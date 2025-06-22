@@ -12,7 +12,8 @@ BUILD_DIR="build/universal" # Temporary build directory
 # Clean previous universal build products if any
 rm -rf "${BUILD_DIR}"
 mkdir -p "${BUILD_DIR}"
-rm -f "${PRODUCT_NAME}" # Remove previous universal binary from root
+mkdir -p "build" # Ensure build directory exists
+rm -f "build/${PRODUCT_NAME}" # Remove previous universal binary from build dir
 
 # Get CFLAGS and LDFLAGS from Makefile (basic parsing, might need improvement for complex Makefiles)
 # This is a simplified approach. A more robust way would be to have `make print-cflags` target.
@@ -44,20 +45,20 @@ clang ${LDFLAGS_FROM_MAKEFILE} -arch arm64 -o "${BUILD_DIR}/${PRODUCT_NAME}_arm6
     "${BUILD_DIR}/${PRODUCT_NAME}_utils_arm64.o"
 
 echo "Creating universal binary..."
-lipo -create -output "${PRODUCT_NAME}" \
+lipo -create -output "build/${PRODUCT_NAME}" \
     "${BUILD_DIR}/${PRODUCT_NAME}_x86_64" \
     "${BUILD_DIR}/${PRODUCT_NAME}_arm64"
 
 echo "Verifying universal binary..."
-lipo -info "${PRODUCT_NAME}"
+lipo -info "build/${PRODUCT_NAME}"
 
 # Optional: Create dSYM
 # echo "Creating dSYM for universal binary..."
 # dsymutil "${PRODUCT_NAME}" -o "${PRODUCT_NAME}.dSYM"
 
-echo "Universal binary '${PRODUCT_NAME}' created successfully in project root."
+echo "Universal binary 'build/${PRODUCT_NAME}' created successfully."
 echo "Build artifacts are in '${BUILD_DIR}'."
-echo "To clean up build artifacts, run 'make clean' (if build dir is part of it) or remove '${BUILD_DIR}' manually."
+echo "To clean up build artifacts, run 'make clean'."
 
 # Note: The Makefile's `clean` target might need to be updated to remove this `build/universal` directory too.
 # Or this script can clean up its own build dir:

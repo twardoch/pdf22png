@@ -1,6 +1,7 @@
 #import <Foundation/Foundation.h>
 #import <Quartz/Quartz.h>
 #import <ImageIO/ImageIO.h>
+#import "errors.h"
 
 // Structures from pdf22png.m
 typedef struct {
@@ -25,6 +26,8 @@ typedef struct {
     BOOL transparentBackground;
     int pngQuality; // 0-9
     BOOL verbose;
+    BOOL includeText; // Include extracted text in filename
+    NSString *pageRange; // Page range specification (e.g., "1-5,10,15-20")
 } Options;
 
 // Function prototypes from pdf22png.m that should remain in main logic

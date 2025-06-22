@@ -1,4 +1,5 @@
 #import "utils.h"
+#import <Vision/Vision.h>
 
 void logMessage(BOOL verbose, NSString *format, ...) {
     if (verbose) {
@@ -146,16 +147,13 @@ CGFloat calculateScaleFactor(ScaleSpec *scale, CGRect pageRect) {
     }
 
     CGFloat scaleX = 1.0, scaleY = 1.0;
-    BOOL scaleXSet = NO, scaleYSet = NO;
 
     if (scale->hasWidth && pageRect.size.width > 0) {
         scaleX = scale->maxWidth / pageRect.size.width;
-        scaleXSet = YES;
     }
 
     if (scale->hasHeight && pageRect.size.height > 0) {
         scaleY = scale->maxHeight / pageRect.size.height;
-        scaleYSet = YES;
     }
 
     if (scale->hasWidth && scale->hasHeight) { // HHHxWWW, fit to smallest
@@ -171,56 +169,61 @@ CGFloat calculateScaleFactor(ScaleSpec *scale, CGRect pageRect) {
 
 CGImageRef renderPDFPageToImage(CGPDFPageRef pdfPage, CGFloat scaleFactor, BOOL transparentBackground, BOOL verbose) {
     if (!pdfPage) return NULL;
+    
+    __block CGImageRef image = NULL;
+    
+    @autoreleasepool {
+        logMessage(verbose, @"Rendering PDF page with scale factor: %.2f", scaleFactor);
 
-    logMessage(verbose, @"Rendering PDF page with scale factor: %.2f", scaleFactor);
+        // Get page dimensions
+        CGRect pageRect = CGPDFPageGetBoxRect(pdfPage, kCGPDFMediaBox);
+        size_t width = (size_t)round(pageRect.size.width * scaleFactor);
+        size_t height = (size_t)round(pageRect.size.height * scaleFactor);
 
-    // Get page dimensions
-    CGRect pageRect = CGPDFPageGetBoxRect(pdfPage, kCGPDFMediaBox);
-    size_t width = (size_t)round(pageRect.size.width * scaleFactor);
-    size_t height = (size_t)round(pageRect.size.height * scaleFactor);
+        if (width == 0 || height == 0) {
+            fprintf(stderr, "Error: Calculated image dimensions are zero (width: %zu, height: %zu). Check scale factor and PDF page size.\n", width, height);
+            return NULL;
+        }
 
-    if (width == 0 || height == 0) {
-        fprintf(stderr, "Error: Calculated image dimensions are zero (width: %zu, height: %zu). Check scale factor and PDF page size.\n", width, height);
-        return NULL;
+        // Create bitmap context
+        CGColorSpaceRef colorSpace = CGColorSpaceCreateDeviceRGB();
+        CGContextRef context = CGBitmapContextCreate(NULL, width, height, 8, 0, colorSpace,
+                                                    kCGImageAlphaPremultipliedLast); // Changed to PremultipliedLast for better transparency handling
+        CGColorSpaceRelease(colorSpace);
+
+        if (!context) {
+            fprintf(stderr, "Failed to create bitmap context\n");
+            return NULL;
+        }
+
+        // Set background
+        if (!transparentBackground) {
+            CGContextSetRGBFillColor(context, 1.0, 1.0, 1.0, 1.0); // White
+            CGContextFillRect(context, CGRectMake(0, 0, width, height));
+        } else {
+            CGContextClearRect(context, CGRectMake(0, 0, width, height)); // Transparent
+        }
+
+        // Save context state
+        CGContextSaveGState(context);
+
+        // Scale and translate for PDF rendering
+        CGContextScaleCTM(context, scaleFactor, scaleFactor);
+        // CGContextTranslateCTM(context, -pageRect.origin.x, -pageRect.origin.y); // This might be needed if cropbox/mediabox origin is not 0,0
+
+        // Draw PDF page
+        CGContextDrawPDFPage(context, pdfPage);
+
+        // Restore context state
+        CGContextRestoreGState(context);
+
+        // Create image from context
+        image = CGBitmapContextCreateImage(context);
+        CGContextRelease(context);
+
+        logMessage(verbose, @"Page rendered to CGImageRef successfully.");
     }
-
-    // Create bitmap context
-    CGColorSpaceRef colorSpace = CGColorSpaceCreateDeviceRGB();
-    CGContextRef context = CGBitmapContextCreate(NULL, width, height, 8, 0, colorSpace,
-                                                kCGImageAlphaPremultipliedLast); // Changed to PremultipliedLast for better transparency handling
-    CGColorSpaceRelease(colorSpace);
-
-    if (!context) {
-        fprintf(stderr, "Failed to create bitmap context\n");
-        return NULL;
-    }
-
-    // Set background
-    if (!transparentBackground) {
-        CGContextSetRGBFillColor(context, 1.0, 1.0, 1.0, 1.0); // White
-        CGContextFillRect(context, CGRectMake(0, 0, width, height));
-    } else {
-        CGContextClearRect(context, CGRectMake(0, 0, width, height)); // Transparent
-    }
-
-    // Save context state
-    CGContextSaveGState(context);
-
-    // Scale and translate for PDF rendering
-    CGContextScaleCTM(context, scaleFactor, scaleFactor);
-    // CGContextTranslateCTM(context, -pageRect.origin.x, -pageRect.origin.y); // This might be needed if cropbox/mediabox origin is not 0,0
-
-    // Draw PDF page
-    CGContextDrawPDFPage(context, pdfPage);
-
-    // Restore context state
-    CGContextRestoreGState(context);
-
-    // Create image from context
-    CGImageRef image = CGBitmapContextCreateImage(context);
-    CGContextRelease(context);
-
-    logMessage(verbose, @"Page rendered to CGImageRef successfully.");
+    
     return image;
 }
 
@@ -323,4 +326,234 @@ NSString *getOutputPrefix(Options *options) {
     } else {
         return @"page"; // Default prefix if input is stdin and no output path
     }
+}
+
+// PDF operator callbacks (forward declarations)
+static void pdf_Tj(CGPDFScannerRef scanner, void *info);
+static void pdf_TJ(CGPDFScannerRef scanner, void *info);
+static void pdf_Quote(CGPDFScannerRef scanner, void *info);
+static void pdf_DoubleQuote(CGPDFScannerRef scanner, void *info);
+
+NSString *extractTextFromPDFPage(CGPDFPageRef page) {
+    if (!page) return nil;
+    
+    NSMutableString *pageText = [NSMutableString string];
+    
+    // Create a PDF Scanner
+    CGPDFScannerRef scanner = NULL;
+    CGPDFContentStreamRef contentStream = CGPDFContentStreamCreateWithPage(page);
+    if (contentStream) {
+        CGPDFOperatorTableRef operatorTable = CGPDFOperatorTableCreate();
+        
+        // Set up operator callbacks for text extraction
+        CGPDFOperatorTableSetCallback(operatorTable, "Tj", &pdf_Tj);
+        CGPDFOperatorTableSetCallback(operatorTable, "TJ", &pdf_TJ);
+        CGPDFOperatorTableSetCallback(operatorTable, "'", &pdf_Quote);
+        CGPDFOperatorTableSetCallback(operatorTable, "\"", &pdf_DoubleQuote);
+        
+        scanner = CGPDFScannerCreate(contentStream, operatorTable, (__bridge void *)pageText);
+        if (scanner) {
+            CGPDFScannerScan(scanner);
+            CGPDFScannerRelease(scanner);
+        }
+        
+        CGPDFOperatorTableRelease(operatorTable);
+        CGPDFContentStreamRelease(contentStream);
+    }
+    
+    // Clean up the text
+    NSString *cleanedText = [pageText stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+    cleanedText = [cleanedText stringByReplacingOccurrencesOfString:@"\\s+" withString:@" " 
+                                                           options:NSRegularExpressionSearch 
+                                                             range:NSMakeRange(0, cleanedText.length)];
+    
+    return cleanedText.length > 0 ? cleanedText : nil;
+}
+
+// PDF operator callbacks
+static void pdf_Tj(CGPDFScannerRef scanner, void *info) {
+    CGPDFStringRef pdfString = NULL;
+    if (CGPDFScannerPopString(scanner, &pdfString)) {
+        NSString *string = (__bridge_transfer NSString *)CGPDFStringCopyTextString(pdfString);
+        if (string) {
+            NSMutableString *pageText = (__bridge NSMutableString *)info;
+            [pageText appendString:string];
+            [pageText appendString:@" "];
+        }
+    }
+}
+
+static void pdf_TJ(CGPDFScannerRef scanner, void *info) {
+    CGPDFArrayRef array = NULL;
+    if (CGPDFScannerPopArray(scanner, &array)) {
+        size_t count = CGPDFArrayGetCount(array);
+        NSMutableString *pageText = (__bridge NSMutableString *)info;
+        
+        for (size_t i = 0; i < count; i++) {
+            CGPDFObjectRef object = NULL;
+            if (CGPDFArrayGetObject(array, i, &object)) {
+                CGPDFObjectType type = CGPDFObjectGetType(object);
+                if (type == kCGPDFObjectTypeString) {
+                    CGPDFStringRef pdfString = NULL;
+                    if (CGPDFObjectGetValue(object, kCGPDFObjectTypeString, &pdfString)) {
+                        NSString *string = (__bridge_transfer NSString *)CGPDFStringCopyTextString(pdfString);
+                        if (string) {
+                            [pageText appendString:string];
+                        }
+                    }
+                }
+            }
+        }
+        [pageText appendString:@" "];
+    }
+}
+
+static void pdf_Quote(CGPDFScannerRef scanner, void *info) {
+    pdf_Tj(scanner, info);
+}
+
+static void pdf_DoubleQuote(CGPDFScannerRef scanner, void *info) {
+    // Skip the two numeric parameters
+    CGPDFReal tc, tw;
+    CGPDFScannerPopNumber(scanner, &tc);
+    CGPDFScannerPopNumber(scanner, &tw);
+    pdf_Tj(scanner, info);
+}
+
+NSString *performOCROnImage(CGImageRef image) {
+    if (!image) return nil;
+    
+    __block NSString *recognizedText = nil;
+    dispatch_semaphore_t semaphore = dispatch_semaphore_create(0);
+    
+    @autoreleasepool {
+        // Create Vision request
+        VNRecognizeTextRequest *request = [[VNRecognizeTextRequest alloc] initWithCompletionHandler:^(VNRequest *request, NSError *error) {
+            if (error) {
+                NSLog(@"OCR Error: %@", error.localizedDescription);
+                dispatch_semaphore_signal(semaphore);
+                return;
+            }
+            
+            NSMutableString *fullText = [NSMutableString string];
+            for (VNRecognizedTextObservation *observation in request.results) {
+                VNRecognizedText *topCandidate = [observation topCandidates:1].firstObject;
+                if (topCandidate) {
+                    [fullText appendString:topCandidate.string];
+                    [fullText appendString:@" "];
+                }
+            }
+            
+            recognizedText = [fullText stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+            dispatch_semaphore_signal(semaphore);
+        }];
+        
+        request.recognitionLevel = VNRequestTextRecognitionLevelAccurate;
+        request.recognitionLanguages = @[@"en-US"]; // Add more languages as needed
+        request.usesLanguageCorrection = YES;
+        
+        // Create handler and perform request
+        VNImageRequestHandler *handler = [[VNImageRequestHandler alloc] initWithCGImage:image options:@{}];
+        NSError *error = nil;
+        [handler performRequests:@[request] error:&error];
+        
+        if (error) {
+            NSLog(@"Failed to perform OCR: %@", error.localizedDescription);
+            dispatch_semaphore_signal(semaphore);
+        }
+    }
+    
+    // Wait for OCR to complete (with timeout)
+    dispatch_semaphore_wait(semaphore, dispatch_time(DISPATCH_TIME_NOW, 5 * NSEC_PER_SEC));
+    
+    return recognizedText;
+}
+
+NSString *slugifyText(NSString *text, NSUInteger maxLength) {
+    if (!text || text.length == 0) return @"";
+    
+    // Convert to lowercase
+    NSString *lowercased = [text lowercaseString];
+    
+    // Replace non-alphanumeric characters with hyphens
+    NSMutableString *slugified = [NSMutableString string];
+    NSCharacterSet *alphanumeric = [NSCharacterSet alphanumericCharacterSet];
+    
+    BOOL lastWasHyphen = NO;
+    for (NSUInteger i = 0; i < lowercased.length && slugified.length < maxLength; i++) {
+        unichar ch = [lowercased characterAtIndex:i];
+        
+        if ([alphanumeric characterIsMember:ch]) {
+            [slugified appendFormat:@"%C", ch];
+            lastWasHyphen = NO;
+        } else if (!lastWasHyphen && slugified.length > 0) {
+            [slugified appendString:@"-"];
+            lastWasHyphen = YES;
+        }
+    }
+    
+    // Remove trailing hyphen if present
+    if ([slugified hasSuffix:@"-"]) {
+        [slugified deleteCharactersInRange:NSMakeRange(slugified.length - 1, 1)];
+    }
+    
+    // Truncate to maxLength
+    if (slugified.length > maxLength) {
+        NSString *truncated = [slugified substringToIndex:maxLength];
+        // Remove partial word at end
+        NSRange lastHyphen = [truncated rangeOfString:@"-" options:NSBackwardsSearch];
+        if (lastHyphen.location != NSNotFound && lastHyphen.location > maxLength * 0.7) {
+            truncated = [truncated substringToIndex:lastHyphen.location];
+        }
+        return truncated;
+    }
+    
+    return slugified;
+}
+
+NSArray<NSNumber *> *parsePageRange(NSString *rangeSpec, NSUInteger totalPages) {
+    if (!rangeSpec || rangeSpec.length == 0) {
+        return nil;
+    }
+    
+    NSMutableSet *pageSet = [NSMutableSet set];
+    NSArray *parts = [rangeSpec componentsSeparatedByString:@","];
+    
+    for (NSString *part in parts) {
+        NSString *trimmedPart = [part stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceCharacterSet]];
+        
+        // Check if it's a range (contains hyphen)
+        NSRange hyphenRange = [trimmedPart rangeOfString:@"-"];
+        if (hyphenRange.location != NSNotFound) {
+            // Split range into start and end
+            NSArray *rangeParts = [trimmedPart componentsSeparatedByString:@"-"];
+            if (rangeParts.count == 2) {
+                NSInteger start = [rangeParts[0] integerValue];
+                NSInteger end = [rangeParts[1] integerValue];
+                
+                // Validate range
+                if (start < 1) start = 1;
+                if (end > totalPages) end = totalPages;
+                
+                if (start <= end) {
+                    for (NSInteger i = start; i <= end; i++) {
+                        [pageSet addObject:@(i)];
+                    }
+                }
+            }
+        } else {
+            // Single page number
+            NSInteger pageNum = [trimmedPart integerValue];
+            if (pageNum >= 1 && pageNum <= totalPages) {
+                [pageSet addObject:@(pageNum)];
+            }
+        }
+    }
+    
+    // Convert set to sorted array
+    NSArray *sortedPages = [[pageSet allObjects] sortedArrayUsingComparator:^NSComparisonResult(NSNumber *obj1, NSNumber *obj2) {
+        return [obj1 compare:obj2];
+    }];
+    
+    return sortedPages;
 }

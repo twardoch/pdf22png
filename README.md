@@ -1,329 +1,210 @@
+# pdf22png
 
-Based on the current repository structure, I can see that `pdf22png` is a macOS-specific tool written in Objective-C for converting PDF files to PNG images. Let me provide a comprehensive description and reorganization plan.
+[![Version](https://img.shields.io/github/v/release/twardoch/pdf22png?label=version)](https://github.com/twardoch/pdf22png/releases/latest)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Platform](https://img.shields.io/badge/platform-macOS-lightgrey.svg)](https://www.apple.com/macos/)
 
-## 1. Project Description
+A high-performance command-line tool for converting PDF documents to PNG images on macOS, leveraging native Core Graphics and Quartz frameworks for optimal quality and speed.
 
-**pdf22png** is a lightweight, high-performance macOS command-line tool that converts PDF documents to PNG images with precision rendering. Built using native macOS frameworks (likely Core Graphics/Quartz), it provides efficient PDF-to-image conversion with support for various resolution settings, page ranges, and output customization options.
+## Features
 
-### 1.1. Key Features:
-- Native macOS implementation for optimal performance
-- Page-by-page or batch conversion
-- Customizable DPI/resolution settings
-- Support for multi-page PDFs
-- Minimal dependencies (macOS frameworks only)
-- Fast processing using Core Graphics
+- **Single & Batch Conversion**: Convert individual pages or entire PDF documents
+- **Flexible Scaling Options**: 
+  - Resolution control (DPI)
+  - Percentage scaling
+  - Fixed dimensions (width/height fitting)
+  - Scale factors
+- **Advanced Options**:
+  - Transparent background support
+  - PNG compression quality control
+  - Verbose logging for debugging
+- **I/O Flexibility**:
+  - Read from files or stdin
+  - Write to files, stdout, or batch output directories
+  - Customizable output naming patterns
+- **Native Performance**: Built with Objective-C using macOS native frameworks
+- **Universal Binary**: Supports both Intel and Apple Silicon Macs
 
-## 2. Detailed Repository Reorganization Plan
+## Installation
 
-### 2.1. **Directory Structure**
+### Using Homebrew (Recommended)
 
-```
-pdf22png/
-├── .github/
-│   ├── workflows/
-│   │   ├── build.yml         # CI/CD for building and testing
-│   │   ├── release.yml       # Automated releases
-│   │   └── homebrew.yml      # Update Homebrew formula on release
-│   ├── ISSUE_TEMPLATE/
-│   │   ├── bug_report.md
-│   │   └── feature_request.md
-│   └── FUNDING.yml
-├── src/
-│   ├── pdf22png.m           # Main implementation (renamed from pdfupng.m)
-│   ├── pdf22png.h           # Header file
-│   ├── utils.m              # Utility functions
-│   └── utils.h
-├── tests/
-│   ├── test_pdf22png.m      # Unit tests
-│   └── fixtures/            # Test PDF files
-├── scripts/
-│   ├── install.sh           # Installation script
-│   ├── uninstall.sh         # Uninstallation script
-│   └── build-universal.sh   # Build universal binary
-├── homebrew/
-│   └── pdf22png.rb          # Homebrew formula template
-├── docs/
-│   ├── USAGE.md
-│   ├── EXAMPLES.md
-│   └── API.md
-├── .gitignore
-├── .gitattributes
-├── .editorconfig
-├── LICENSE                  # MIT or Apache 2.0
-├── README.md
-├── CHANGELOG.md
-├── TODO.md
-├── PROGRESS.md
-├── Makefile                 # Enhanced Makefile
-├── CMakeLists.txt          # Alternative build system
-└── pdf22png.xcodeproj/     # Xcode project (optional)
+```bash
+brew tap twardoch/homebrew-pdf22png
+brew install pdf22png
 ```
 
-### 2.2. **Enhanced .gitignore**
-```gitignore
-# this_file: .gitignore
+### Building from Source
 
-# macOS
-.DS_Store
-.AppleDouble
-.LSOverride
-._*
-.Spotlight-V100
-.Trashes
+Requirements:
+- macOS 10.15 or later
+- Xcode Command Line Tools
 
-# Xcode
-*.xcworkspace
-xcuserdata/
-*.xcscmblueprint
-*.xccheckout
-DerivedData/
-*.moved-aside
-*.pbxuser
-!default.pbxuser
-*.mode1v3
-!default.mode1v3
-*.mode2v3
-!default.mode2v3
-*.perspectivev3
-!default.perspectivev3
-
-# Build products
-build/
-*.o
-*.a
-*.dylib
-pdf22png
-*.dSYM/
-
-# CMake
-CMakeCache.txt
-CMakeFiles/
-cmake_install.cmake
-Makefile.cmake
-
-# Testing
-test-results/
-coverage/
-*.gcov
-*.gcda
-*.gcno
-
-# IDEs
-.vscode/
-.idea/
-*.swp
-*.swo
-*~
-.cursorindexingignore
-
-# Distribution
-dist/
-*.tar.gz
-*.zip
-*.dmg
-
-# Documentation
-docs/_build/
-*.pdf
+```bash
+git clone https://github.com/twardoch/pdf22png.git
+cd pdf22png
+make
+sudo make install
 ```
 
-### 2.3. **Modern Makefile**
-```makefile
-# this_file: Makefile
+To build a universal binary for both Intel and Apple Silicon:
 
-# Variables
-PRODUCT_NAME = pdf22png
-CC = clang
-CFLAGS = -Wall -Wextra -O2 -fobjc-arc -mmacosx-version-min=10.15
-LDFLAGS = -framework Foundation -framework CoreGraphics -framework AppKit
-PREFIX = /usr/local
-BINDIR = $(PREFIX)/bin
-SRCDIR = src
-TESTDIR = tests
-VERSION = $(shell git describe --tags --always --dirty)
-
-# Source files
-SOURCES = $(SRCDIR)/pdf22png.m $(SRCDIR)/utils.m
-OBJECTS = $(SOURCES:.m=.o)
-TEST_SOURCES = $(TESTDIR)/test_pdf22png.m
-TEST_OBJECTS = $(TEST_SOURCES:.m=.o)
-
-# Targets
-.PHONY: all clean install uninstall test universal release fmt lint
-
-all: $(PRODUCT_NAME)
-
-$(PRODUCT_NAME): $(OBJECTS)
-	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^
-
-%.o: %.m
-	$(CC) $(CFLAGS) -c -o $@ $
-
-# Universal binary for Intel and Apple Silicon
-universal:
-	@echo "Building universal binary..."
-	@scripts/build-universal.sh
-
-install: $(PRODUCT_NAME)
-	@echo "Installing $(PRODUCT_NAME) to $(BINDIR)..."
-	@install -d $(BINDIR)
-	@install -m 755 $(PRODUCT_NAME) $(BINDIR)/
-	@echo "Installation complete!"
-
-uninstall:
-	@echo "Uninstalling $(PRODUCT_NAME)..."
-	@rm -f $(BINDIR)/$(PRODUCT_NAME)
-	@echo "Uninstallation complete!"
-
-test: $(PRODUCT_NAME) $(TEST_OBJECTS)
-	@echo "Running tests..."
-	@$(CC) $(CFLAGS) $(LDFLAGS) -o test_runner $(TEST_OBJECTS) $(filter-out $(SRCDIR)/pdf22png.o,$(OBJECTS))
-	@./test_runner
-
-clean:
-	@rm -f $(OBJECTS) $(TEST_OBJECTS) $(PRODUCT_NAME) test_runner
-	@rm -rf *.dSYM
-	@echo "Clean complete!"
-
-fmt:
-	@echo "Formatting code..."
-	@clang-format -i $(SRCDIR)/*.m $(SRCDIR)/*.h $(TESTDIR)/*.m
-
-lint:
-	@echo "Linting code..."
-	@oclint $(SOURCES) -- $(CFLAGS)
-
-# Release build with version info
-release:
-	$(MAKE) clean
-	$(MAKE) CFLAGS="$(CFLAGS) -DVERSION=\"$(VERSION)\""
-	@echo "Release build complete: $(VERSION)"
+```bash
+make universal
 ```
 
-### 2.4. **Homebrew Formula Structure**
-```ruby
-# this_file: homebrew/pdf22png.rb
+## Usage
 
-class Pdf22png < Formula
-  desc "High-performance PDF to PNG converter for macOS"
-  homepage "https://github.com/twardoch/pdf22png"
-  url "https://github.com/twardoch/pdf22png/archive/refs/tags/v1.0.0.tar.gz"
-  sha256 "YOUR_SHA256_HERE"
-  license "MIT"
-  head "https://github.com/twardoch/pdf22png.git", branch: "main"
+### Basic Syntax
 
-  depends_on :macos
-
-  def install
-    system "make", "PREFIX=#{prefix}"
-    system "make", "install", "PREFIX=#{prefix}"
-  end
-
-  test do
-    # Create a simple test PDF
-    (testpath/"test.pdf").write <<~EOS
-      %PDF-1.4
-      1 0 obj << /Type /Catalog /Pages 2 0 R >> endobj
-      2 0 obj << /Type /Pages /Kids [3 0 R] /Count 1 >> endobj
-      3 0 obj << /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] >> endobj
-      xref
-      0 4
-      0000000000 65535 f
-      0000000009 00000 n
-      0000000058 00000 n
-      0000000115 00000 n
-      trailer << /Size 4 /Root 1 0 R >>
-      startxref
-      190
-      %%EOF
-    EOS
-
-    system "#{bin}/pdf22png", "test.pdf", "output.png"
-    assert_predicate testpath/"output.png", :exist?
-  end
-end
+```bash
+pdf22png [OPTIONS] <input.pdf> [output.png]
 ```
 
-### 2.5. **GitHub Actions Workflows**
+### Quick Examples
 
-**Build Workflow (.github/workflows/build.yml)**:
-```yaml
-# this_file: .github/workflows/build.yml
-
-name: Build and Test
-
-on:
-  push:
-    branches: [ main, develop ]
-  pull_request:
-    branches: [ main ]
-
-jobs:
-  build:
-    runs-on: macos-latest
-    strategy:
-      matrix:
-        os: [macos-12, macos-13, macos-14]
-    
-    steps:
-    - uses: actions/checkout@v4
-    
-    - name: Build
-      run: make
-    
-    - name: Run tests
-      run: make test
-    
-    - name: Build universal binary
-      run: make universal
-    
-    - name: Upload artifacts
-      uses: actions/upload-artifact@v4
-      with:
-        name: pdf22png-${{ matrix.os }}
-        path: pdf22png
+Convert first page of a PDF:
+```bash
+pdf22png input.pdf output.png
 ```
 
-**Release Workflow (.github/workflows/release.yml)**:
-```yaml
-# this_file: .github/workflows/release.yml
-
-name: Release
-
-on:
-  push:
-    tags:
-      - 'v*'
-
-jobs:
-  release:
-    runs-on: macos-latest
-    
-    steps:
-    - uses: actions/checkout@v4
-    
-    - name: Build universal binary
-      run: make universal
-    
-    - name: Create archive
-      run: |
-        mkdir -p dist
-        cp pdf22png dist/
-        cp README.md LICENSE docs/USAGE.md dist/
-        cd dist && tar -czf pdf22png-${{ github.ref_name }}-macos.tar.gz *
-    
-    - name: Create Release
-      uses: softprops/action-gh-release@v1
-      with:
-        files: dist/*.tar.gz
-        generate_release_notes: true
-    
-    - name: Update Homebrew formula
-      run: |
-        # Update SHA256 in formula
-        SHA256=$(shasum -a 256 dist/*.tar.gz | cut -d' ' -f1)
-        sed -i '' "s/sha256 \".*\"/sha256 \"$SHA256\"/" homebrew/pdf22png.rb
-        sed -i '' "s|url \".*\"|url \"https://github.com/twardoch/pdf22png/archive/refs/tags/${{ github.ref_name }}.tar.gz\"|" homebrew/pdf22png.rb
+Convert a specific page:
+```bash
+pdf22png -p 5 document.pdf page5.png
 ```
 
+Convert all pages to individual PNGs:
+```bash
+pdf22png -a document.pdf
+# Creates: document-001.png, document-002.png, etc.
+```
 
+Convert at 300 DPI resolution:
+```bash
+pdf22png -r 300 input.pdf high-res.png
+```
+
+Scale to 50% size:
+```bash
+pdf22png -s 50% input.pdf half-size.png
+```
+
+### Options
+
+| Option | Long Form | Description | Default |
+|--------|-----------|-------------|---------|
+| `-p <n>` | `--page` | Convert specific page number | 1 |
+| `-a` | `--all` | Convert all pages | disabled |
+| `-r <dpi>` | `--resolution` | Set output DPI (e.g., 300) | 144 |
+| `-s <spec>` | `--scale` | Scale specification (see below) | 100% |
+| `-t` | `--transparent` | Preserve transparency | disabled |
+| `-q <0-9>` | `--quality` | PNG compression quality | 6 |
+| `-o <path>` | `--output` | Output file/prefix or `-` for stdout | - |
+| `-d <dir>` | `--directory` | Output directory for batch mode | . |
+| `-v` | `--verbose` | Enable verbose logging | disabled |
+| `-h` | `--help` | Show help message | - |
+
+### Scale Specifications
+
+The `-s/--scale` option accepts various formats:
+
+- **Percentage**: `150%` (1.5x scale)
+- **Factor**: `2.0` (2x scale)
+- **Fixed width**: `800x` (800px wide, height auto)
+- **Fixed height**: `x600` (600px high, width auto)
+- **Fit within**: `800x600` (fit within 800x600 box)
+
+### Advanced Examples
+
+Convert with transparent background at 300 DPI:
+```bash
+pdf22png -t -r 300 input.pdf transparent-300dpi.png
+```
+
+Batch convert all pages to a specific directory:
+```bash
+pdf22png -d ./output_images -o myprefix document.pdf
+# Creates: ./output_images/myprefix-001.png, etc.
+```
+
+Pipe operations:
+```bash
+# From stdin to stdout
+cat document.pdf | pdf22png - - > output.png
+
+# Process and pipe to ImageMagick
+pdf22png -r 300 input.pdf - | convert - -resize 50% final.jpg
+```
+
+## Architecture
+
+pdf22png is built using:
+- **Objective-C** with ARC (Automatic Reference Counting)
+- **Core Graphics** for PDF rendering
+- **Quartz** framework for image processing
+- **ImageIO** for PNG output
+- Native macOS APIs for optimal performance
+
+The codebase is organized into:
+- `src/pdf22png.m` - Main program logic and argument parsing
+- `src/utils.m` - Utility functions for scaling, rendering, and I/O
+- `tests/` - XCTest-based unit tests
+
+## Performance
+
+pdf22png is optimized for performance:
+- Parallel processing for batch conversions using Grand Central Dispatch
+- Efficient memory management with autoreleasepool usage
+- Native Core Graphics rendering for best quality
+- Minimal dependencies (only macOS system frameworks)
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit issues, feature requests, or pull requests.
+
+### Development
+
+To build from source:
+```bash
+make
+```
+
+To run tests:
+```bash
+make test
+```
+
+### Releasing
+
+To create a new release:
+```bash
+# Automatic versioning (increments minor version)
+./release.sh
+
+# Specify version explicitly
+./release.sh --v 2.1.0
+```
+
+This will:
+1. Build the universal binary
+2. Run tests
+3. Create and push a git tag
+4. Trigger GitHub Actions to build and publish release artifacts
+
+See [TODO.md](TODO.md) for planned features and improvements.
+
+## License
+
+pdf22png is released under the MIT License. See [LICENSE](LICENSE) for details.
+
+## Author
+
+- Created by [Adam Twardoch](https://github.com/twardoch)
+- Developed using Anthropic software
+
+## See Also
+
+- [Usage Guide](docs/USAGE.md) - Detailed usage instructions
+- [Examples](docs/EXAMPLES.md) - More usage examples
+- [API Documentation](docs/API.md) - Function reference
+- [Changelog](CHANGELOG.md) - Version history

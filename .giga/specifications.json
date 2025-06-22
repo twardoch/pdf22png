@@ -1,0 +1,18 @@
+[
+  {
+    "fileName": "main-overview.mdc",
+    "description": "Complete system overview including core architecture, key components, and high-level data flow between PDF processing and PNG generation components"
+  },
+  {
+    "fileName": "scaling-algorithms.mdc",
+    "description": "Detailed documentation of the PDF scaling algorithms, including percentage scaling, DPI calculations, dimension fitting, and aspect ratio preservation logic"
+  },
+  {
+    "fileName": "pdf-rendering-pipeline.mdc",
+    "description": "Complete documentation of the PDF rendering pipeline, including page extraction, CoreGraphics rendering, transparency handling, and PNG compression workflow"
+  },
+  {
+    "fileName": "batch-processing-architecture.mdc",
+    "description": "Documentation of the parallel processing architecture for batch conversions, including Grand Central Dispatch implementation and thread management"
+  }
+]

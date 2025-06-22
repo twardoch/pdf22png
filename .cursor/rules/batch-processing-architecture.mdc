@@ -1,0 +1,72 @@
+---
+description: Documents the parallel processing architecture for PDF batch conversions using Grand Central Dispatch
+globs: src/pdf22png.m,src/utils.m
+alwaysApply: false
+---
+
+
+# batch-processing-architecture
+
+## Parallel Processing Implementation
+
+The batch processing architecture utilizes Grand Central Dispatch (GCD) to parallelize PDF page conversions:
+
+### Core Components
+
+1. **Batch Mode Dispatcher**
+- Located in: `src/pdf22png.m`
+- Manages concurrent page processing using GCD dispatch queues
+- Handles thread synchronization for batch operations
+
+2. **Worker Thread Management**
+- Distributes page conversion tasks across multiple threads
+- Maintains thread-safe status updates for conversion progress
+- Implements autorelease pools for memory management during batch operations
+
+3. **Output Coordination**
+- Manages concurrent file writing for multiple page outputs
+- Generates sequential output filenames based on page numbers
+- Coordinates directory access for batch output files
+
+### Batch Processing Workflow
+
+1. **Initialization Phase**
+```
+Input PDF -> Page Count Analysis -> Worker Thread Pool Creation
+```
+
+2. **Distribution Phase**
+```
+Page Tasks -> GCD Dispatch Queue -> Worker Threads
+```
+
+3. **Synchronization Phase**
+```
+Worker Results -> Status Aggregation -> Final Output
+```
+
+### Critical Business Rules
+
+1. **Page Processing Order**
+- Pages can be processed in any order
+- Output filenames maintain sequential numbering regardless of completion order
+- Each page conversion is atomic and independent
+
+2. **Resource Management**
+- Worker threads utilize independent autorelease pools
+- Memory allocation is managed per-page rather than globally
+- PDF document remains open for shared access across threads
+
+3. **Error Handling**
+- Individual page failures don't halt batch processing
+- Success/failure status tracked independently per page
+- Aggregate status reported after all pages complete
+
+4. **Output Coordination**
+- Thread-safe file naming pattern generation
+- Directory management for multiple output files
+- Status tracking for completed conversions
+
+$END$
+
+ If you're using this file in context, clearly say in italics in one small line that "Context added by Giga batch-processing-architecture".

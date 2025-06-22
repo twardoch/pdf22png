@@ -1,6 +1,16 @@
 #import "pdf22png.h"
 #import "utils.h"
-#import <getopt.h> // For getopt_long
+#import <getopt.h>
+#import <signal.h>
+
+// Global variable for signal handling
+static volatile sig_atomic_t g_shouldTerminate = 0;
+
+// Signal handler for graceful shutdown
+void signalHandler(int sig) {
+    g_shouldTerminate = 1;
+    fprintf(stderr, "\nReceived signal %d, finishing current operations...\n", sig);
+}
 
 // Define long options for getopt_long
 static struct option long_options[] = {
@@ -11,6 +21,7 @@ static struct option long_options[] = {
     {"transparent", no_argument, 0, 't'},
     {"quality", required_argument, 0, 'q'},
     {"verbose", no_argument, 0, 'v'},
+    {"name", no_argument, 0, 'n'}, // Include text in filename
     {"help", no_argument, 0, 'h'},
     {"output", required_argument, 0, 'o'}, // For consistency with other tools
     {"directory", required_argument, 0, 'd'}, // For batch output directory
@@ -21,7 +32,9 @@ void printUsage(const char *programName) {
     fprintf(stderr, "Usage: %s [OPTIONS] <input.pdf> [output.png | output_%%03d.png]\n", programName);
     fprintf(stderr, "Converts PDF documents to PNG images.\n\n");
     fprintf(stderr, "Options:\n");
-    fprintf(stderr, "  -p, --page <n>          Convert specific page (default: 1). Ignored in batch mode.\n");
+    fprintf(stderr, "  -p, --page <spec>       Page(s) to convert. Single page, range, or comma-separated.\n");
+    fprintf(stderr, "                          Examples: 1 | 1-5 | 1,3,5-10 (default: 1)\n");
+    fprintf(stderr, "                          In batch mode, only specified pages are converted.\n");
     fprintf(stderr, "  -a, --all               Convert all pages. If -d is not given, uses input filename as prefix.\n");
     fprintf(stderr, "                          Output files named <prefix>-<page_num>.png.\n");
     fprintf(stderr, "  -r, --resolution <dpi>  Set output DPI (e.g., 150dpi). Overrides -s if both used with numbers.\n");
@@ -39,6 +52,7 @@ void printUsage(const char *programName) {
     fprintf(stderr, "  -d, --directory <dir>   Output directory for batch mode (converts all pages).\n");
     fprintf(stderr, "                          If used, -o specifies filename prefix inside this directory.\n");
     fprintf(stderr, "  -v, --verbose           Verbose output.\n");
+    fprintf(stderr, "  -n, --name              Include extracted text in output filename (batch mode only).\n");
     fprintf(stderr, "  -h, --help              Show this help message and exit.\n\n");
     fprintf(stderr, "Arguments:\n");
     fprintf(stderr, "  <input.pdf>             Input PDF file. If '-', reads from stdin.\n");
@@ -57,7 +71,9 @@ Options parseArguments(int argc, const char *argv[]) {
         .batchMode = NO,
         .transparentBackground = NO,
         .pngQuality = 6, // Default PNG quality
-        .verbose = NO
+        .verbose = NO,
+        .includeText = NO,
+        .pageRange = nil
     };
 
     int opt;
@@ -68,13 +84,22 @@ Options parseArguments(int argc, const char *argv[]) {
     // Suppress getopt's default error messages
     // opterr = 0;
 
-    while ((opt = getopt_long(argc, (char *const *)argv, "p:ar:s:tq:o:d:vh", long_options, &option_index)) != -1) {
+    while ((opt = getopt_long(argc, (char *const *)argv, "p:ar:s:tq:o:d:vnh", long_options, &option_index)) != -1) {
         switch (opt) {
             case 'p':
-                options.pageNumber = atoi(optarg);
-                if (options.pageNumber < 1) {
-                    fprintf(stderr, "Error: Invalid page number: %s. Must be >= 1.\n", optarg);
-                    exit(1);
+                options.pageRange = [NSString stringWithUTF8String:optarg];
+                // For single page mode compatibility, try to parse as simple number
+                NSScanner *scanner = [NSScanner scannerWithString:options.pageRange];
+                NSInteger singlePage;
+                if ([scanner scanInteger:&singlePage] && [scanner isAtEnd]) {
+                    options.pageNumber = singlePage;
+                    if (options.pageNumber < 1) {
+                        fprintf(stderr, "Error: Invalid page number: %s. Must be >= 1.\n", optarg);
+                        exit(1);
+                    }
+                } else {
+                    // It's a range or list, will be parsed later
+                    options.pageNumber = 0; // Indicates range mode
                 }
                 break;
             case 'a':
@@ -120,6 +145,9 @@ Options parseArguments(int argc, const char *argv[]) {
                 break;
             case 'v':
                 options.verbose = YES;
+                break;
+            case 'n':
+                options.includeText = YES;
                 break;
             case 'h':
                 printUsage(argv[0]);
@@ -247,47 +275,49 @@ Options parseArguments(int argc, const char *argv[]) {
 
 
 BOOL processSinglePage(CGPDFDocumentRef pdfDocument, Options *options) {
-    logMessage(options->verbose, @"Processing single page: %ld", (long)options->pageNumber);
+    @autoreleasepool {
+        logMessage(options->verbose, @"Processing single page: %ld", (long)options->pageNumber);
 
-    size_t pageCount = CGPDFDocumentGetNumberOfPages(pdfDocument);
-    if (options->pageNumber < 1 || options->pageNumber > (NSInteger)pageCount) {
-        fprintf(stderr, "Error: Page %ld does not exist (document has %zu pages).\n",
-                (long)options->pageNumber, pageCount);
-        return NO;
+        size_t pageCount = CGPDFDocumentGetNumberOfPages(pdfDocument);
+        if (options->pageNumber < 1 || options->pageNumber > (NSInteger)pageCount) {
+            fprintf(stderr, "Error: Page %ld does not exist (document has %zu pages).\n",
+                    (long)options->pageNumber, pageCount);
+            return NO;
+        }
+
+        CGPDFPageRef pdfPage = CGPDFDocumentGetPage(pdfDocument, options->pageNumber);
+        if (!pdfPage) {
+            fprintf(stderr, "Error: Failed to get page %ld.\n", (long)options->pageNumber);
+            return NO;
+        }
+
+        CGRect pageRect = CGPDFPageGetBoxRect(pdfPage, kCGPDFMediaBox);
+        CGFloat scaleFactor = calculateScaleFactor(&options->scale, pageRect);
+        logMessage(options->verbose, @"Calculated scale factor for page %ld: %.2f", (long)options->pageNumber, scaleFactor);
+
+        CGImageRef image = renderPDFPageToImage(pdfPage, scaleFactor, options->transparentBackground, options->verbose);
+        if (!image) {
+            fprintf(stderr, "Error: Failed to render PDF page %ld.\n", (long)options->pageNumber);
+            return NO;
+        }
+
+        BOOL success;
+        if (options->outputPath && [options->outputPath isEqualToString:@"-"]) {
+            logMessage(options->verbose, @"Writing image to stdout.");
+            NSFileHandle *stdoutHandle = [NSFileHandle fileHandleWithStandardOutput];
+            success = writeImageAsPNG(image, stdoutHandle, options->pngQuality, options->verbose);
+        } else if (options->outputPath) {
+            logMessage(options->verbose, @"Writing image to file: %@", options->outputPath);
+            success = writeImageToFile(image, options->outputPath, options->pngQuality, options->verbose);
+        } else {
+            // This case should ideally be caught by argument parsing, means no output specified
+            fprintf(stderr, "Error: Output path not specified for single page mode.\n");
+            success = NO;
+        }
+
+        CGImageRelease(image);
+        return success;
     }
-
-    CGPDFPageRef pdfPage = CGPDFDocumentGetPage(pdfDocument, options->pageNumber);
-    if (!pdfPage) {
-        fprintf(stderr, "Error: Failed to get page %ld.\n", (long)options->pageNumber);
-        return NO;
-    }
-
-    CGRect pageRect = CGPDFPageGetBoxRect(pdfPage, kCGPDFMediaBox);
-    CGFloat scaleFactor = calculateScaleFactor(&options->scale, pageRect);
-    logMessage(options->verbose, @"Calculated scale factor for page %ld: %.2f", (long)options->pageNumber, scaleFactor);
-
-    CGImageRef image = renderPDFPageToImage(pdfPage, scaleFactor, options->transparentBackground, options->verbose);
-    if (!image) {
-        fprintf(stderr, "Error: Failed to render PDF page %ld.\n", (long)options->pageNumber);
-        return NO;
-    }
-
-    BOOL success;
-    if (options->outputPath && [options->outputPath isEqualToString:@"-"]) {
-        logMessage(options->verbose, @"Writing image to stdout.");
-        NSFileHandle *stdoutHandle = [NSFileHandle fileHandleWithStandardOutput];
-        success = writeImageAsPNG(image, stdoutHandle, options->pngQuality, options->verbose);
-    } else if (options->outputPath) {
-        logMessage(options->verbose, @"Writing image to file: %@", options->outputPath);
-        success = writeImageToFile(image, options->outputPath, options->pngQuality, options->verbose);
-    } else {
-        // This case should ideally be caught by argument parsing, means no output specified
-        fprintf(stderr, "Error: Output path not specified for single page mode.\n");
-        success = NO;
-    }
-
-    CGImageRelease(image);
-    return success;
 }
 
 BOOL processBatchMode(CGPDFDocumentRef pdfDocument, Options *options) {
@@ -309,8 +339,10 @@ BOOL processBatchMode(CGPDFDocumentRef pdfDocument, Options *options) {
     NSString *prefix = getOutputPrefix(options); // Handles nil outputPath for prefix generation
     logMessage(options->verbose, @"Using output prefix: %@", prefix);
 
-    __block volatile BOOL overallSuccess = YES;
-    NSObject *lock = [[NSObject alloc] init]; // For thread-safe modification of overallSuccess
+    __block volatile NSInteger successCount = 0;
+    __block volatile NSInteger failCount = 0;
+    __block volatile NSInteger processedCount = 0;
+    NSObject *lock = [[NSObject alloc] init]; // For thread-safe modification of counters
 
     // Determine number of concurrent operations. Default to processor count.
     //NSInteger concurrentOperations = [[NSProcessInfo processInfo] activeProcessorCount];
@@ -318,19 +350,26 @@ BOOL processBatchMode(CGPDFDocumentRef pdfDocument, Options *options) {
     // dispatch_queue_t queue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0);
     // dispatch_apply is good for this.
 
+    logMessage(options->verbose, @"Starting batch conversion of %zu pages...", pageCount);
+
     dispatch_apply(pageCount, dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^(size_t i) {
-        if (!overallSuccess) { // Early exit if another thread failed
+        // Check for termination signal
+        if (g_shouldTerminate) {
             return;
         }
-
+        
+        // Continue processing even if other pages fail
         size_t pageNum = i + 1;
         logMessage(options->verbose, @"Starting processing for page %zu...", pageNum);
 
         @autoreleasepool {
             CGPDFPageRef pdfPage = CGPDFDocumentGetPage(pdfDocument, pageNum);
             if (!pdfPage) {
-                fprintf(stderr, "Error: Failed to get page %zu.\n", pageNum);
-                @synchronized(lock) { overallSuccess = NO; }
+                fprintf(stderr, "Warning: Failed to get page %zu, skipping.\n", pageNum);
+                @synchronized(lock) { 
+                    failCount++; 
+                    processedCount++;
+                }
                 return;
             }
 
@@ -340,30 +379,92 @@ BOOL processBatchMode(CGPDFDocumentRef pdfDocument, Options *options) {
 
             CGImageRef image = renderPDFPageToImage(pdfPage, scaleFactor, options->transparentBackground, options->verbose);
             if (!image) {
-                fprintf(stderr, "Error: Failed to render page %zu.\n", pageNum);
-                @synchronized(lock) { overallSuccess = NO; }
+                fprintf(stderr, "Warning: Failed to render page %zu, skipping.\n", pageNum);
+                @synchronized(lock) { 
+                    failCount++; 
+                    processedCount++;
+                }
                 return;
             }
 
-            NSString *filename = [NSString stringWithFormat:@"%@-%03zu.png", prefix, pageNum];
+            NSString *filename;
+            if (options->includeText) {
+                // Extract text from PDF page first
+                NSString *pageText = extractTextFromPDFPage(pdfPage);
+                
+                // If no text found, try OCR
+                if (!pageText || pageText.length == 0) {
+                    logMessage(options->verbose, @"No text extracted from PDF, attempting OCR for page %zu", pageNum);
+                    pageText = performOCROnImage(image);
+                }
+                
+                // Generate filename with text suffix
+                if (pageText && pageText.length > 0) {
+                    NSString *slug = slugifyText(pageText, 30);
+                    filename = [NSString stringWithFormat:@"%@-%03zu--%@.png", prefix, pageNum, slug];
+                    logMessage(options->verbose, @"Extracted text for page %zu: %@", pageNum, slug);
+                } else {
+                    filename = [NSString stringWithFormat:@"%@-%03zu.png", prefix, pageNum];
+                    logMessage(options->verbose, @"No text found for page %zu", pageNum);
+                }
+            } else {
+                filename = [NSString stringWithFormat:@"%@-%03zu.png", prefix, pageNum];
+            }
+            
             NSString *outputPath = [options->outputDirectory stringByAppendingPathComponent:filename];
             logMessage(options->verbose, @"Writing image for page %zu to file: %@", pageNum, outputPath);
 
             if (!writeImageToFile(image, outputPath, options->pngQuality, options->verbose)) {
-                fprintf(stderr, "Error: Failed to write page %zu to '%s'.\n", pageNum, [outputPath UTF8String]);
-                @synchronized(lock) { overallSuccess = NO; }
+                fprintf(stderr, "Warning: Failed to write page %zu to '%s', skipping.\n", pageNum, [outputPath UTF8String]);
+                @synchronized(lock) { 
+                    failCount++; 
+                    processedCount++;
+                }
+            } else {
+                @synchronized(lock) { 
+                    successCount++; 
+                    processedCount++;
+                }
             }
 
             CGImageRelease(image);
+            
+            // Progress reporting
+            @synchronized(lock) {
+                if (!options->verbose && processedCount % 10 == 0) {
+                    fprintf(stderr, "\rProgress: %ld/%zu pages processed", (long)processedCount, pageCount);
+                    fflush(stderr);
+                }
+            }
+            
             logMessage(options->verbose, @"Finished processing for page %zu.", pageNum);
         }
     });
-
-    return overallSuccess;
+    
+    // Clear progress line if not in verbose mode
+    if (!options->verbose) {
+        fprintf(stderr, "\r%*s\r", 50, ""); // Clear the progress line
+    }
+    
+    // Report results
+    if (g_shouldTerminate) {
+        fprintf(stderr, "Batch processing interrupted: %ld pages converted before interruption, %ld pages failed.\n", 
+                (long)successCount, (long)failCount);
+    } else {
+        fprintf(stderr, "Batch processing complete: %ld pages converted successfully, %ld pages failed.\n", 
+                (long)successCount, (long)failCount);
+    }
+    
+    // Return success only if at least one page was converted
+    return successCount > 0;
 }
 
 int main(int argc, const char *argv[]) {
     @autoreleasepool {
+        // Install signal handlers
+        signal(SIGINT, signalHandler);
+        signal(SIGTERM, signalHandler);
+        
         Options options = parseArguments(argc, argv);
 
         logMessage(options.verbose, @"Starting pdf22png tool.");
@@ -387,7 +488,21 @@ int main(int argc, const char *argv[]) {
             return 1;
         }
 
-        logMessage(options.verbose, @"PDF document loaded successfully. Total pages: %zu", CGPDFDocumentGetNumberOfPages(pdfDocument));
+        // Validate PDF document
+        if (CGPDFDocumentIsEncrypted(pdfDocument)) {
+            fprintf(stderr, "Error: PDF document is encrypted. Password-protected PDFs are not currently supported.\n");
+            CGPDFDocumentRelease(pdfDocument);
+            return 1;
+        }
+        
+        size_t pageCount = CGPDFDocumentGetNumberOfPages(pdfDocument);
+        if (pageCount == 0) {
+            fprintf(stderr, "Error: PDF document has no pages.\n");
+            CGPDFDocumentRelease(pdfDocument);
+            return 1;
+        }
+
+        logMessage(options.verbose, @"PDF document loaded successfully. Total pages: %zu", pageCount);
 
         BOOL success;
         if (options.batchMode) {

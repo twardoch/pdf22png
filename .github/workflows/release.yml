@@ -1,4 +1,4 @@
-name: Release
+name: Build and Release
 
 on:
   push:
@@ -6,31 +6,163 @@ on:
       - 'v*'
 
 jobs:
-  release:
+  build-and-release:
     runs-on: macos-latest
-
+    
+    strategy:
+      matrix:
+        include:
+          - name: "macOS Universal"
+            arch: "universal"
+    
     steps:
-    - uses: actions/checkout@v4
-
-    - name: Build universal binary
-      run: make universal
-
-    - name: Create archive
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    
+    - name: Setup Xcode
+      uses: maxim-lobanov/setup-xcode@v1
+      with:
+        xcode-version: latest-stable
+    
+    - name: Get version from tag
+      id: version
       run: |
-        mkdir -p dist
-        cp pdf22png dist/
-        cp README.md LICENSE docs/USAGE.md dist/
-        cd dist && tar -czf pdf22png-${{ github.ref_name }}-macos.tar.gz *
-
+        VERSION=${GITHUB_REF#refs/tags/v}
+        echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+        echo "Building version $VERSION"
+    
+    - name: Build Universal Binary
+      run: |
+        make clean
+        make universal
+        
+    - name: Run Tests
+      run: |
+        if [ -f "tests/test_pdf22png.m" ]; then
+          make test
+        fi
+    
+    - name: Create distribution directory
+      run: |
+        mkdir -p dist/pdf22png
+        cp build/pdf22png dist/pdf22png/
+        cp README.md dist/pdf22png/
+        cp LICENSE dist/pdf22png/
+        
+    - name: Create pkg installer
+      run: |
+        # Create component package
+        pkgbuild --root dist/pdf22png \
+                 --identifier com.twardoch.pdf22png \
+                 --version ${{ steps.version.outputs.VERSION }} \
+                 --install-location /usr/local/bin \
+                 pdf22png-component.pkg
+        
+        # Create distribution XML
+        cat > distribution.xml << EOF
+        <?xml version="1.0" encoding="utf-8"?>
+        <installer-gui-script minSpecVersion="2.0">
+            <title>pdf22png ${{ steps.version.outputs.VERSION }}</title>
+            <pkg-ref id="com.twardoch.pdf22png">
+                <bundle-version/>
+            </pkg-ref>
+            <options customize="never" require-scripts="false" hostArchitectures="x86_64,arm64"/>
+            <domains enable_localSystem="true"/>
+            <choices-outline>
+                <line choice="default">
+                    <line choice="com.twardoch.pdf22png"/>
+                </line>
+            </choices-outline>
+            <choice id="default"/>
+            <choice id="com.twardoch.pdf22png" visible="false" customLocation="/">
+                <pkg-ref id="com.twardoch.pdf22png"/>
+            </choice>
+            <pkg-ref id="com.twardoch.pdf22png" version="${{ steps.version.outputs.VERSION }}" onConclusion="none">pdf22png-component.pkg</pkg-ref>
+        </installer-gui-script>
+        EOF
+        
+        # Build final installer package
+        productbuild --distribution distribution.xml \
+                     --package-path . \
+                     --version ${{ steps.version.outputs.VERSION }} \
+                     pdf22png-${{ steps.version.outputs.VERSION }}-universal.pkg
+    
+    - name: Create DMG
+      run: |
+        mkdir -p dmg-contents
+        cp build/pdf22png dmg-contents/
+        cp README.md dmg-contents/
+        cp LICENSE dmg-contents/
+        
+        # Create a simple install script
+        cat > dmg-contents/install.sh << 'EOF'
+        #!/bin/bash
+        echo "Installing pdf22png to /usr/local/bin..."
+        sudo cp pdf22png /usr/local/bin/
+        sudo chmod +x /usr/local/bin/pdf22png
+        echo "Installation complete!"
+        EOF
+        chmod +x dmg-contents/install.sh
+        
+        # Create DMG
+        hdiutil create -volname "pdf22png ${{ steps.version.outputs.VERSION }}" \
+                       -srcfolder dmg-contents \
+                       -ov -format UDZO \
+                       pdf22png-${{ steps.version.outputs.VERSION }}-universal.dmg
+    
+    - name: Prepare binary for release
+      run: |
+        cp build/pdf22png pdf22png-${{ steps.version.outputs.VERSION }}-universal
+    
+    - name: Generate checksums
+      run: |
+        shasum -a 256 pdf22png-${{ steps.version.outputs.VERSION }}-universal.pkg > checksums.txt
+        shasum -a 256 pdf22png-${{ steps.version.outputs.VERSION }}-universal.dmg >> checksums.txt
+        shasum -a 256 pdf22png-${{ steps.version.outputs.VERSION }}-universal >> checksums.txt
+    
     - name: Create Release
       uses: softprops/action-gh-release@v1
       with:
-        files: dist/*.tar.gz
-        generate_release_notes: true
-
+        tag_name: ${{ github.ref }}
+        name: pdf22png v${{ steps.version.outputs.VERSION }}
+        body: |
+          # pdf22png v${{ steps.version.outputs.VERSION }}
+          
+          High-performance PDF to PNG converter for macOS.
+          
+          ## Installation
+          
+          ### Option 1: Homebrew
+          ```bash
+          brew tap twardoch/homebrew-pdf22png
+          brew install pdf22png
+          ```
+          
+          ### Option 2: Package Installer
+          Download and run `pdf22png-${{ steps.version.outputs.VERSION }}-universal.pkg`
+          
+          ### Option 3: Manual Installation
+          Download `pdf22png-${{ steps.version.outputs.VERSION }}-universal.dmg`, mount it, and run:
+          ```bash
+          sudo cp /Volumes/pdf22png*/pdf22png /usr/local/bin/
+          ```
+          
+          ## What's New
+          See [CHANGELOG.md](https://github.com/twardoch/pdf22png/blob/main/CHANGELOG.md) for details.
+          
+          ## Checksums
+          See `checksums.txt` for SHA-256 checksums of all artifacts.
+        draft: false
+        prerelease: false
+        files: |
+          pdf22png-${{ steps.version.outputs.VERSION }}-universal.pkg
+          pdf22png-${{ steps.version.outputs.VERSION }}-universal.dmg
+          pdf22png-${{ steps.version.outputs.VERSION }}-universal
+          checksums.txt
+    
     - name: Update Homebrew formula
       run: |
-        # Update SHA256 in formula
-        SHA256=$(shasum -a 256 dist/*.tar.gz | cut -d' ' -f1)
-        sed -i '' "s/sha256 \".*\"/sha256 \"$SHA256\"/" homebrew/pdf22png.rb
-        sed -i '' "s|url \".*\"|url \"https://github.com/twardoch/pdf22png/archive/refs/tags/${{ github.ref_name }}.tar.gz\"|" homebrew/pdf22png.rb
+        echo "Homebrew formula update would typically happen here"
+        echo "This usually involves updating the formula in the tap repository"
