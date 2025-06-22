@@ -1,0 +1,226 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <meta http-equiv="Content-Style-Type" content="text/css">
+  <title></title>
+  <meta name="Generator" content="Cocoa HTML Writer">
+  <meta name="CocoaVersion" content="2575.6">
+  <style type="text/css">
+    p.p1 {margin: 0.0px 0.0px 0.0px 0.0px; font: 12.0px 'Helvetica Light'}
+    p.p2 {margin: 0.0px 0.0px 0.0px 0.0px; font: 12.0px 'Helvetica Light'; min-height: 14.0px}
+  </style>
+</head>
+<body>
+<p class="p1"># pdf22png</p>
+<p class="p2"><br></p>
+<p class="p1">[![Version](https://img.shields.io/github/v/release/twardoch/pdf22png?label=version)](https://github.com/twardoch/pdf22png/releases/latest)</p>
+<p class="p1">[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)</p>
+<p class="p1">[![Platform](https://img.shields.io/badge/platform-macOS-lightgrey.svg)](https://www.apple.com/macos/)</p>
+<p class="p2"><br></p>
+<p class="p1">A high-performance command-line tool for converting PDF documents to PNG images on macOS, leveraging native Core Graphics and Quartz frameworks for optimal quality and speed.</p>
+<p class="p2"><br></p>
+<p class="p1">## Features</p>
+<p class="p2"><br></p>
+<p class="p1">- **Single &amp; Batch Conversion**: Convert individual pages or entire PDF documents</p>
+<p class="p1">- **Flexible Scaling Options**:<span class="Apple-converted-space"> </span></p>
+<p class="p1"><span class="Apple-converted-space">  </span>- Resolution control (DPI)</p>
+<p class="p1"><span class="Apple-converted-space">  </span>- Percentage scaling</p>
+<p class="p1"><span class="Apple-converted-space">  </span>- Fixed dimensions (width/height fitting)</p>
+<p class="p1"><span class="Apple-converted-space">  </span>- Scale factors</p>
+<p class="p1">- **Advanced Options**:</p>
+<p class="p1"><span class="Apple-converted-space">  </span>- Transparent background support</p>
+<p class="p1"><span class="Apple-converted-space">  </span>- PNG compression quality control</p>
+<p class="p1"><span class="Apple-converted-space">  </span>- Verbose logging for debugging</p>
+<p class="p1">- **I/O Flexibility**:</p>
+<p class="p1"><span class="Apple-converted-space">  </span>- Read from files or stdin</p>
+<p class="p1"><span class="Apple-converted-space">  </span>- Write to files, stdout, or batch output directories</p>
+<p class="p1"><span class="Apple-converted-space">  </span>- Customizable output naming patterns</p>
+<p class="p1">- **Native Performance**: Built with Objective-C using macOS native frameworks</p>
+<p class="p1">- **Universal Binary**: Supports both Intel and Apple Silicon Macs</p>
+<p class="p2"><br></p>
+<p class="p1">## Installation</p>
+<p class="p2"><br></p>
+<p class="p1">### Using Homebrew (Recommended)</p>
+<p class="p2"><br></p>
+<p class="p1">```bash</p>
+<p class="p1">brew tap twardoch/homebrew-pdf22png</p>
+<p class="p1">brew install pdf22png</p>
+<p class="p1">```</p>
+<p class="p2"><br></p>
+<p class="p1">### Building from Source</p>
+<p class="p2"><br></p>
+<p class="p1">Requirements:</p>
+<p class="p1">- macOS 10.15 or later</p>
+<p class="p1">- Xcode Command Line Tools</p>
+<p class="p2"><br></p>
+<p class="p1">```bash</p>
+<p class="p1">git clone https://github.com/twardoch/pdf22png.git</p>
+<p class="p1">cd pdf22png</p>
+<p class="p1">make</p>
+<p class="p1">sudo make install</p>
+<p class="p1">```</p>
+<p class="p2"><br></p>
+<p class="p1">To build a universal binary for both Intel and Apple Silicon:</p>
+<p class="p2"><br></p>
+<p class="p1">```bash</p>
+<p class="p1">make universal</p>
+<p class="p1">```</p>
+<p class="p2"><br></p>
+<p class="p1">## Usage</p>
+<p class="p2"><br></p>
+<p class="p1">### Basic Syntax</p>
+<p class="p2"><br></p>
+<p class="p1">```bash</p>
+<p class="p1">pdf22png [OPTIONS] &lt;input.pdf&gt; [output.png]</p>
+<p class="p1">```</p>
+<p class="p2"><br></p>
+<p class="p1">### Quick Examples</p>
+<p class="p2"><br></p>
+<p class="p1">Convert first page of a PDF:</p>
+<p class="p1">```bash</p>
+<p class="p1">pdf22png input.pdf output.png</p>
+<p class="p1">```</p>
+<p class="p2"><br></p>
+<p class="p1">Convert a specific page:</p>
+<p class="p1">```bash</p>
+<p class="p1">pdf22png -p 5 document.pdf page5.png</p>
+<p class="p1">```</p>
+<p class="p2"><br></p>
+<p class="p1">Convert all pages to individual PNGs:</p>
+<p class="p1">```bash</p>
+<p class="p1">pdf22png -a document.pdf</p>
+<p class="p1"># Creates: document-001.png, document-002.png, etc.</p>
+<p class="p1">```</p>
+<p class="p2"><br></p>
+<p class="p1">Convert at 300 DPI resolution:</p>
+<p class="p1">```bash</p>
+<p class="p1">pdf22png -r 300 input.pdf high-res.png</p>
+<p class="p1">```</p>
+<p class="p2"><br></p>
+<p class="p1">Scale to 50% size:</p>
+<p class="p1">```bash</p>
+<p class="p1">pdf22png -s 50% input.pdf half-size.png</p>
+<p class="p1">```</p>
+<p class="p2"><br></p>
+<p class="p1">### Options</p>
+<p class="p2"><br></p>
+<p class="p1">| Option | Long Form | Description | Default |</p>
+<p class="p1">|--------|-----------|-------------|---------|</p>
+<p class="p1">| `-p &lt;n&gt;` | `--page` | Convert specific page number | 1 |</p>
+<p class="p1">| `-a` | `--all` | Convert all pages | disabled |</p>
+<p class="p1">| `-r &lt;dpi&gt;` | `--resolution` | Set output DPI (e.g., 300) | 144 |</p>
+<p class="p1">| `-s &lt;spec&gt;` | `--scale` | Scale specification (see below) | 100% |</p>
+<p class="p1">| `-t` | `--transparent` | Preserve transparency | disabled |</p>
+<p class="p1">| `-q &lt;0-9&gt;` | `--quality` | PNG compression quality | 6 |</p>
+<p class="p1">| `-o &lt;path&gt;` | `--output` | Output file/prefix or `-` for stdout | - |</p>
+<p class="p1">| `-d &lt;dir&gt;` | `--directory` | Output directory for batch mode | . |</p>
+<p class="p1">| `-v` | `--verbose` | Enable verbose logging | disabled |</p>
+<p class="p1">| `-h` | `--help` | Show help message | - |</p>
+<p class="p2"><br></p>
+<p class="p1">### Scale Specifications</p>
+<p class="p2"><br></p>
+<p class="p1">The `-s/--scale` option accepts various formats:</p>
+<p class="p2"><br></p>
+<p class="p1">- **Percentage**: `150%` (1.5x scale)</p>
+<p class="p1">- **Factor**: `2.0` (2x scale)</p>
+<p class="p1">- **Fixed width**: `800x` (800px wide, height auto)</p>
+<p class="p1">- **Fixed height**: `x600` (600px high, width auto)</p>
+<p class="p1">- **Fit within**: `800x600` (fit within 800x600 box)</p>
+<p class="p2"><br></p>
+<p class="p1">### Advanced Examples</p>
+<p class="p2"><br></p>
+<p class="p1">Convert with transparent background at 300 DPI:</p>
+<p class="p1">```bash</p>
+<p class="p1">pdf22png -t -r 300 input.pdf transparent-300dpi.png</p>
+<p class="p1">```</p>
+<p class="p2"><br></p>
+<p class="p1">Batch convert all pages to a specific directory:</p>
+<p class="p1">```bash</p>
+<p class="p1">pdf22png -d ./output_images -o myprefix document.pdf</p>
+<p class="p1"># Creates: ./output_images/myprefix-001.png, etc.</p>
+<p class="p1">```</p>
+<p class="p2"><br></p>
+<p class="p1">Pipe operations:</p>
+<p class="p1">```bash</p>
+<p class="p1"># From stdin to stdout</p>
+<p class="p1">cat document.pdf | pdf22png - - &gt; output.png</p>
+<p class="p2"><br></p>
+<p class="p1"># Process and pipe to ImageMagick</p>
+<p class="p1">pdf22png -r 300 input.pdf - | convert - -resize 50% final.jpg</p>
+<p class="p1">```</p>
+<p class="p2"><br></p>
+<p class="p1">## Architecture</p>
+<p class="p2"><br></p>
+<p class="p1">pdf22png is built using:</p>
+<p class="p1">- **Objective-C** with ARC (Automatic Reference Counting)</p>
+<p class="p1">- **Core Graphics** for PDF rendering</p>
+<p class="p1">- **Quartz** framework for image processing</p>
+<p class="p1">- **ImageIO** for PNG output</p>
+<p class="p1">- Native macOS APIs for optimal performance</p>
+<p class="p2"><br></p>
+<p class="p1">The codebase is organized into:</p>
+<p class="p1">- `src/pdf22png.m` - Main program logic and argument parsing</p>
+<p class="p1">- `src/utils.m` - Utility functions for scaling, rendering, and I/O</p>
+<p class="p1">- `tests/` - XCTest-based unit tests</p>
+<p class="p2"><br></p>
+<p class="p1">## Performance</p>
+<p class="p2"><br></p>
+<p class="p1">pdf22png is optimized for performance:</p>
+<p class="p1">- Parallel processing for batch conversions using Grand Central Dispatch</p>
+<p class="p1">- Efficient memory management with autoreleasepool usage</p>
+<p class="p1">- Native Core Graphics rendering for best quality</p>
+<p class="p1">- Minimal dependencies (only macOS system frameworks)</p>
+<p class="p2"><br></p>
+<p class="p1">## Contributing</p>
+<p class="p2"><br></p>
+<p class="p1">Contributions are welcome! Please feel free to submit issues, feature requests, or pull requests.</p>
+<p class="p2"><br></p>
+<p class="p1">### Development</p>
+<p class="p2"><br></p>
+<p class="p1">To build from source:</p>
+<p class="p1">```bash</p>
+<p class="p1">make</p>
+<p class="p1">```</p>
+<p class="p2"><br></p>
+<p class="p1">To run tests:</p>
+<p class="p1">```bash</p>
+<p class="p1">make test</p>
+<p class="p1">```</p>
+<p class="p2"><br></p>
+<p class="p1">### Releasing</p>
+<p class="p2"><br></p>
+<p class="p1">To create a new release:</p>
+<p class="p1">```bash</p>
+<p class="p1"># Automatic versioning (increments minor version)</p>
+<p class="p1">./release.sh</p>
+<p class="p2"><br></p>
+<p class="p1"># Specify version explicitly</p>
+<p class="p1">./release.sh --v 2.1.0</p>
+<p class="p1">```</p>
+<p class="p2"><br></p>
+<p class="p1">This will:</p>
+<p class="p1">1. Build the universal binary</p>
+<p class="p1">2. Run tests</p>
+<p class="p1">3. Create and push a git tag</p>
+<p class="p1">4. Trigger GitHub Actions to build and publish release artifacts</p>
+<p class="p2"><br></p>
+<p class="p1">See [TODO.md](TODO.md) for planned features and improvements.</p>
+<p class="p2"><br></p>
+<p class="p1">## License</p>
+<p class="p2"><br></p>
+<p class="p1">pdf22png is released under the MIT License. See [LICENSE](LICENSE) for details.</p>
+<p class="p2"><br></p>
+<p class="p1">## Author</p>
+<p class="p2"><br></p>
+<p class="p1">- Created by [Adam Twardoch](https://github.com/twardoch)</p>
+<p class="p1">- Developed using Anthropic software</p>
+<p class="p2"><br></p>
+<p class="p1">## See Also</p>
+<p class="p2"><br></p>
+<p class="p1">- [Usage Guide](docs/USAGE.md) - Detailed usage instructions</p>
+<p class="p1">- [Examples](docs/EXAMPLES.md) - More usage examples</p>
+<p class="p1">- [API Documentation](docs/API.md) - Function reference</p>
+<p class="p1">- [Changelog](CHANGELOG.md) - Version history</p>
+</body>
+</html>

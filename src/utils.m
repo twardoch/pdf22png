@@ -283,8 +283,22 @@ BOOL writeImageAsPNG(CGImageRef image, NSFileHandle *output, int pngQuality, BOO
     return YES;
 }
 
-BOOL writeImageToFile(CGImageRef image, NSString *outputPath, int pngQuality, BOOL verbose) {
+BOOL writeImageToFile(CGImageRef image, NSString *outputPath, int pngQuality, BOOL verbose, BOOL dryRun) {
     if (!image || !outputPath) return NO;
+
+    if (dryRun) {
+        // In dry-run mode, just report what would be created
+        fprintf(stdout, "[DRY-RUN] Would create: %s\n", [outputPath UTF8String]);
+        
+        // Calculate approximate file size for the image
+        size_t width = CGImageGetWidth(image);
+        size_t height = CGImageGetHeight(image);
+        size_t bitsPerPixel = CGImageGetBitsPerPixel(image);
+        size_t estimatedSize = (width * height * bitsPerPixel) / 8 / 1024; // KB
+        
+        fprintf(stdout, "          Dimensions: %zux%zu, Estimated size: ~%zu KB\n", width, height, estimatedSize);
+        return YES;
+    }
 
     logMessage(verbose, @"Writing image as PNG to file: %@ with quality: %d", outputPath, pngQuality);
 

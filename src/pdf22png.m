@@ -22,6 +22,7 @@ static struct option long_options[] = {
     {"quality", required_argument, 0, 'q'},
     {"verbose", no_argument, 0, 'v'},
     {"name", no_argument, 0, 'n'}, // Include text in filename
+    {"dry-run", no_argument, 0, 'D'}, // Preview operations without writing
     {"help", no_argument, 0, 'h'},
     {"output", required_argument, 0, 'o'}, // For consistency with other tools
     {"directory", required_argument, 0, 'd'}, // For batch output directory
@@ -53,6 +54,7 @@ void printUsage(const char *programName) {
     fprintf(stderr, "                          If used, -o specifies filename prefix inside this directory.\n");
     fprintf(stderr, "  -v, --verbose           Verbose output.\n");
     fprintf(stderr, "  -n, --name              Include extracted text in output filename (batch mode only).\n");
+    fprintf(stderr, "  -D, --dry-run           Preview operations without writing files.\n");
     fprintf(stderr, "  -h, --help              Show this help message and exit.\n\n");
     fprintf(stderr, "Arguments:\n");
     fprintf(stderr, "  <input.pdf>             Input PDF file. If '-', reads from stdin.\n");
@@ -73,7 +75,8 @@ Options parseArguments(int argc, const char *argv[]) {
         .pngQuality = 6, // Default PNG quality
         .verbose = NO,
         .includeText = NO,
-        .pageRange = nil
+        .pageRange = nil,
+        .dryRun = NO
     };
 
     int opt;
@@ -84,9 +87,9 @@ Options parseArguments(int argc, const char *argv[]) {
     // Suppress getopt's default error messages
     // opterr = 0;
 
-    while ((opt = getopt_long(argc, (char *const *)argv, "p:ar:s:tq:o:d:vnh", long_options, &option_index)) != -1) {
+    while ((opt = getopt_long(argc, (char *const *)argv, "p:ar:s:tq:o:d:vnDh", long_options, &option_index)) != -1) {
         switch (opt) {
-            case 'p':
+            case 'p': {
                 options.pageRange = [NSString stringWithUTF8String:optarg];
                 // For single page mode compatibility, try to parse as simple number
                 NSScanner *scanner = [NSScanner scannerWithString:options.pageRange];
@@ -102,6 +105,7 @@ Options parseArguments(int argc, const char *argv[]) {
                     options.pageNumber = 0; // Indicates range mode
                 }
                 break;
+            }
             case 'a':
                 options.batchMode = YES;
                 break;
@@ -148,6 +152,9 @@ Options parseArguments(int argc, const char *argv[]) {
                 break;
             case 'n':
                 options.includeText = YES;
+                break;
+            case 'D':
+                options.dryRun = YES;
                 break;
             case 'h':
                 printUsage(argv[0]);
@@ -303,12 +310,20 @@ BOOL processSinglePage(CGPDFDocumentRef pdfDocument, Options *options) {
 
         BOOL success;
         if (options->outputPath && [options->outputPath isEqualToString:@"-"]) {
-            logMessage(options->verbose, @"Writing image to stdout.");
-            NSFileHandle *stdoutHandle = [NSFileHandle fileHandleWithStandardOutput];
-            success = writeImageAsPNG(image, stdoutHandle, options->pngQuality, options->verbose);
+            if (options->dryRun) {
+                size_t width = CGImageGetWidth(image);
+                size_t height = CGImageGetHeight(image);
+                fprintf(stdout, "[DRY-RUN] Would write PNG to stdout\n");
+                fprintf(stdout, "          Page: %ld, Dimensions: %zux%zu\n", (long)options->pageNumber, width, height);
+                success = YES;
+            } else {
+                logMessage(options->verbose, @"Writing image to stdout.");
+                NSFileHandle *stdoutHandle = [NSFileHandle fileHandleWithStandardOutput];
+                success = writeImageAsPNG(image, stdoutHandle, options->pngQuality, options->verbose);
+            }
         } else if (options->outputPath) {
             logMessage(options->verbose, @"Writing image to file: %@", options->outputPath);
-            success = writeImageToFile(image, options->outputPath, options->pngQuality, options->verbose);
+            success = writeImageToFile(image, options->outputPath, options->pngQuality, options->verbose, options->dryRun);
         } else {
             // This case should ideally be caught by argument parsing, means no output specified
             fprintf(stderr, "Error: Output path not specified for single page mode.\n");
@@ -323,43 +338,62 @@ BOOL processSinglePage(CGPDFDocumentRef pdfDocument, Options *options) {
 BOOL processBatchMode(CGPDFDocumentRef pdfDocument, Options *options) {
     logMessage(options->verbose, @"Processing in batch mode. Output directory: %@", options->outputDirectory);
 
-    NSFileManager *fileManager = [NSFileManager defaultManager];
-    NSError *error = nil;
-    if (![fileManager createDirectoryAtPath:options->outputDirectory
-                withIntermediateDirectories:YES
-                                 attributes:nil
-                                      error:&error]) {
-        fprintf(stderr, "Error: Failed to create output directory '%s': %s\n",
-                [options->outputDirectory UTF8String],
-                [[error localizedDescription] UTF8String]);
-        return NO;
+    if (options->dryRun) {
+        fprintf(stdout, "[DRY-RUN] Would create directory: %s\n", [options->outputDirectory UTF8String]);
+    } else {
+        NSFileManager *fileManager = [NSFileManager defaultManager];
+        NSError *error = nil;
+        if (![fileManager createDirectoryAtPath:options->outputDirectory
+                    withIntermediateDirectories:YES
+                                     attributes:nil
+                                          error:&error]) {
+            fprintf(stderr, "Error: Failed to create output directory '%s': %s\n",
+                    [options->outputDirectory UTF8String],
+                    [[error localizedDescription] UTF8String]);
+            return NO;
+        }
     }
 
-    size_t pageCount = CGPDFDocumentGetNumberOfPages(pdfDocument);
+    size_t totalPageCount = CGPDFDocumentGetNumberOfPages(pdfDocument);
     NSString *prefix = getOutputPrefix(options); // Handles nil outputPath for prefix generation
     logMessage(options->verbose, @"Using output prefix: %@", prefix);
+    
+    // Determine which pages to process
+    NSArray<NSNumber *> *pagesToProcess;
+    if (options->pageRange) {
+        pagesToProcess = parsePageRange(options->pageRange, totalPageCount);
+        if (!pagesToProcess || pagesToProcess.count == 0) {
+            fprintf(stderr, "Error: Invalid page range specification: %s\n", [options->pageRange UTF8String]);
+            return NO;
+        }
+        logMessage(options->verbose, @"Processing %lu pages from range: %@", 
+                   (unsigned long)pagesToProcess.count, options->pageRange);
+    } else {
+        // Process all pages
+        NSMutableArray *allPages = [NSMutableArray arrayWithCapacity:totalPageCount];
+        for (size_t i = 1; i <= totalPageCount; i++) {
+            [allPages addObject:@(i)];
+        }
+        pagesToProcess = allPages;
+        logMessage(options->verbose, @"Processing all %zu pages", totalPageCount);
+    }
 
     __block volatile NSInteger successCount = 0;
     __block volatile NSInteger failCount = 0;
     __block volatile NSInteger processedCount = 0;
     NSObject *lock = [[NSObject alloc] init]; // For thread-safe modification of counters
 
-    // Determine number of concurrent operations. Default to processor count.
-    //NSInteger concurrentOperations = [[NSProcessInfo processInfo] activeProcessorCount];
-    // logMessage(options->verbose, @"Using %ld concurrent operations for batch processing.", (long)concurrentOperations);
-    // dispatch_queue_t queue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0);
-    // dispatch_apply is good for this.
+    logMessage(options->verbose, @"Starting batch conversion of %lu pages...", 
+               (unsigned long)pagesToProcess.count);
 
-    logMessage(options->verbose, @"Starting batch conversion of %zu pages...", pageCount);
-
-    dispatch_apply(pageCount, dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^(size_t i) {
+    dispatch_apply(pagesToProcess.count, dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^(size_t i) {
         // Check for termination signal
         if (g_shouldTerminate) {
             return;
         }
         
         // Continue processing even if other pages fail
-        size_t pageNum = i + 1;
+        size_t pageNum = [pagesToProcess[i] unsignedIntegerValue];
         logMessage(options->verbose, @"Starting processing for page %zu...", pageNum);
 
         @autoreleasepool {
@@ -414,7 +448,7 @@ BOOL processBatchMode(CGPDFDocumentRef pdfDocument, Options *options) {
             NSString *outputPath = [options->outputDirectory stringByAppendingPathComponent:filename];
             logMessage(options->verbose, @"Writing image for page %zu to file: %@", pageNum, outputPath);
 
-            if (!writeImageToFile(image, outputPath, options->pngQuality, options->verbose)) {
+            if (!writeImageToFile(image, outputPath, options->pngQuality, options->verbose, options->dryRun)) {
                 fprintf(stderr, "Warning: Failed to write page %zu to '%s', skipping.\n", pageNum, [outputPath UTF8String]);
                 @synchronized(lock) { 
                     failCount++; 
@@ -432,7 +466,8 @@ BOOL processBatchMode(CGPDFDocumentRef pdfDocument, Options *options) {
             // Progress reporting
             @synchronized(lock) {
                 if (!options->verbose && processedCount % 10 == 0) {
-                    fprintf(stderr, "\rProgress: %ld/%zu pages processed", (long)processedCount, pageCount);
+                    fprintf(stderr, "\rProgress: %ld/%lu pages processed", 
+                            (long)processedCount, (unsigned long)pagesToProcess.count);
                     fflush(stderr);
                 }
             }
@@ -447,7 +482,10 @@ BOOL processBatchMode(CGPDFDocumentRef pdfDocument, Options *options) {
     }
     
     // Report results
-    if (g_shouldTerminate) {
+    if (options->dryRun) {
+        fprintf(stdout, "\n[DRY-RUN] Would convert %lu pages to PNG files\n", 
+                (unsigned long)pagesToProcess.count);
+    } else if (g_shouldTerminate) {
         fprintf(stderr, "Batch processing interrupted: %ld pages converted before interruption, %ld pages failed.\n", 
                 (long)successCount, (long)failCount);
     } else {

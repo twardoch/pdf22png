@@ -13,7 +13,7 @@ NSData *readPDFData(NSString *inputPath, BOOL verbose); // Added verbose
 CGFloat calculateScaleFactor(ScaleSpec *scale, CGRect pageRect);
 CGImageRef renderPDFPageToImage(CGPDFPageRef pdfPage, CGFloat scaleFactor, BOOL transparentBackground, BOOL verbose); // Added transparentBackground and verbose
 BOOL writeImageAsPNG(CGImageRef image, NSFileHandle *output, int pngQuality, BOOL verbose); // Added pngQuality and verbose
-BOOL writeImageToFile(CGImageRef image, NSString *outputPath, int pngQuality, BOOL verbose); // Added pngQuality and verbose
+BOOL writeImageToFile(CGImageRef image, NSString *outputPath, int pngQuality, BOOL verbose, BOOL dryRun); // Added pngQuality, verbose and dryRun
 NSString *getOutputPrefix(Options *options);
 void logMessage(BOOL verbose, NSString *format, ...);
 
