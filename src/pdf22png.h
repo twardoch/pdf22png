@@ -29,6 +29,7 @@ typedef struct {
     BOOL includeText; // Include extracted text in filename
     NSString *pageRange; // Page range specification (e.g., "1-5,10,15-20")
     BOOL dryRun; // Preview operations without writing files
+    NSString *namingPattern; // Custom naming pattern with placeholders
 } Options;
 
 // Function prototypes from pdf22png.m that should remain in main logic

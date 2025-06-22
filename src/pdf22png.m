@@ -22,6 +22,7 @@ static struct option long_options[] = {
     {"quality", required_argument, 0, 'q'},
     {"verbose", no_argument, 0, 'v'},
     {"name", no_argument, 0, 'n'}, // Include text in filename
+    {"pattern", required_argument, 0, 'P'}, // Custom naming pattern
     {"dry-run", no_argument, 0, 'D'}, // Preview operations without writing
     {"help", no_argument, 0, 'h'},
     {"output", required_argument, 0, 'o'}, // For consistency with other tools
@@ -54,6 +55,15 @@ void printUsage(const char *programName) {
     fprintf(stderr, "                          If used, -o specifies filename prefix inside this directory.\n");
     fprintf(stderr, "  -v, --verbose           Verbose output.\n");
     fprintf(stderr, "  -n, --name              Include extracted text in output filename (batch mode only).\n");
+    fprintf(stderr, "  -P, --pattern <pat>     Custom naming pattern for batch mode. Placeholders:\n");
+    fprintf(stderr, "                          {basename} - Input filename without extension\n");
+    fprintf(stderr, "                          {page} - Page number (auto-padded)\n");
+    fprintf(stderr, "                          {page:03d} - Page with custom padding\n");
+    fprintf(stderr, "                          {text} - Extracted text (requires -n)\n");
+    fprintf(stderr, "                          {date} - Current date (YYYYMMDD)\n");
+    fprintf(stderr, "                          {time} - Current time (HHMMSS)\n");
+    fprintf(stderr, "                          {total} - Total page count\n");
+    fprintf(stderr, "                          Example: '{basename}_p{page:04d}_of_{total}'\n");
     fprintf(stderr, "  -D, --dry-run           Preview operations without writing files.\n");
     fprintf(stderr, "  -h, --help              Show this help message and exit.\n\n");
     fprintf(stderr, "Arguments:\n");
@@ -76,7 +86,8 @@ Options parseArguments(int argc, const char *argv[]) {
         .verbose = NO,
         .includeText = NO,
         .pageRange = nil,
-        .dryRun = NO
+        .dryRun = NO,
+        .namingPattern = nil
     };
 
     int opt;
@@ -87,7 +98,7 @@ Options parseArguments(int argc, const char *argv[]) {
     // Suppress getopt's default error messages
     // opterr = 0;
 
-    while ((opt = getopt_long(argc, (char *const *)argv, "p:ar:s:tq:o:d:vnDh", long_options, &option_index)) != -1) {
+    while ((opt = getopt_long(argc, (char *const *)argv, "p:ar:s:tq:o:d:vnP:Dh", long_options, &option_index)) != -1) {
         switch (opt) {
             case 'p': {
                 options.pageRange = [NSString stringWithUTF8String:optarg];
@@ -152,6 +163,9 @@ Options parseArguments(int argc, const char *argv[]) {
                 break;
             case 'n':
                 options.includeText = YES;
+                break;
+            case 'P':
+                options.namingPattern = [NSString stringWithUTF8String:optarg];
                 break;
             case 'D':
                 options.dryRun = YES;
@@ -422,7 +436,10 @@ BOOL processBatchMode(CGPDFDocumentRef pdfDocument, Options *options) {
             }
 
             NSString *filename;
-            if (options->includeText) {
+            NSString *extractedText = nil;
+            
+            // Extract text if needed (for -n flag or {text} placeholder)
+            if (options->includeText || (options->namingPattern && [options->namingPattern containsString:@"{text}"])) {
                 // Extract text from PDF page first
                 NSString *pageText = extractTextFromPDFPage(pdfPage);
                 
@@ -432,17 +449,23 @@ BOOL processBatchMode(CGPDFDocumentRef pdfDocument, Options *options) {
                     pageText = performOCROnImage(image);
                 }
                 
-                // Generate filename with text suffix
+                // Slugify the text if found
                 if (pageText && pageText.length > 0) {
-                    NSString *slug = slugifyText(pageText, 30);
-                    filename = [NSString stringWithFormat:@"%@-%03zu--%@.png", prefix, pageNum, slug];
-                    logMessage(options->verbose, @"Extracted text for page %zu: %@", pageNum, slug);
+                    extractedText = slugifyText(pageText, 30);
+                    logMessage(options->verbose, @"Extracted text for page %zu: %@", pageNum, extractedText);
                 } else {
-                    filename = [NSString stringWithFormat:@"%@-%03zu.png", prefix, pageNum];
                     logMessage(options->verbose, @"No text found for page %zu", pageNum);
                 }
+            }
+            
+            // Generate filename using pattern or default format
+            if (options->namingPattern) {
+                filename = formatFilenameWithPattern(options->namingPattern, prefix, pageNum, totalPageCount, extractedText);
+                filename = [filename stringByAppendingString:@".png"];
             } else {
-                filename = [NSString stringWithFormat:@"%@-%03zu.png", prefix, pageNum];
+                filename = formatFilenameWithPattern(nil, prefix, pageNum, totalPageCount, 
+                                                   options->includeText ? extractedText : nil);
+                filename = [filename stringByAppendingString:@".png"];
             }
             
             NSString *outputPath = [options->outputDirectory stringByAppendingPathComponent:filename];

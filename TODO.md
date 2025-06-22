@@ -31,10 +31,10 @@ If I supply `-n` or `--name` then the PNG output files should have the prefix, t
 
 ## Phase 4: User Experience
 
--   [ ] Add progress reporting with ETA for batch operations
--   [ ] Implement page range selection (e.g., `-p 5-10,15,20-25`)
--   [ ] Add custom naming patterns with placeholders (e.g., `{basename}_{page:03d}_{date}`)
--   [ ] Add dry-run mode to preview operations
+-   [x] Add progress reporting with ETA for batch operations
+-   [x] Implement page range selection (e.g., `-p 5-10,15,20-25`)
+-   [x] Add custom naming patterns with placeholders (e.g., `{basename}_{page:03d}_{date}`)
+-   [x] Add dry-run mode to preview operations
 -   [ ] Implement overwrite protection with interactive prompts
 -   [ ] Add verbose error messages with troubleshooting hints
 

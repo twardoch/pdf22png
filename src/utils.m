@@ -571,3 +571,73 @@ NSArray<NSNumber *> *parsePageRange(NSString *rangeSpec, NSUInteger totalPages) 
     
     return sortedPages;
 }
+
+NSString *formatFilenameWithPattern(NSString *pattern, NSString *basename, NSUInteger pageNum, 
+                                   NSUInteger totalPages, NSString *extractedText) {
+    if (!pattern || pattern.length == 0) {
+        // Default pattern if none specified
+        if (extractedText && extractedText.length > 0) {
+            return [NSString stringWithFormat:@"%@-%03zu--%@", basename, pageNum, extractedText];
+        } else {
+            return [NSString stringWithFormat:@"%@-%03zu", basename, pageNum];
+        }
+    }
+    
+    NSMutableString *result = [NSMutableString stringWithString:pattern];
+    
+    // Replace {basename} or {name}
+    [result replaceOccurrencesOfString:@"{basename}" withString:basename 
+                              options:0 range:NSMakeRange(0, result.length)];
+    [result replaceOccurrencesOfString:@"{name}" withString:basename 
+                              options:0 range:NSMakeRange(0, result.length)];
+    
+    // Replace {page} with zero-padded page number
+    NSUInteger digits = (NSUInteger)log10(totalPages > 0 ? totalPages : 1) + 1;
+    if (digits < 3) digits = 3; // Minimum 3 digits
+    NSString *pageStr = [NSString stringWithFormat:@"%0*zu", (int)digits, pageNum];
+    [result replaceOccurrencesOfString:@"{page}" withString:pageStr 
+                              options:0 range:NSMakeRange(0, result.length)];
+    
+    // Replace {page:03d} style formatting
+    NSRegularExpression *pageFormatRegex = [NSRegularExpression regularExpressionWithPattern:@"\\{page:0?(\\d+)d\\}" 
+                                                                                    options:0 error:nil];
+    NSArray *matches = [pageFormatRegex matchesInString:result options:0 
+                                               range:NSMakeRange(0, result.length)];
+    
+    // Process matches in reverse order to avoid index shifting
+    for (NSTextCheckingResult *match in [matches reverseObjectEnumerator]) {
+        NSRange digitRange = [match rangeAtIndex:1];
+        NSString *digitStr = [result substringWithRange:digitRange];
+        int formatDigits = [digitStr intValue];
+        NSString *formattedPage = [NSString stringWithFormat:@"%0*zu", formatDigits, pageNum];
+        [result replaceCharactersInRange:match.range withString:formattedPage];
+    }
+    
+    // Replace {text} with extracted text (if available)
+    if (extractedText && extractedText.length > 0) {
+        [result replaceOccurrencesOfString:@"{text}" withString:extractedText 
+                                  options:0 range:NSMakeRange(0, result.length)];
+    } else {
+        [result replaceOccurrencesOfString:@"{text}" withString:@"" 
+                                  options:0 range:NSMakeRange(0, result.length)];
+    }
+    
+    // Replace {date} with current date in YYYYMMDD format
+    NSDateFormatter *dateFormatter = [[NSDateFormatter alloc] init];
+    [dateFormatter setDateFormat:@"yyyyMMdd"];
+    NSString *dateStr = [dateFormatter stringFromDate:[NSDate date]];
+    [result replaceOccurrencesOfString:@"{date}" withString:dateStr 
+                              options:0 range:NSMakeRange(0, result.length)];
+    
+    // Replace {time} with current time in HHMMSS format  
+    [dateFormatter setDateFormat:@"HHmmss"];
+    NSString *timeStr = [dateFormatter stringFromDate:[NSDate date]];
+    [result replaceOccurrencesOfString:@"{time}" withString:timeStr 
+                              options:0 range:NSMakeRange(0, result.length)];
+    
+    // Replace {total} with total page count
+    [result replaceOccurrencesOfString:@"{total}" withString:[NSString stringWithFormat:@"%zu", totalPages] 
+                              options:0 range:NSMakeRange(0, result.length)];
+    
+    return result;
+}

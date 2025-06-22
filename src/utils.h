@@ -25,4 +25,8 @@ NSString *slugifyText(NSString *text, NSUInteger maxLength);
 // Page range parsing
 NSArray<NSNumber *> *parsePageRange(NSString *rangeSpec, NSUInteger totalPages);
 
+// Naming pattern processing
+NSString *formatFilenameWithPattern(NSString *pattern, NSString *basename, NSUInteger pageNum, 
+                                   NSUInteger totalPages, NSString *extractedText);
+
 #endif /* UTILS_H */

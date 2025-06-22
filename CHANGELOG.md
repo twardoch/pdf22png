@@ -65,6 +65,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Generates slugified filenames like `prefix-001--extracted-text.png`
   - Maximum 30 characters for text suffix, properly truncated at word boundaries
   - Only available in batch mode for performance reasons
+- Page range selection with `-p/--page` option supporting complex ranges
+  - Single pages: `-p 5`
+  - Ranges: `-p 5-10`
+  - Comma-separated lists: `-p 1,3,5-10,15`
+  - Works in both single page and batch modes
+  - Validates ranges against total page count
+- Dry-run mode with `-D/--dry-run` flag
+  - Preview all operations without writing any files
+  - Shows what files would be created with their dimensions
+  - Estimates file sizes based on image dimensions
+  - Works with all output modes (file, stdout, batch)
+  - Useful for testing command options before actual conversion
+- Custom naming patterns with `-P/--pattern` option for batch mode
+  - `{basename}` or `{name}` - Input filename without extension
+  - `{page}` - Page number with automatic padding
+  - `{page:03d}` - Page number with custom padding (e.g., 001, 002)
+  - `{text}` - Extracted text from page (requires -n flag)
+  - `{date}` - Current date in YYYYMMDD format
+  - `{time}` - Current time in HHMMSS format
+  - `{total}` - Total page count
+  - Example: `'{basename}_p{page:04d}_of_{total}'` → `document_p0001_of_10.png`
 
 ## [1.0.0] - 2024-06-23
 
