@@ -1,0 +1,22 @@
+# Auto detect text files and perform LF normalization
+* text=auto eol=lf
+
+# Explicitly declare files that will always have LF line endings on checkout
+*.h text eol=lf
+*.m text eol=lf
+*.c text eol=lf
+*.sh text eol=lf
+*.md text eol=lf
+*.txt text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.rb text eol=lf
+Makefile text eol=lf
+LICENSE text eol=lf
+
+# Explicitly declare files that are binary and should not be modified.
+*.png binary
+*.pdf binary
+*.gz binary
+*.zip binary
+*.dmg binary
