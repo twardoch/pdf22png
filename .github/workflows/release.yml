@@ -1,0 +1,36 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  release:
+    runs-on: macos-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Build universal binary
+      run: make universal
+
+    - name: Create archive
+      run: |
+        mkdir -p dist
+        cp pdf22png dist/
+        cp README.md LICENSE docs/USAGE.md dist/
+        cd dist && tar -czf pdf22png-${{ github.ref_name }}-macos.tar.gz *
+
+    - name: Create Release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: dist/*.tar.gz
+        generate_release_notes: true
+
+    - name: Update Homebrew formula
+      run: |
+        # Update SHA256 in formula
+        SHA256=$(shasum -a 256 dist/*.tar.gz | cut -d' ' -f1)
+        sed -i '' "s/sha256 \".*\"/sha256 \"$SHA256\"/" homebrew/pdf22png.rb
+        sed -i '' "s|url \".*\"|url \"https://github.com/twardoch/pdf22png/archive/refs/tags/${{ github.ref_name }}.tar.gz\"|" homebrew/pdf22png.rb

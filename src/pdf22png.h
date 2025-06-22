@@ -1,0 +1,42 @@
+#import <Foundation/Foundation.h>
+#import <Quartz/Quartz.h>
+#import <ImageIO/ImageIO.h>
+
+// Structures from pdf22png.m
+typedef struct {
+    CGFloat scaleFactor;
+    CGFloat maxWidth;
+    CGFloat maxHeight;
+    CGFloat dpi;
+    BOOL isPercentage;
+    BOOL isDPI;
+    BOOL hasWidth;
+    BOOL hasHeight;
+} ScaleSpec;
+
+typedef struct {
+    ScaleSpec scale;
+    NSInteger pageNumber;
+    NSString *inputPath;
+    NSString *outputPath;
+    NSString *outputDirectory;
+    BOOL batchMode;
+    // Recommended additions for new features from README
+    BOOL transparentBackground;
+    int pngQuality; // 0-9
+    BOOL verbose;
+} Options;
+
+// Function prototypes from pdf22png.m that should remain in main logic
+void printUsage(const char *programName);
+Options parseArguments(int argc, const char *argv[]);
+BOOL processSinglePage(CGPDFDocumentRef pdfDocument, Options *options);
+BOOL processBatchMode(CGPDFDocumentRef pdfDocument, Options *options);
+
+// Potentially new functions based on README advanced options
+// These would be implemented in pdf22png.m
+// void handleTransparency(CGContextRef context, Options* options); // Example if needed
+// void setPNGCompression(CGImageDestinationRef dest, Options* options); // Example if needed
+
+// Main function declaration (though it's standard)
+int main(int argc, const char *argv[]);
