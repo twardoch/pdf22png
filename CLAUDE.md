@@ -1,0 +1,1 @@
+Read README.md and create a plan for the project into TODO.md. Then implement the plan. Then rewrite README.md to reflect the changes.
