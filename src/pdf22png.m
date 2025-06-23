@@ -24,6 +24,7 @@ static struct option long_options[] = {
     {"name", no_argument, 0, 'n'}, // Include text in filename
     {"pattern", required_argument, 0, 'P'}, // Custom naming pattern
     {"dry-run", no_argument, 0, 'D'}, // Preview operations without writing
+    {"force", no_argument, 0, 'f'}, // Force overwrite without prompting
     {"help", no_argument, 0, 'h'},
     {"output", required_argument, 0, 'o'}, // For consistency with other tools
     {"directory", required_argument, 0, 'd'}, // For batch output directory
@@ -65,6 +66,7 @@ void printUsage(const char *programName) {
     fprintf(stderr, "                          {total} - Total page count\n");
     fprintf(stderr, "                          Example: '{basename}_p{page:04d}_of_{total}'\n");
     fprintf(stderr, "  -D, --dry-run           Preview operations without writing files.\n");
+    fprintf(stderr, "  -f, --force             Force overwrite existing files without prompting.\n");
     fprintf(stderr, "  -h, --help              Show this help message and exit.\n\n");
     fprintf(stderr, "Arguments:\n");
     fprintf(stderr, "  <input.pdf>             Input PDF file. If '-', reads from stdin.\n");
@@ -87,7 +89,8 @@ Options parseArguments(int argc, const char *argv[]) {
         .includeText = NO,
         .pageRange = nil,
         .dryRun = NO,
-        .namingPattern = nil
+        .namingPattern = nil,
+        .forceOverwrite = NO
     };
 
     int opt;
@@ -98,7 +101,7 @@ Options parseArguments(int argc, const char *argv[]) {
     // Suppress getopt's default error messages
     // opterr = 0;
 
-    while ((opt = getopt_long(argc, (char *const *)argv, "p:ar:s:tq:o:d:vnP:Dh", long_options, &option_index)) != -1) {
+    while ((opt = getopt_long(argc, (char *const *)argv, "p:ar:s:tq:o:d:vnP:Dfh", long_options, &option_index)) != -1) {
         switch (opt) {
             case 'p': {
                 options.pageRange = [NSString stringWithUTF8String:optarg];
@@ -135,7 +138,8 @@ Options parseArguments(int argc, const char *argv[]) {
             }
             case 's':
                 if (!parseScaleSpec(optarg, &options.scale)) {
-                    fprintf(stderr, "Error: Invalid scale specification: %s\n", optarg);
+                    reportError([NSString stringWithFormat:@"Invalid scale specification: %s", optarg],
+                               getTroubleshootingHint(@"scale format"));
                     printUsage(argv[0]);
                     exit(1);
                 }
@@ -169,6 +173,9 @@ Options parseArguments(int argc, const char *argv[]) {
                 break;
             case 'D':
                 options.dryRun = YES;
+                break;
+            case 'f':
+                options.forceOverwrite = YES;
                 break;
             case 'h':
                 printUsage(argv[0]);
@@ -337,7 +344,7 @@ BOOL processSinglePage(CGPDFDocumentRef pdfDocument, Options *options) {
             }
         } else if (options->outputPath) {
             logMessage(options->verbose, @"Writing image to file: %@", options->outputPath);
-            success = writeImageToFile(image, options->outputPath, options->pngQuality, options->verbose, options->dryRun);
+            success = writeImageToFile(image, options->outputPath, options->pngQuality, options->verbose, options->dryRun, options->forceOverwrite);
         } else {
             // This case should ideally be caught by argument parsing, means no output specified
             fprintf(stderr, "Error: Output path not specified for single page mode.\n");
@@ -377,7 +384,8 @@ BOOL processBatchMode(CGPDFDocumentRef pdfDocument, Options *options) {
     if (options->pageRange) {
         pagesToProcess = parsePageRange(options->pageRange, totalPageCount);
         if (!pagesToProcess || pagesToProcess.count == 0) {
-            fprintf(stderr, "Error: Invalid page range specification: %s\n", [options->pageRange UTF8String]);
+            reportError([NSString stringWithFormat:@"Invalid page range specification: %@", options->pageRange],
+                       getTroubleshootingHint(@"page range"));
             return NO;
         }
         logMessage(options->verbose, @"Processing %lu pages from range: %@", 
@@ -471,7 +479,7 @@ BOOL processBatchMode(CGPDFDocumentRef pdfDocument, Options *options) {
             NSString *outputPath = [options->outputDirectory stringByAppendingPathComponent:filename];
             logMessage(options->verbose, @"Writing image for page %zu to file: %@", pageNum, outputPath);
 
-            if (!writeImageToFile(image, outputPath, options->pngQuality, options->verbose, options->dryRun)) {
+            if (!writeImageToFile(image, outputPath, options->pngQuality, options->verbose, options->dryRun, options->forceOverwrite)) {
                 fprintf(stderr, "Warning: Failed to write page %zu to '%s', skipping.\n", pageNum, [outputPath UTF8String]);
                 @synchronized(lock) { 
                     failCount++; 
@@ -551,14 +559,16 @@ int main(int argc, const char *argv[]) {
 
         // Validate PDF document
         if (CGPDFDocumentIsEncrypted(pdfDocument)) {
-            fprintf(stderr, "Error: PDF document is encrypted. Password-protected PDFs are not currently supported.\n");
+            reportError(@"PDF document is encrypted. Password-protected PDFs are not currently supported.",
+                       getTroubleshootingHint(@"pdf encrypted password"));
             CGPDFDocumentRelease(pdfDocument);
             return 1;
         }
         
         size_t pageCount = CGPDFDocumentGetNumberOfPages(pdfDocument);
         if (pageCount == 0) {
-            fprintf(stderr, "Error: PDF document has no pages.\n");
+            reportError(@"PDF document has no pages.",
+                       getTroubleshootingHint(@"pdf empty no pages"));
             CGPDFDocumentRelease(pdfDocument);
             return 1;
         }

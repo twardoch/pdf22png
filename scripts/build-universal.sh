@@ -17,8 +17,8 @@ rm -f "build/${PRODUCT_NAME}" # Remove previous universal binary from build dir
 
 # Get CFLAGS and LDFLAGS from Makefile (basic parsing, might need improvement for complex Makefiles)
 # This is a simplified approach. A more robust way would be to have `make print-cflags` target.
-CFLAGS_FROM_MAKEFILE=$(grep -E '^CFLAGS\s*=' Makefile | sed -E 's/CFLAGS\s*=\s*//' | sed "s~\$(SRCDIR)~$SRCDIR~g")
-LDFLAGS_FROM_MAKEFILE=$(grep -E '^LDFLAGS\s*=' Makefile | sed -E 's/LDFLAGS\s*=\s*//' | sed "s~\$(SRCDIR)~$SRCDIR~g")
+CFLAGS_FROM_MAKEFILE=$(make -s print-cflags 2>/dev/null || grep -E '^CFLAGS' Makefile | head -1 | cut -d'=' -f2- | xargs)
+LDFLAGS_FROM_MAKEFILE=$(make -s print-ldflags 2>/dev/null || grep -E '^LDFLAGS' Makefile | head -1 | cut -d'=' -f2- | xargs)
 
 # Source files (assuming they are listed in Makefile or known)
 # For simplicity, let's assume pdf22png.m and utils.m
@@ -31,18 +31,18 @@ MAIN_SOURCE="${SRCDIR}/pdf22png.m"
 UTIL_SOURCE="${SRCDIR}/utils.m"
 
 echo "Building for x86_64..."
-clang ${CFLAGS_FROM_MAKEFILE} -arch x86_64 -c "${MAIN_SOURCE}" -o "${BUILD_DIR}/${PRODUCT_NAME}_main_x86_64.o"
-clang ${CFLAGS_FROM_MAKEFILE} -arch x86_64 -c "${UTIL_SOURCE}" -o "${BUILD_DIR}/${PRODUCT_NAME}_utils_x86_64.o"
-clang ${LDFLAGS_FROM_MAKEFILE} -arch x86_64 -o "${BUILD_DIR}/${PRODUCT_NAME}_x86_64" \
-    "${BUILD_DIR}/${PRODUCT_NAME}_main_x86_64.o" \
-    "${BUILD_DIR}/${PRODUCT_NAME}_utils_x86_64.o"
+eval "clang ${CFLAGS_FROM_MAKEFILE} -arch x86_64 -c \"${MAIN_SOURCE}\" -o \"${BUILD_DIR}/${PRODUCT_NAME}_main_x86_64.o\""
+eval "clang ${CFLAGS_FROM_MAKEFILE} -arch x86_64 -c \"${UTIL_SOURCE}\" -o \"${BUILD_DIR}/${PRODUCT_NAME}_utils_x86_64.o\""
+eval "clang ${LDFLAGS_FROM_MAKEFILE} -arch x86_64 -o \"${BUILD_DIR}/${PRODUCT_NAME}_x86_64\" \
+    \"${BUILD_DIR}/${PRODUCT_NAME}_main_x86_64.o\" \
+    \"${BUILD_DIR}/${PRODUCT_NAME}_utils_x86_64.o\""
 
 echo "Building for arm64..."
-clang ${CFLAGS_FROM_MAKEFILE} -arch arm64 -c "${MAIN_SOURCE}" -o "${BUILD_DIR}/${PRODUCT_NAME}_main_arm64.o"
-clang ${CFLAGS_FROM_MAKEFILE} -arch arm64 -c "${UTIL_SOURCE}" -o "${BUILD_DIR}/${PRODUCT_NAME}_utils_arm64.o"
-clang ${LDFLAGS_FROM_MAKEFILE} -arch arm64 -o "${BUILD_DIR}/${PRODUCT_NAME}_arm64" \
-    "${BUILD_DIR}/${PRODUCT_NAME}_main_arm64.o" \
-    "${BUILD_DIR}/${PRODUCT_NAME}_utils_arm64.o"
+eval "clang ${CFLAGS_FROM_MAKEFILE} -arch arm64 -c \"${MAIN_SOURCE}\" -o \"${BUILD_DIR}/${PRODUCT_NAME}_main_arm64.o\""
+eval "clang ${CFLAGS_FROM_MAKEFILE} -arch arm64 -c \"${UTIL_SOURCE}\" -o \"${BUILD_DIR}/${PRODUCT_NAME}_utils_arm64.o\""
+eval "clang ${LDFLAGS_FROM_MAKEFILE} -arch arm64 -o \"${BUILD_DIR}/${PRODUCT_NAME}_arm64\" \
+    \"${BUILD_DIR}/${PRODUCT_NAME}_main_arm64.o\" \
+    \"${BUILD_DIR}/${PRODUCT_NAME}_utils_arm64.o\""
 
 echo "Creating universal binary..."
 lipo -create -output "build/${PRODUCT_NAME}" \

@@ -15,8 +15,13 @@ A high-performance command-line tool for converting PDF documents to PNG images 
   - Fixed dimensions (width/height fitting)
   - Scale factors
 - **Advanced Options**:
+  - Page range selection (e.g., `1-5,10,15-20`)
+  - Text extraction and OCR for smart naming
+  - Dry-run mode for operation preview
+  - File overwrite protection with prompts
   - Transparent background support
   - PNG compression quality control
+  - Enhanced error messages with troubleshooting hints
   - Verbose logging for debugging
 - **I/O Flexibility**:
   - Read from files or stdin
@@ -173,6 +178,12 @@ pdf22png -a -D -P 'page_{page}_of_{total}' document.pdf
 # Shows what files would be created without actually writing them
 ```
 
+Force overwrite existing files without prompting:
+```bash
+pdf22png -f -a document.pdf
+# Overwrites existing files without asking
+```
+
 Pipe operations:
 ```bash
 # From stdin to stdout
@@ -194,7 +205,8 @@ pdf22png is built using:
 The codebase is organized into:
 - `src/pdf22png.m` - Main program logic and argument parsing
 - `src/utils.m` - Utility functions for scaling, rendering, and I/O
-- `tests/` - XCTest-based unit tests
+- `src/errors.h` - Error handling and reporting system
+- `tests/` - Custom test runner with comprehensive unit tests
 
 ## Performance
 
@@ -202,6 +214,8 @@ pdf22png is optimized for performance:
 - Parallel processing for batch conversions using Grand Central Dispatch
 - Efficient memory management with autoreleasepool usage
 - Native Core Graphics rendering for best quality
+- Built-in error recovery for robust batch processing
+- Context-aware text extraction with OCR fallback
 - Minimal dependencies (only macOS system frameworks)
 
 ## Contributing

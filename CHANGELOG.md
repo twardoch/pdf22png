@@ -8,6 +8,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- File overwrite protection with interactive prompts
+  - New `-f/--force` flag to bypass overwrite prompts
+  - Interactive confirmation when files would be overwritten
+  - Dry-run mode now shows which files would be overwritten
+  - Non-interactive mode defaults to not overwriting existing files
+- Enhanced error reporting with troubleshooting hints
+  - Context-aware error messages provide specific guidance
+  - Automatic troubleshooting suggestions based on error type
+  - Covers PDF-related, file I/O, memory, scaling, and page range errors
+  - Improved user experience with actionable error resolution
+
+### Fixed
+- Fixed sign comparison warnings in utils.m (NSInteger vs NSUInteger)
+- Replaced XCTest dependency with custom test runner for better compatibility
+- Improved test coverage with overwrite protection functionality tests
+
+## [1.1.0] - 2025-06-22
+
+### Added
 - Automated release script (`release.sh`) with semantic versioning support
   - Automatic version detection from git tags
   - Minor version auto-increment capability
@@ -19,47 +38,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - DMG disk image creation with install script
   - Automated SHA-256 checksum generation
   - GitHub release creation with all artifacts
-
-### Fixed
-- Updated GitHub Actions workflow to use modern actions (replaced deprecated create-release@v1 with softprops/action-gh-release@v1)
-- Fixed binary path references throughout release workflow
-- Corrected build paths in distribution packaging
-
-### Changed
-- Reorganized project structure for better maintainability:
-  - Build output now goes to `build/` directory instead of project root
-  - Updated Makefile to use dedicated build directory with proper dependencies
-  - Modified universal build script to output to `build/` directory
-  - Updated all scripts and workflows to reference new build location
-- Improved build system with explicit directory creation
-- Enhanced clean target to properly remove all build artifacts
-
-### Removed
-- Removed old monolithic `pdf22png.m` from root directory (superseded by modular version in `src/`)
-
-### Documentation
-- Created comprehensive improvement plan in TODO.md with:
-  - Critical stability and memory management fixes
-  - High-priority user experience enhancements
-  - Performance optimization opportunities
-  - Testing infrastructure requirements
-  - Code modernization roadmap
-  - Security hardening recommendations
-  - Cross-platform compatibility considerations
-  - Phased implementation strategy
-
-### Fixed (2025-06-22)
-- Added @autoreleasepool blocks in renderPDFPageToImage() and batch processing loops to prevent memory buildup
-- Fixed memory leaks in error paths by ensuring proper cleanup of Core Graphics resources
-- Fixed unused variables warnings (scaleXSet, scaleYSet) in calculateScaleFactor()
-- Added PDF validation to check for encrypted PDFs and empty documents before processing
-- Created unified error handling system with dedicated errors.h header and standardized error codes
-- Implemented partial batch recovery - failed pages are now skipped instead of stopping entire batch
-- Added graceful shutdown with signal handlers (SIGINT, SIGTERM) for batch operations
-- Added progress reporting for batch operations (shows every 10 pages processed)
-
-### Added (2025-06-22)
-- New `-n/--name` flag for including extracted text in output filenames (Phase 0)
+- New `-n/--name` flag for including extracted text in output filenames
   - Extracts text directly from PDF pages using Core Graphics
   - Falls back to OCR using Vision framework when no text is found
   - Generates slugified filenames like `prefix-001--extracted-text.png`
@@ -86,6 +65,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `{time}` - Current time in HHMMSS format
   - `{total}` - Total page count
   - Example: `'{basename}_p{page:04d}_of_{total}'` → `document_p0001_of_10.png`
+
+### Fixed
+- Updated GitHub Actions workflow to use modern actions (replaced deprecated create-release@v1 with softprops/action-gh-release@v1)
+- Fixed binary path references throughout release workflow
+- Corrected build paths in distribution packaging
+- Added @autoreleasepool blocks in renderPDFPageToImage() and batch processing loops to prevent memory buildup
+- Fixed memory leaks in error paths by ensuring proper cleanup of Core Graphics resources
+- Fixed unused variables warnings (scaleXSet, scaleYSet) in calculateScaleFactor()
+- Added PDF validation to check for encrypted PDFs and empty documents before processing
+- Created unified error handling system with dedicated errors.h header and standardized error codes
+- Implemented partial batch recovery - failed pages are now skipped instead of stopping entire batch
+- Added graceful shutdown with signal handlers (SIGINT, SIGTERM) for batch operations
+- Added progress reporting for batch operations (shows every 10 pages processed)
+
+### Changed
+- Reorganized project structure for better maintainability:
+  - Build output now goes to `build/` directory instead of project root
+  - Updated Makefile to use dedicated build directory with proper dependencies
+  - Modified universal build script to output to `build/` directory
+  - Updated all scripts and workflows to reference new build location
+- Improved build system with explicit directory creation
+- Enhanced clean target to properly remove all build artifacts
+
+### Removed
+- Removed old monolithic `pdf22png.m` from root directory (superseded by modular version in `src/`)
+
+### Documentation
+- Created comprehensive improvement plan in TODO.md with:
+  - Critical stability and memory management fixes
+  - High-priority user experience enhancements
+  - Performance optimization opportunities
+  - Testing infrastructure requirements
+  - Code modernization roadmap
+  - Security hardening recommendations
+  - Phased implementation strategy
 
 ## [1.0.0] - 2024-06-23
 

@@ -13,7 +13,7 @@ VERSION = $(shell git describe --tags --always --dirty)
 # Source files
 SOURCES = $(SRCDIR)/pdf22png.m $(SRCDIR)/utils.m
 OBJECTS = $(SOURCES:.m=.o)
-TEST_SOURCES = $(TESTDIR)/test_pdf22png.m
+TEST_SOURCES = $(TESTDIR)/test_runner.m
 TEST_OBJECTS = $(TEST_SOURCES:.m=.o)
 
 # Targets
@@ -46,11 +46,9 @@ uninstall:
 	@rm -f $(BINDIR)/$(PRODUCT_NAME)
 	@echo "Uninstallation complete!"
 
-TEST_LDFLAGS = $(LDFLAGS) -framework XCTest
-
 test: $(BUILDDIR)/$(PRODUCT_NAME) $(TEST_OBJECTS)
 	@echo "Running tests..."
-	@$(CC) $(CFLAGS) $(TEST_LDFLAGS) -o $(BUILDDIR)/test_runner $(TEST_OBJECTS) $(filter-out $(SRCDIR)/pdf22png.o,$(OBJECTS))
+	@$(CC) $(CFLAGS) $(LDFLAGS) -o $(BUILDDIR)/test_runner $(TEST_OBJECTS) $(filter-out $(SRCDIR)/pdf22png.o,$(OBJECTS))
 	@$(BUILDDIR)/test_runner
 
 clean:

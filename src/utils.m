@@ -26,7 +26,8 @@ BOOL parseScaleSpec(const char *spec, ScaleSpec *scale) {
         scale->scaleFactor = [numStr doubleValue] / 100.0;
         scale->isPercentage = YES;
         if (scale->scaleFactor <= 0) {
-            fprintf(stderr, "Error: Scale percentage must be positive.\n");
+            reportError(@"Scale percentage must be positive.",
+                       getTroubleshootingHint(@"scale format"));
             return NO;
         }
         return YES;
@@ -38,7 +39,8 @@ BOOL parseScaleSpec(const char *spec, ScaleSpec *scale) {
         scale->dpi = [numStr doubleValue];
         scale->isDPI = YES;
         if (scale->dpi <= 0) {
-            fprintf(stderr, "Error: DPI value must be positive.\n");
+            reportError(@"DPI value must be positive.",
+                       getTroubleshootingHint(@"scale format"));
             return NO;
         }
         return YES;
@@ -283,12 +285,14 @@ BOOL writeImageAsPNG(CGImageRef image, NSFileHandle *output, int pngQuality, BOO
     return YES;
 }
 
-BOOL writeImageToFile(CGImageRef image, NSString *outputPath, int pngQuality, BOOL verbose, BOOL dryRun) {
+BOOL writeImageToFile(CGImageRef image, NSString *outputPath, int pngQuality, BOOL verbose, BOOL dryRun, BOOL forceOverwrite) {
     if (!image || !outputPath) return NO;
 
     if (dryRun) {
         // In dry-run mode, just report what would be created
-        fprintf(stdout, "[DRY-RUN] Would create: %s\n", [outputPath UTF8String]);
+        BOOL exists = fileExists(outputPath);
+        fprintf(stdout, "[DRY-RUN] Would create: %s%s\n", [outputPath UTF8String], 
+                exists ? " (overwrites existing)" : "");
         
         // Calculate approximate file size for the image
         size_t width = CGImageGetWidth(image);
@@ -298,6 +302,12 @@ BOOL writeImageToFile(CGImageRef image, NSString *outputPath, int pngQuality, BO
         
         fprintf(stdout, "          Dimensions: %zux%zu, Estimated size: ~%zu KB\n", width, height, estimatedSize);
         return YES;
+    }
+
+    // Check for overwrite protection
+    if (!forceOverwrite && !shouldOverwriteFile(outputPath, YES)) {
+        logMessage(verbose, @"Skipping %@ - file exists and overwrite denied", outputPath);
+        return NO;
     }
 
     logMessage(verbose, @"Writing image as PNG to file: %@ with quality: %d", outputPath, pngQuality);
@@ -547,7 +557,7 @@ NSArray<NSNumber *> *parsePageRange(NSString *rangeSpec, NSUInteger totalPages) 
                 
                 // Validate range
                 if (start < 1) start = 1;
-                if (end > totalPages) end = totalPages;
+                if (end > (NSInteger)totalPages) end = (NSInteger)totalPages;
                 
                 if (start <= end) {
                     for (NSInteger i = start; i <= end; i++) {
@@ -558,7 +568,7 @@ NSArray<NSNumber *> *parsePageRange(NSString *rangeSpec, NSUInteger totalPages) 
         } else {
             // Single page number
             NSInteger pageNum = [trimmedPart integerValue];
-            if (pageNum >= 1 && pageNum <= totalPages) {
+            if (pageNum >= 1 && pageNum <= (NSInteger)totalPages) {
                 [pageSet addObject:@(pageNum)];
             }
         }
@@ -640,4 +650,103 @@ NSString *formatFilenameWithPattern(NSString *pattern, NSString *basename, NSUIn
                               options:0 range:NSMakeRange(0, result.length)];
     
     return result;
+}
+
+// File overwrite protection functions
+BOOL fileExists(NSString *path) {
+    return [[NSFileManager defaultManager] fileExistsAtPath:path];
+}
+
+BOOL shouldOverwriteFile(NSString *path, BOOL interactive) {
+    if (!fileExists(path)) {
+        return YES; // File doesn't exist, safe to write
+    }
+    
+    if (!interactive) {
+        return NO; // Non-interactive mode, don't overwrite
+    }
+    
+    return promptUserForOverwrite(path);
+}
+
+BOOL promptUserForOverwrite(NSString *path) {
+    fprintf(stderr, "File '%s' already exists. Overwrite? (y/N): ", [path UTF8String]);
+    fflush(stderr);
+    
+    char response[10];
+    if (fgets(response, sizeof(response), stdin) == NULL) {
+        return NO; // No input, default to no
+    }
+    
+    // Check first character, case insensitive
+    char first = response[0];
+    return (first == 'y' || first == 'Y');
+}
+
+// Enhanced error reporting functions
+void reportError(NSString *message, NSString *troubleshootingHint) {
+    fprintf(stderr, "Error: %s\n", [message UTF8String]);
+    if (troubleshootingHint) {
+        fprintf(stderr, "Hint:  %s\n", [troubleshootingHint UTF8String]);
+    }
+}
+
+void reportWarning(NSString *message, NSString *troubleshootingHint) {
+    fprintf(stderr, "Warning: %s\n", [message UTF8String]);
+    if (troubleshootingHint) {
+        fprintf(stderr, "Hint:    %s\n", [troubleshootingHint UTF8String]);
+    }
+}
+
+NSString *getTroubleshootingHint(NSString *errorContext) {
+    if (!errorContext) return nil;
+    
+    NSString *context = [errorContext lowercaseString];
+    
+    // PDF-related errors
+    if ([context containsString:@"pdf"] || [context containsString:@"document"]) {
+        if ([context containsString:@"encrypted"] || [context containsString:@"password"]) {
+            return @"PDF is password-protected. Try removing the password first using Preview or pdftk.";
+        }
+        if ([context containsString:@"corrupt"] || [context containsString:@"invalid"]) {
+            return @"PDF file may be corrupted. Try opening it in Preview to verify it's readable.";
+        }
+        if ([context containsString:@"empty"] || [context containsString:@"no pages"]) {
+            return @"PDF appears to be empty or has no pages to convert.";
+        }
+        return @"Verify the PDF file is valid and readable in Preview or other PDF viewers.";
+    }
+    
+    // File I/O errors
+    if ([context containsString:@"permission"] || [context containsString:@"denied"]) {
+        return @"Check file permissions. You may need to use 'sudo' or change file ownership.";
+    }
+    if ([context containsString:@"not found"] || [context containsString:@"no such file"]) {
+        return @"Verify the file path is correct and the file exists. Use absolute paths to avoid confusion.";
+    }
+    if ([context containsString:@"disk"] || [context containsString:@"space"]) {
+        return @"Check available disk space. Large PDFs can require significant storage for conversion.";
+    }
+    
+    // Memory errors
+    if ([context containsString:@"memory"] || [context containsString:@"allocation"]) {
+        return @"Try processing fewer pages at once or use a smaller scale factor to reduce memory usage.";
+    }
+    
+    // Image/rendering errors
+    if ([context containsString:@"image"] || [context containsString:@"render"]) {
+        return @"Try using a smaller scale factor or lower DPI setting to reduce image complexity.";
+    }
+    
+    // Scale/format errors
+    if ([context containsString:@"scale"] || [context containsString:@"format"]) {
+        return @"Use formats like '150%', '2.0', '800x600', or '300dpi'. See --help for examples.";
+    }
+    
+    // Page range errors
+    if ([context containsString:@"page"] || [context containsString:@"range"]) {
+        return @"Use formats like '5' (single page), '1-10' (range), or '1,3,5-10' (list). Pages start at 1.";
+    }
+    
+    return @"Run with -v/--verbose flag for more detailed information, or check --help for usage examples.";
 }
