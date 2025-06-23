@@ -104,6 +104,7 @@ pdf22png -s 50% input.pdf half-size.png
 | `-n` | `--name` | Include extracted text in filenames | disabled |
 | `-P <pattern>` | `--pattern` | Custom naming pattern for batch mode | - |
 | `-D` | `--dry-run` | Preview operations without writing files | disabled |
+| `-f` | `--force` | Force overwrite existing files without prompting | disabled |
 | `-v` | `--verbose` | Enable verbose logging | disabled |
 | `-h` | `--help` | Show help message | - |
 
