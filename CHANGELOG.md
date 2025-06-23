@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **Complete Rewrite to Swift**: The entire application has been rewritten from Objective-C to modern Swift.
+  - Core logic now uses Swift features like `Codable` for options, `async/await` for concurrency (especially in batch mode), and Swift error handling.
+  - Build system updated to use Swift Package Manager, managed via the existing Makefile.
+  - Command-line argument parsing now uses `swift-argument-parser`.
+  - Tests rewritten in Swift using XCTest.
+  - Retains compatibility with existing command-line arguments and features.
+  - Performance maintained or improved through Swift Concurrency and optimizations.
+  - Codebase organization now follows Swift Package Manager conventions (`Sources/`, `Tests/`).
+
 ### Added
 - File overwrite protection with interactive prompts
   - New `-f/--force` flag to bypass overwrite prompts

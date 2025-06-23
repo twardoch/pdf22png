@@ -28,12 +28,12 @@
 ## Medium Priority
 
 ### Phase 3: Code Architecture Refactoring
--   [ ] Split monolithic `pdf22png.m` into logical modules:
-    -   `PDFProcessor` class for PDF operations
-    -   `ImageRenderer` class for rendering operations
-    -   `BatchProcessor` class for batch operations
-    -   `CLIParser` class for command-line parsing
--   [ ] Remove tight coupling with Options struct
+-   [x] Split monolithic `pdf22png.m` into logical modules: (COMPLETED - Swift rewrite resulted in `main.swift`, `Models.swift`, `Utilities.swift`)
+    -   `PDFProcessor` class for PDF operations (Partially done via functions in Utilities/main)
+    -   `ImageRenderer` class for rendering operations (Partially done via functions in Utilities/main)
+    -   `BatchProcessor` class for batch operations (Partially done via functions in main)
+    -   `CLIParser` class for command-line parsing (COMPLETED - `swift-argument-parser` in `main.swift`)
+-   [ ] Remove tight coupling with Options struct (ProcessingOptions is better, but still passed around)
 -   [ ] Implement proper dependency injection for testability
 
 ### Phase 7: Additional Features
@@ -56,22 +56,22 @@
 ## Low Priority
 
 ### Phase 9: Build System Enhancements
--   [ ] Add header dependency tracking in Makefile
--   [ ] Create debug/release build configurations
--   [ ] Implement proper version injection from git tags
--   [ ] Add static analysis targets (clang-tidy, scan-build)
--   [ ] Create CMake build option for cross-platform builds
+-   [ ] Add header dependency tracking in Makefile (N/A for Swift SPM)
+-   [x] Create debug/release build configurations (COMPLETED - SPM handles this, Makefile updated)
+-   [ ] Implement proper version injection from git tags (Partially done via Makefile, review Swift embedding)
+-   [ ] Add static analysis targets (clang-tidy, scan-build) (Consider SwiftLint)
+-   [ ] Create CMake build option for cross-platform builds (N/A, macOS only tool)
 -   [ ] Add code signing for macOS distribution
 -   [ ] Automate .pkg and .dmg creation in Makefile
 
 ### Phase 10: Modernization
--   [ ] Add nullability annotations throughout codebase
--   [ ] Convert to modern property syntax
--   [ ] Replace C-style casts with Objective-C casts
--   [ ] Use blocks instead of function pointers
--   [ ] Add collection generics
--   [ ] Implement proper NSError handling
--   [ ] Add async/await support for batch operations
+-   [x] Add nullability annotations throughout codebase (COMPLETED - Swift optionals)
+-   [x] Convert to modern property syntax (COMPLETED - Swift syntax)
+-   [x] Replace C-style casts with Objective-C casts (COMPLETED - Swift casts)
+-   [x] Use blocks instead of function pointers (COMPLETED - Swift closures)
+-   [x] Add collection generics (COMPLETED - Swift generics)
+-   [x] Implement proper NSError handling (COMPLETED - Swift `Error` protocol)
+-   [x] Add async/await support for batch operations (COMPLETED - Swift Concurrency)
 
 ### Phase 11: Security Hardening
 -   [ ] Sanitize all file paths to prevent injection
@@ -98,7 +98,7 @@
 -   [ ] Automated release pipeline
 
 ## Technical Debt
-1. **Consistent style**: Apply clang-format throughout
+1. **Consistent style**: Apply clang-format throughout (Consider `swift-format`)
 2. **Remove magic numbers**: Define all constants
 3. **Audit TODO/FIXME comments**: Address or remove
 

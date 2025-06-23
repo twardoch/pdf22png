@@ -18,7 +18,7 @@ A high-performance command-line tool for converting PDF documents to PNG images 
   - Read from files or stdin
   - Write to files, stdout, or batch output directories
   - Customizable output naming patterns
-- **Native Performance**: Built with Objective-C using macOS native frameworks
+- **Native Performance**: Built with Swift using macOS native frameworks
 - **Universal Binary**: Supports both Intel and Apple Silicon Macs
 
 ## Installation
@@ -135,24 +135,27 @@ pdf22png -r 300 input.pdf - | convert - -resize 50% final.jpg
 ## Architecture
 
 pdf22png is built using:
-- **Objective-C** with ARC (Automatic Reference Counting)
+- **Swift** using macOS native frameworks
 - **Core Graphics** for PDF rendering
-- **Quartz** framework for image processing
+- **Vision** framework for OCR capabilities
 - **ImageIO** for PNG output
 - Native macOS APIs for optimal performance
+- **Swift Argument Parser** for command-line interface
 
 The codebase is organized into:
-- `src/pdf22png.m` - Main program logic and argument parsing
-- `src/utils.m` - Utility functions for scaling, rendering, and I/O
-- `tests/` - XCTest-based unit tests
+- `Package.swift` - Swift Package Manager manifest
+- `Sources/pdf22png/main.swift` - Main program logic, argument parsing, and processing workflows
+- `Sources/pdf22png/Models.swift` - Core data structures
+- `Sources/pdf22png/Utilities.swift` - Utility functions
+- `Tests/pdf22pngTests/` - XCTest-based unit tests written in Swift
 
 ## Performance
 
 pdf22png is optimized for performance:
-- Parallel processing for batch conversions using Grand Central Dispatch
-- Efficient memory management with autoreleasepool usage
+- Parallel processing for batch conversions using Swift Concurrency (TaskGroup)
+- Efficient memory management with Swift ARC and value types
 - Native Core Graphics rendering for best quality
-- Minimal dependencies (only macOS system frameworks)
+- Minimal dependencies (only macOS system frameworks and Swift Argument Parser)
 
 
 # main-overview
@@ -169,14 +172,14 @@ pdf22png is optimized for performance:
 pdf22png implements specialized PDF to PNG conversion logic leveraging macOS native frameworks. The core business functionality is organized around:
 
 ## Core Conversion Engine
-The primary conversion logic resides in `src/pdf22png.m`, handling:
+The primary conversion logic resides in `Sources/pdf22png/main.swift` (within the `PDF22PNG` struct and its extensions), handling:
 - PDF page rendering with customizable scaling
-- Transparent background preservation 
+- Transparent background preservation
 - Quality-controlled PNG output generation
-- Batch processing with parallel execution
+- Batch processing with parallel execution using Swift Concurrency
 
 ## Scale Specification System
-Located in `src/utils.m`, implements specialized scaling algorithms:
+Located in `Sources/pdf22png/Utilities.swift` (e.g., `parseScaleSpecification`, `calculateScaleFactor`) and `Sources/pdf22png/Models.swift` (the `ScaleSpecification` struct), implements specialized scaling algorithms:
 - Percentage-based scaling (e.g. "150%")
 - Fixed dimension specifications (e.g. "800x600")
 - DPI-based resolution control

@@ -27,7 +27,7 @@ A high-performance command-line tool for converting PDF documents to PNG images 
   - Read from files or stdin
   - Write to files, stdout, or batch output directories
   - Customizable output naming patterns
-- **Native Performance**: Built with Objective-C using macOS native frameworks
+- **Native Performance**: Built with Swift using macOS native frameworks
 - **Universal Binary**: Supports both Intel and Apple Silicon Macs
 
 ## Installation
@@ -196,23 +196,25 @@ pdf22png -r 300 input.pdf - | convert - -resize 50% final.jpg
 ## Architecture
 
 pdf22png is built using:
-- **Objective-C** with ARC (Automatic Reference Counting)
+- **Swift** using macOS native frameworks
 - **Core Graphics** for PDF rendering
-- **Quartz** framework for image processing
+- **Vision** framework for OCR capabilities
 - **ImageIO** for PNG output
 - Native macOS APIs for optimal performance
+- **Swift Argument Parser** for command-line interface
 
 The codebase is organized into:
-- `src/pdf22png.m` - Main program logic and argument parsing
-- `src/utils.m` - Utility functions for scaling, rendering, and I/O
-- `src/errors.h` - Error handling and reporting system
-- `tests/` - Custom test runner with comprehensive unit tests
+- `Package.swift` - Swift Package Manager manifest
+- `Sources/pdf22png/main.swift` - Main program logic, argument parsing, and processing workflows
+- `Sources/pdf22png/Models.swift` - Core data structures (e.g., `ProcessingOptions`, `ScaleSpecification`)
+- `Sources/pdf22png/Utilities.swift` - Utility functions for scaling, rendering, I/O, text extraction, etc.
+- `Tests/pdf22pngTests/` - XCTest-based unit tests written in Swift
 
 ## Performance
 
 pdf22png is optimized for performance:
-- Parallel processing for batch conversions using Grand Central Dispatch
-- Efficient memory management with autoreleasepool usage
+- Parallel processing for batch conversions using Swift Concurrency (TaskGroup)
+- Efficient memory management with Swift ARC and value types where appropriate
 - Native Core Graphics rendering for best quality
 - Built-in error recovery for robust batch processing
 - Context-aware text extraction with OCR fallback
