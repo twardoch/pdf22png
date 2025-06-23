@@ -93,7 +93,7 @@ pdf22png -s 50% input.pdf half-size.png
 
 | Option | Long Form | Description | Default |
 |--------|-----------|-------------|---------|
-| `-p <n>` | `--page` | Convert specific page number | 1 |
+| `-p <n>` | `--page` | Convert specific page number or range | 1 |
 | `-a` | `--all` | Convert all pages | disabled |
 | `-r <dpi>` | `--resolution` | Set output DPI (e.g., 300) | 144 |
 | `-s <spec>` | `--scale` | Scale specification (see below) | 100% |
@@ -101,6 +101,9 @@ pdf22png -s 50% input.pdf half-size.png
 | `-q <0-9>` | `--quality` | PNG compression quality | 6 |
 | `-o <path>` | `--output` | Output file/prefix or `-` for stdout | - |
 | `-d <dir>` | `--directory` | Output directory for batch mode | . |
+| `-n` | `--name` | Include extracted text in filenames | disabled |
+| `-P <pattern>` | `--pattern` | Custom naming pattern for batch mode | - |
+| `-D` | `--dry-run` | Preview operations without writing files | disabled |
 | `-v` | `--verbose` | Enable verbose logging | disabled |
 | `-h` | `--help` | Show help message | - |
 
@@ -114,6 +117,30 @@ The `-s/--scale` option accepts various formats:
 - **Fixed height**: `x600` (600px high, width auto)
 - **Fit within**: `800x600` (fit within 800x600 box)
 
+### Page Ranges
+
+The `-p/--page` option supports flexible page selection:
+
+- **Single page**: `-p 5`
+- **Range**: `-p 5-10`
+- **Multiple selections**: `-p 1,3,5-10,15`
+- **Mix and match**: `-p 1-3,7,10-15`
+
+### Custom Naming Patterns
+
+Use `-P/--pattern` with placeholders for batch conversions:
+
+- `{basename}` or `{name}` - Input filename without extension
+- `{page}` - Page number with automatic padding
+- `{page:03d}` - Page number with custom padding (e.g., 001, 002)
+- `{text}` - Extracted text from page (requires -n flag)
+- `{date}` - Current date in YYYYMMDD format
+- `{time}` - Current time in HHMMSS format
+- `{total}` - Total page count
+
+Example: `pdf22png -P '{basename}_p{page:04d}_of_{total}' doc.pdf`
+Creates: `doc_p0001_of_10.png`, `doc_p0002_of_10.png`, etc.
+
 ### Advanced Examples
 
 Convert with transparent background at 300 DPI:
@@ -125,6 +152,24 @@ Batch convert all pages to a specific directory:
 ```bash
 pdf22png -d ./output_images -o myprefix document.pdf
 # Creates: ./output_images/myprefix-001.png, etc.
+```
+
+Convert specific page ranges:
+```bash
+pdf22png -p 1-3,5,10-15 document.pdf
+# Converts pages 1, 2, 3, 5, 10, 11, 12, 13, 14, 15
+```
+
+Use custom naming pattern with extracted text:
+```bash
+pdf22png -a -n -P '{basename}-{page:03d}--{text}' document.pdf
+# Creates: document-001--introduction.png, document-002--chapter-one.png, etc.
+```
+
+Preview operations with dry-run mode:
+```bash
+pdf22png -a -D -P 'page_{page}_of_{total}' document.pdf
+# Shows what files would be created without actually writing them
 ```
 
 Pipe operations:
