@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **Major Codebase Streamlining Initiative**: Complete architectural consolidation and modernization
+  - **Phase 1: Implementation Consolidation (Complete)**: 
+    - Archived Objective-C implementation to `archive/objc/` (preserving 30,270 lines of legacy code)
+    - Archived Swift SPM implementation to `archive/swift-spm/` (avoiding dependency complexity)
+    - Consolidated on single Swift standalone implementation for maximum maintainability
+    - Reduced build system complexity from 3 parallel systems to 1 focused system
+    - Removed redundant build scripts (build.sh, release.sh) and simplified CI/CD workflows
+    - Updated GitHub Actions to target single implementation with corrected artifact paths
+  - **Phase 2: Code Modularization (Started)**: Breaking down 1,382-line monolithic main.swift
+    - Created modular directory structure: CLI/, Core/, Models/, Utilities/
+    - Extracted MemoryManager (100+ lines) to dedicated Core/MemoryManager.swift module
+    - Established foundation for extracting PDFProcessor, ImageRenderer, BatchProcessor
+    - Prepared infrastructure for splitting 2,000+ line Utilities into focused modules
+  - **Documentation Consolidation**: Streamlined from 15+ documentation files
+    - Removed outdated files: AGENTS.md, IMPLEMENTATION_STATUS.md, PROGRESS.md, CMakeLists.txt
+    - Consolidated BUILD.md and MIGRATION.md content into main documentation
+    - Maintained essential documentation: README.md, API.md, USAGE.md, EXAMPLES.md
+    - Preserved professional man page (pdf22png.1) for Unix compatibility
+
 ### Added
 - **Performance Optimizations (Phase 1.2)**: Significant performance improvements for batch operations
   - **Adaptive Batch Sizing**: Dynamic adjustment of concurrent operations based on available memory

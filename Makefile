@@ -1,103 +1,65 @@
-# pdf22png - Dual Implementation Build System
-# This Makefile dispatches to individual implementations in subdirectories
+# pdf22png - Streamlined Swift Build System
 
 PRODUCT_NAME = pdf22png
 VERSION = $(shell git describe --tags --always --dirty)
+PREFIX ?= /usr/local
 
 .PHONY: all clean install uninstall test universal release fmt lint
-.PHONY: objc objc-build swift swift-build swift-test swift-clean
-.PHONY: install-objc install-swift universal-objc universal-swift
 
-all: swift-build
+all: build
 
-# Objective-C targets
-objc: objc-build
+# Build targets
+build:
+	@echo "Building $(PRODUCT_NAME)..."
+	@$(MAKE) -C src build
 
-objc-build:
-	@echo "Building Objective-C implementation..."
-	@$(MAKE) -C pdf22png-objc build
+release:
+	@echo "Building $(PRODUCT_NAME) release: $(VERSION)"
+	@$(MAKE) -C src release
 
-# Swift targets
-swift: swift-build
+universal:
+	@echo "Building universal binary..."
+	@$(MAKE) -C src universal
 
-swift-build:
-	@echo "Building Swift implementation..."
-	@$(MAKE) -C pdf22png-swift build
-
-swift-test:
-	@echo "Running Swift tests..."
-	@$(MAKE) -C pdf22png-swift test
-
-swift-clean:
-	@echo "Cleaning Swift build..."
-	@$(MAKE) -C pdf22png-swift clean
-
-# Universal binary targets
-universal: universal-swift
-
-universal-objc:
-	@echo "Building universal binary (Objective-C)..."
-	@$(MAKE) -C pdf22png-objc universal
-
-universal-swift:
-	@echo "Building universal binary (Swift)..."
-	@$(MAKE) -C pdf22png-swift universal
+# Test targets
+test:
+	@echo "Running tests..."
+	@$(MAKE) -C src test
 
 # Install targets
-install: install-swift install-man
-
-install-objc:
-	@echo "Installing $(PRODUCT_NAME) (Objective-C)..."
-	@$(MAKE) -C pdf22png-objc install
-
-install-swift:
-	@echo "Installing $(PRODUCT_NAME) (Swift)..."
-	@$(MAKE) -C pdf22png-swift install
+install: build install-man
+	@echo "Installing $(PRODUCT_NAME)..."
+	@$(MAKE) -C src install PREFIX=$(PREFIX)
 
 install-man:
 	@echo "Installing man page..."
-	@mkdir -p /usr/local/share/man/man1
-	@cp docs/pdf22png.1 /usr/local/share/man/man1/
+	@mkdir -p $(PREFIX)/share/man/man1
+	@cp docs/pdf22png.1 $(PREFIX)/share/man/man1/
 	@echo "Man page installed. Use 'man pdf22png' to view."
 
 uninstall:
 	@echo "Uninstalling $(PRODUCT_NAME)..."
-	@$(MAKE) -C pdf22png-objc uninstall
-	@$(MAKE) -C pdf22png-swift uninstall
-	@rm -f /usr/local/share/man/man1/pdf22png.1
+	@$(MAKE) -C src uninstall PREFIX=$(PREFIX)
+	@rm -f $(PREFIX)/share/man/man1/pdf22png.1
 	@echo "Man page removed."
 
-# Test targets
-test: swift-test test-objc
-
-test-objc:
-	@echo "Running Objective-C tests..."
-	@$(MAKE) -C pdf22png-objc test
-
 # Clean targets
-clean: clean-objc swift-clean
+clean:
+	@echo "Cleaning build..."
+	@$(MAKE) -C src clean
 
-clean-objc:
-	@echo "Cleaning Objective-C build..."
-	@$(MAKE) -C pdf22png-objc clean
-
+# Code quality targets
 fmt:
 	@echo "Formatting code..."
-	@$(MAKE) -C pdf22png-objc fmt
-	@$(MAKE) -C pdf22png-swift fmt
+	@$(MAKE) -C src fmt
 
 lint:
 	@echo "Linting code..."
-	@$(MAKE) -C pdf22png-objc lint
-	@$(MAKE) -C pdf22png-swift lint
+	@$(MAKE) -C src lint
 
-# Release build with version info
-release: release-swift
-
-release-objc:
-	@echo "Building Objective-C release: $(VERSION)"
-	@$(MAKE) -C pdf22png-objc release
-
-release-swift:
-	@echo "Building Swift release: $(VERSION)"
-	@$(MAKE) -C pdf22png-swift release
+# Show build information
+info:
+	@echo "Product: $(PRODUCT_NAME)"
+	@echo "Version: $(VERSION)"
+	@echo "Prefix: $(PREFIX)"
+	@echo "Swift version: $(shell swift --version | head -n1)"
