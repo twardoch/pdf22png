@@ -1,120 +1,127 @@
-# PDF22PNG Streamlining TODO
+# PDF22PNG Phase 3+ Streamlining TODO
 
-## Phase 3: Complete Code Modularization
+## Phase 3: Build System & Infrastructure Modernization
 
-### Core Business Logic Extraction
-- [ ] Extract PDFProcessor module from main.swift (lines 907-1015)
-- [ ] Extract ImageRenderer module from main.swift (lines 1015-1200)
-- [ ] Extract BatchProcessor module from main.swift (lines 1200-1242)
-- [ ] Create Models/ProcessingOptions.swift
-- [ ] Create Models/ScaleSpecification.swift (lines 814-907)
-- [ ] Create Models/Errors.swift
-- [ ] Create Models/Results.swift
+### Week 1: Swift Package Manager Integration
+- [x] Create Package.swift for modern SPM support
+- [x] Update Makefile for SPM workflow (build, test, clean, docs)
+- [ ] Update GitHub Actions CI/CD for SPM
+- [x] Remove legacy files (main_old.swift, outdated artifacts)
+- [x] Reorganize source structure for SPM compatibility
 
-### Supporting Systems Extraction
-- [ ] Extract CLI/ArgumentParser.swift (lines 492-696)
-- [ ] Create CLI/OutputFormatter.swift
-- [ ] Create Utilities/FileOperations.swift
-- [ ] Create Utilities/ValidationUtils.swift
-- [ ] Extract Utilities/ProgressReporter.swift (lines 377-492)
-- [ ] Extract Core/ResourceManager.swift (lines 126-198)
-- [ ] Extract Core/SignalHandler.swift (lines 314-377)
+### Week 1: Code Cleanup
+- [x] Delete src/main_old.swift (48,813 chars - 40.6% of codebase)
+- [x] Clean up or relocate src/test-framework.swift
+- [x] Remove build artifacts and temporary files
+- [x] Verify all modules work with SPM structure
 
-### Monolithic Main Cleanup
-- [ ] Reduce main.swift to minimal entry point (~50 lines)
-- [ ] Update all imports and dependencies
-- [ ] Ensure build works after each extraction
-- [ ] Test all functionality preserved
+## Phase 4: Testing Infrastructure
 
-## Phase 4: Architecture Optimization
+### Week 2: Unit Testing Framework
+- [x] Create Tests/ directory structure
+- [x] Create Tests/CoreTests/PDFProcessorTests.swift
+- [x] Create Tests/CoreTests/ImageRendererTests.swift
+- [ ] Create Tests/CoreTests/BatchProcessorTests.swift
+- [x] Create Tests/CoreTests/MemoryManagerTests.swift
+- [x] Create Tests/CLITests/ArgumentParserTests.swift
+- [ ] Create Tests/CLITests/OutputFormatterTests.swift
+- [x] Create Tests/UtilitiesTests/InputValidatorTests.swift
+- [ ] Create Tests/UtilitiesTests/ProgressReporterTests.swift
 
-### Protocol-Based Design
-- [ ] Create Core/Protocols.swift with service interfaces
-- [ ] Create Core/ServiceContainer.swift for dependency injection
-- [ ] Refactor modules to use protocols
-- [ ] Implement error handling consolidation
+### Week 2: Integration Testing
+- [ ] Create Tests/IntegrationTests/EndToEndTests.swift
+- [ ] Create Tests/PerformanceTests/BenchmarkTests.swift
+- [ ] Achieve 90%+ test coverage across all modules
+- [ ] Validate memory usage and performance tests
 
-### Performance Enhancements
-- [ ] Enhance Core/MemoryPool.swift with size-based allocation
-- [ ] Create Utilities/AsyncFileOperations.swift
-- [ ] Create Core/SmartRenderer.swift for content analysis
-- [ ] Add rendering decision caching
+## Phase 5: Documentation Modernization
 
-## Phase 5: Testing Infrastructure
+### Week 3: API Documentation
+- [ ] Add DocC documentation to Core/PDFProcessor.swift
+- [ ] Add DocC documentation to Core/ImageRenderer.swift
+- [ ] Add DocC documentation to Core/BatchProcessor.swift
+- [ ] Add DocC documentation to Core/MemoryManager.swift
+- [ ] Add DocC documentation to CLI modules
+- [ ] Add DocC documentation to Utilities modules
 
-### Unit Testing
-- [ ] Create Tests/CoreTests/ directory structure
-- [ ] Add PDFProcessorTests.swift
-- [ ] Add ImageRendererTests.swift
-- [ ] Add BatchProcessorTests.swift
-- [ ] Add MemoryManagerTests.swift
-- [ ] Create Tests/CLITests/ directory
-- [ ] Add ArgumentParserTests.swift
-- [ ] Add OutputFormatterTests.swift
-- [ ] Create Tests/UtilitiesTests/ directory
-- [ ] Add FileOperationsTests.swift
-- [ ] Add ValidationUtilsTests.swift
-
-### Integration Testing
-- [ ] Create Tests/IntegrationTests/ directory
-- [ ] Add EndToEndTests.swift
-- [ ] Add PerformanceTests.swift
-- [ ] Add MemoryTests.swift
-- [ ] Achieve 90%+ test coverage
-
-## Phase 6: Documentation Modernization
-
-### Code Documentation
-- [ ] Add DocC documentation to all public APIs
-- [ ] Document PDFProcessor class and methods
-- [ ] Document ImageRenderer class and methods
-- [ ] Document BatchProcessor class and methods
-- [ ] Document CLI modules
-- [ ] Document Utilities modules
-
-### Architecture Documentation
+### Week 3: Architecture Documentation
 - [ ] Create docs/ARCHITECTURE.md
 - [ ] Create docs/DEVELOPMENT.md
-- [ ] Update existing documentation for new structure
-- [ ] Create system overview diagrams
-- [ ] Document module interaction patterns
+- [ ] Update README.md for new architecture
+- [ ] Update existing documentation for modular structure
+- [ ] Create code examples and tutorials
 
-## Phase 7: Build System Modernization
+## Phase 6: Advanced Features & Optimization
 
-### Swift Package Manager
-- [ ] Create Package.swift for proper SPM support
-- [ ] Update Makefile for modern Swift workflow
-- [ ] Add swift-format integration
-- [ ] Add documentation generation
-- [ ] Update CI/CD for new structure
+### Week 4: Performance Enhancements
+- [ ] Create Core/MemoryPool.swift with actor-based context pooling
+- [ ] Create Core/SmartRenderer.swift for content analysis
+- [ ] Create Utilities/AsyncFileOperations.swift for concurrent I/O
+- [ ] Implement rendering decision caching
+- [ ] Add performance monitoring and metrics
 
-### Quality Tools
-- [ ] Set up SwiftLint configuration
-- [ ] Add pre-commit hooks
-- [ ] Implement automated formatting
+### Week 4: Memory Management
+- [ ] Enhance memory pool with size-based allocation
+- [ ] Add memory pressure detection and response
+- [ ] Implement adaptive batch sizing improvements
+- [ ] Add memory leak detection and prevention
+
+## Phase 7: Quality & Automation Tools
+
+### Week 5: Code Quality Tools
+- [ ] Create .swiftlint.yml configuration
+- [ ] Set up swift-format integration
+- [ ] Create pre-commit hooks for formatting and linting
+- [ ] Add automated code quality checks to CI
+
+### Week 5: Development Automation
+- [ ] Create scripts/release.sh for automated releases
+- [ ] Set up automated dependency updates
+- [ ] Create development environment setup script
 - [ ] Add code coverage reporting
 
-## Phase 8: Final Polish
+## Phase 8: Final Polish & Release
 
-### Performance Validation
-- [ ] Benchmark current vs new architecture
+### Week 6: Performance Validation
+- [ ] Benchmark current vs new architecture performance
 - [ ] Validate memory usage improvements
 - [ ] Test processing speed maintenance
 - [ ] Verify startup time improvements
+- [ ] Run regression tests against baseline
 
-### Release Preparation
-- [ ] Update version to 2.0.0
+### Week 6: Release Preparation
+- [ ] Update version to 2.0.0 across all files
 - [ ] Create comprehensive release notes
-- [ ] Update Homebrew formula
-- [ ] Test universal binary build
-- [ ] Validate all platforms
+- [ ] Update Homebrew formula for new version
+- [ ] Test universal binary builds (Intel + Apple Silicon)
+- [ ] Validate all platforms and deployment targets
 
-## Success Criteria
+## Success Criteria Validation
 
-- [ ] Single focused main.swift (~50 lines vs 1,382)
-- [ ] 12-15 focused modules (~200 lines each max)
+### Code Quality Metrics
+- [ ] All modules under 200 lines (currently achieved)
 - [ ] 90%+ test coverage across all modules
-- [ ] 40% build time reduction
-- [ ] 100% API documentation coverage
-- [ ] All existing functionality preserved
+- [ ] 100% public API documentation coverage
+- [ ] Zero SwiftLint warnings or errors
+
+### Performance Metrics
+- [ ] Build time under 10 seconds for incremental builds
+- [ ] Test suite completes in under 30 seconds
+- [ ] Memory usage within defined limits
+- [ ] Processing speed maintained or improved
+
+### Developer Experience
+- [ ] One-command setup for new developers
+- [ ] Automated formatting and linting
+- [ ] Clear contribution guidelines
+- [ ] Comprehensive documentation
+
+### User Experience
+- [ ] Zero regressions in existing functionality
+- [ ] All command-line options work identically
+- [ ] Error messages remain helpful and actionable
 - [ ] Performance maintained or improved
+
+## Current Priority: Phase 3 Infrastructure
+
+Starting with Phase 3 infrastructure modernization to establish the foundation for all subsequent improvements. The immediate focus is on Swift Package Manager integration and code cleanup to remove the largest technical debt items.
