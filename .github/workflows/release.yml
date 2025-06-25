@@ -50,6 +50,8 @@ jobs:
         cp build/pdf22png dist/pdf22png/
         cp README.md dist/pdf22png/
         cp LICENSE dist/pdf22png/
+        cp build.sh dist/pdf22png/
+        chmod +x dist/pdf22png/build.sh
         
     - name: Create pkg installer
       run: |
@@ -95,6 +97,8 @@ jobs:
         cp build/pdf22png dmg-contents/
         cp README.md dmg-contents/
         cp LICENSE dmg-contents/
+        cp build.sh dmg-contents/
+        chmod +x dmg-contents/build.sh
         
         # Create a simple install script
         cat > dmg-contents/install.sh << 'EOF'
@@ -147,6 +151,14 @@ jobs:
           Download `pdf22png-${{ steps.version.outputs.VERSION }}-universal.dmg`, mount it, and run:
           ```bash
           sudo cp /Volumes/pdf22png*/pdf22png /usr/local/bin/
+          ```
+          
+          ### Option 4: Build from Source
+          Clone the repository and use the included build script:
+          ```bash
+          git clone https://github.com/twardoch/pdf22png.git
+          cd pdf22png
+          ./build.sh -u -i  # Build and install universal binary
           ```
           
           ## What's New

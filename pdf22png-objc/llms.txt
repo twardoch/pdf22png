@@ -1,0 +1,2001 @@
+This file is a merged representation of the entire codebase, combined into a single document by Repomix.
+
+<file_summary>
+This section contains a summary of this file.
+
+<purpose>
+This file contains a packed representation of the entire repository's contents.
+It is designed to be easily consumable by AI systems for analysis, code review,
+or other automated processes.
+</purpose>
+
+<file_format>
+The content is organized as follows:
+1. This summary section
+2. Repository information
+3. Directory structure
+4. Repository files (if enabled)
+5. Multiple file entries, each consisting of:
+  - File path as an attribute
+  - Full contents of the file
+</file_format>
+
+<usage_guidelines>
+- This file should be treated as read-only. Any changes should be made to the
+  original repository files, not this packed version.
+- When processing this file, use the file path to distinguish
+  between different files in the repository.
+- Be aware that this file may contain sensitive information. Handle it with
+  the same level of security as you would the original repository.
+</usage_guidelines>
+
+<notes>
+- Some files may have been excluded based on .gitignore rules and Repomix's configuration
+- Binary files are not included in this packed representation. Please refer to the Repository Structure section for a complete list of file paths, including binary files
+- Files matching patterns in .gitignore are excluded
+- Files matching default ignore patterns are excluded
+- Files are sorted by Git change count (files with more changes are at the bottom)
+</notes>
+
+</file_summary>
+
+<directory_structure>
+scripts/
+  test-objc.sh
+src/
+  errors.h
+  pdf22png.h
+  pdf22png.m
+  utils.h
+  utils.m
+Tests/
+  test_runner.m
+Makefile
+</directory_structure>
+
+<files>
+This section contains the contents of the repository's files.
+
+<file path="scripts/test-objc.sh">
+#!/bin/bash
+# Test script for Objective-C version of pdf22png
+
+set -e
+
+echo "Testing pdf22png Objective-C implementation..."
+
+# Create a simple test PDF using PostScript
+cat > test.ps << 'EOF'
+%!PS-Adobe-3.0
+%%BoundingBox: 0 0 612 792
+%%Pages: 2
+%%EndComments
+
+%%Page: 1 1
+/Helvetica findfont 40 scalefont setfont
+100 400 moveto
+(Test Page 1) show
+showpage
+
+%%Page: 2 2  
+/Helvetica findfont 40 scalefont setfont
+100 400 moveto
+(Test Page 2) show
+showpage
+
+%%EOF
+EOF
+
+# Convert PS to PDF
+ps2pdf test.ps test.pdf
+
+# Build if not already built
+if [ ! -f ./build/pdf22png-objc ]; then
+    echo "Building Objective-C version..."
+    make objc
+fi
+
+echo ""
+echo "Running tests..."
+echo "==============="
+
+# Test 1: Basic conversion
+echo "Test 1: Basic single page conversion"
+./build/pdf22png-objc test.pdf test-output.png
+if [ -f test-output.png ]; then
+    echo "✓ Basic conversion successful"
+    rm test-output.png
+else
+    echo "✗ Basic conversion failed"
+fi
+
+# Test 2: Specific page
+echo ""
+echo "Test 2: Convert page 2"
+./build/pdf22png-objc -p 2 test.pdf test-page2.png
+if [ -f test-page2.png ]; then
+    echo "✓ Page selection successful"
+    rm test-page2.png
+else
+    echo "✗ Page selection failed"
+fi
+
+# Test 3: Scaling
+echo ""
+echo "Test 3: Scale to 200%"
+./build/pdf22png-objc -s 200% test.pdf test-scaled.png
+if [ -f test-scaled.png ]; then
+    echo "✓ Scaling successful"
+    rm test-scaled.png
+else
+    echo "✗ Scaling failed"
+fi
+
+# Test 4: DPI setting
+echo ""
+echo "Test 4: Convert at 300 DPI"
+./build/pdf22png-objc -r 300 test.pdf test-300dpi.png
+if [ -f test-300dpi.png ]; then
+    echo "✓ DPI setting successful"
+    rm test-300dpi.png
+else
+    echo "✗ DPI setting failed"
+fi
+
+# Test 5: Batch mode
+echo ""
+echo "Test 5: Batch conversion"
+mkdir -p test-batch
+./build/pdf22png-objc -a -d test-batch test.pdf
+if [ -f test-batch/test-001.png ] && [ -f test-batch/test-002.png ]; then
+    echo "✓ Batch conversion successful"
+    rm -rf test-batch
+else
+    echo "✗ Batch conversion failed"
+fi
+
+# Test 6: Dry run
+echo ""
+echo "Test 6: Dry run mode"
+./build/pdf22png-objc -D test.pdf test-dryrun.png > /dev/null 2>&1
+if [ ! -f test-dryrun.png ]; then
+    echo "✓ Dry run successful (no file created)"
+else
+    echo "✗ Dry run failed (file was created)"
+    rm test-dryrun.png
+fi
+
+# Test 7: stdin/stdout
+echo ""
+echo "Test 7: stdin to stdout"
+cat test.pdf | ./build/pdf22png-objc - - > test-stdio.png 2>/dev/null
+if [ -f test-stdio.png ] && [ -s test-stdio.png ]; then
+    echo "✓ stdin/stdout successful"
+    rm test-stdio.png
+else
+    echo "✗ stdin/stdout failed"
+fi
+
+# Test 8: Help
+echo ""
+echo "Test 8: Help message"
+if ./build/pdf22png-objc -h 2>&1 | grep -q "Usage:"; then
+    echo "✓ Help message displayed"
+else
+    echo "✗ Help message failed"
+fi
+
+# Cleanup
+rm -f test.ps test.pdf
+
+echo ""
+echo "==============="
+echo "Tests complete!"
+</file>
+
+<file path="src/errors.h">
+#ifndef PDF22PNG_ERRORS_H
+#define PDF22PNG_ERRORS_H
+
+// Error codes for pdf22png
+typedef enum {
+    PDF22PNG_SUCCESS = 0,
+    PDF22PNG_ERROR_GENERAL = 1,
+    PDF22PNG_ERROR_INVALID_ARGS = 2,
+    PDF22PNG_ERROR_FILE_NOT_FOUND = 3,
+    PDF22PNG_ERROR_FILE_READ = 4,
+    PDF22PNG_ERROR_FILE_WRITE = 5,
+    PDF22PNG_ERROR_NO_INPUT = 6,
+    PDF22PNG_ERROR_INVALID_PDF = 7,
+    PDF22PNG_ERROR_ENCRYPTED_PDF = 8,
+    PDF22PNG_ERROR_EMPTY_PDF = 9,
+    PDF22PNG_ERROR_PAGE_NOT_FOUND = 10,
+    PDF22PNG_ERROR_RENDER_FAILED = 11,
+    PDF22PNG_ERROR_MEMORY = 12,
+    PDF22PNG_ERROR_OUTPUT_DIR = 13,
+    PDF22PNG_ERROR_INVALID_SCALE = 14,
+    PDF22PNG_ERROR_BATCH_FAILED = 15
+} PDF22PNGError;
+
+// Error messages
+static const char* PDF22PNG_ERROR_MESSAGES[] = {
+    "Success",
+    "General error",
+    "Invalid command line arguments",
+    "Input file not found",
+    "Failed to read input file",
+    "Failed to write output file",
+    "No input data received",
+    "Invalid PDF document",
+    "PDF document is encrypted (password-protected PDFs not supported)",
+    "PDF document has no pages",
+    "Requested page does not exist",
+    "Failed to render PDF page",
+    "Memory allocation failed",
+    "Failed to create output directory",
+    "Invalid scale specification",
+    "Batch processing failed"
+};
+
+// Function to get error message
+static inline const char* pdf22png_error_string(PDF22PNGError error) {
+    if (error >= 0 && error <= PDF22PNG_ERROR_BATCH_FAILED) {
+        return PDF22PNG_ERROR_MESSAGES[error];
+    }
+    return "Unknown error";
+}
+
+// Macro for error reporting with file and line info
+#define PDF22PNG_ERROR(code, ...) do { \
+    fprintf(stderr, "Error: %s\n", pdf22png_error_string(code)); \
+    if (##__VA_ARGS__) { \
+        fprintf(stderr, "Details: "); \
+        fprintf(stderr, ##__VA_ARGS__); \
+        fprintf(stderr, "\n"); \
+    } \
+} while(0)
+
+#endif // PDF22PNG_ERRORS_H
+</file>
+
+<file path="src/pdf22png.h">
+#import <Foundation/Foundation.h>
+#import <Quartz/Quartz.h>
+#import <ImageIO/ImageIO.h>
+#import "errors.h"
+
+// Structures from pdf22png.m
+typedef struct {
+    CGFloat scaleFactor;
+    CGFloat maxWidth;
+    CGFloat maxHeight;
+    CGFloat dpi;
+    BOOL isPercentage;
+    BOOL isDPI;
+    BOOL hasWidth;
+    BOOL hasHeight;
+} ScaleSpec;
+
+typedef struct {
+    ScaleSpec scale;
+    NSInteger pageNumber;
+    NSString *inputPath;
+    NSString *outputPath;
+    NSString *outputDirectory;
+    BOOL batchMode;
+    // Recommended additions for new features from README
+    BOOL transparentBackground;
+    int pngQuality; // 0-9
+    BOOL verbose;
+    BOOL includeText; // Include extracted text in filename
+    NSString *pageRange; // Page range specification (e.g., "1-5,10,15-20")
+    BOOL dryRun; // Preview operations without writing files
+    NSString *namingPattern; // Custom naming pattern with placeholders
+    BOOL forceOverwrite; // Force overwrite without prompting
+} Options;
+
+// Function prototypes from pdf22png.m that should remain in main logic
+void printUsage(const char *programName);
+Options parseArguments(int argc, const char *argv[]);
+BOOL processSinglePage(CGPDFDocumentRef pdfDocument, Options *options);
+BOOL processBatchMode(CGPDFDocumentRef pdfDocument, Options *options);
+
+// Potentially new functions based on README advanced options
+// These would be implemented in pdf22png.m
+// void handleTransparency(CGContextRef context, Options* options); // Example if needed
+// void setPNGCompression(CGImageDestinationRef dest, Options* options); // Example if needed
+
+// Main function declaration (though it's standard)
+int main(int argc, const char *argv[]);
+</file>
+
+<file path="src/pdf22png.m">
+#import "pdf22png.h"
+#import "utils.h"
+#import <getopt.h>
+#import <signal.h>
+
+// Global variable for signal handling
+static volatile sig_atomic_t g_shouldTerminate = 0;
+
+// Signal handler for graceful shutdown
+void signalHandler(int sig) {
+    g_shouldTerminate = 1;
+    fprintf(stderr, "\nReceived signal %d, finishing current operations...\n", sig);
+}
+
+// Define long options for getopt_long
+static struct option long_options[] = {
+    {"page", required_argument, 0, 'p'},
+    {"all", no_argument, 0, 'a'}, // New: for batch mode without needing -d
+    {"resolution", required_argument, 0, 'r'}, // Maps to -s Ndpi
+    {"scale", required_argument, 0, 's'},
+    {"transparent", no_argument, 0, 't'},
+    {"quality", required_argument, 0, 'q'},
+    {"verbose", no_argument, 0, 'v'},
+    {"name", no_argument, 0, 'n'}, // Include text in filename
+    {"pattern", required_argument, 0, 'P'}, // Custom naming pattern
+    {"dry-run", no_argument, 0, 'D'}, // Preview operations without writing
+    {"force", no_argument, 0, 'f'}, // Force overwrite without prompting
+    {"help", no_argument, 0, 'h'},
+    {"output", required_argument, 0, 'o'}, // For consistency with other tools
+    {"directory", required_argument, 0, 'd'}, // For batch output directory
+    {0, 0, 0, 0}
+};
+
+void printUsage(const char *programName) {
+    fprintf(stderr, "Usage: %s [OPTIONS] <input.pdf> [output.png | output_%%03d.png]\n", programName);
+    fprintf(stderr, "Converts PDF documents to PNG images.\n\n");
+    fprintf(stderr, "Options:\n");
+    fprintf(stderr, "  -p, --page <spec>       Page(s) to convert. Single page, range, or comma-separated.\n");
+    fprintf(stderr, "                          Examples: 1 | 1-5 | 1,3,5-10 (default: 1)\n");
+    fprintf(stderr, "                          In batch mode, only specified pages are converted.\n");
+    fprintf(stderr, "  -a, --all               Convert all pages. If -d is not given, uses input filename as prefix.\n");
+    fprintf(stderr, "                          Output files named <prefix>-<page_num>.png.\n");
+    fprintf(stderr, "  -r, --resolution <dpi>  Set output DPI (e.g., 150dpi). Overrides -s if both used with numbers.\n");
+    fprintf(stderr, "  -s, --scale <spec>      Scaling specification (default: 100%% or 1.0).\n");
+    fprintf(stderr, "                            NNN%%: percentage (e.g., 150%%)\n");
+    fprintf(stderr, "                            N.N:  scale factor (e.g., 1.5)\n");
+    fprintf(stderr, "                            WxH:  fit to WxH pixels (e.g., 800x600)\n");
+    fprintf(stderr, "                            Wx:   fit to width W pixels (e.g., 1024x)\n");
+    fprintf(stderr, "                            xH:   fit to height H pixels (e.g., x768)\n");
+    // fprintf(stderr, "                            Ndpi: dots per inch (e.g., 300dpi) - use -r for this\n");
+    fprintf(stderr, "  -t, --transparent       Preserve transparency (default: white background).\n");
+    fprintf(stderr, "  -q, --quality <n>       PNG compression quality (0-9, default: 6). Currently informational.\n");
+    fprintf(stderr, "  -o, --output <path>     Output PNG file or prefix for batch mode.\n");
+    fprintf(stderr, "                          If '-', output to stdout (single page mode only).\n");
+    fprintf(stderr, "  -d, --directory <dir>   Output directory for batch mode (converts all pages).\n");
+    fprintf(stderr, "                          If used, -o specifies filename prefix inside this directory.\n");
+    fprintf(stderr, "  -v, --verbose           Verbose output.\n");
+    fprintf(stderr, "  -n, --name              Include extracted text in output filename (batch mode only).\n");
+    fprintf(stderr, "  -P, --pattern <pat>     Custom naming pattern for batch mode. Placeholders:\n");
+    fprintf(stderr, "                          {basename} - Input filename without extension\n");
+    fprintf(stderr, "                          {page} - Page number (auto-padded)\n");
+    fprintf(stderr, "                          {page:03d} - Page with custom padding\n");
+    fprintf(stderr, "                          {text} - Extracted text (requires -n)\n");
+    fprintf(stderr, "                          {date} - Current date (YYYYMMDD)\n");
+    fprintf(stderr, "                          {time} - Current time (HHMMSS)\n");
+    fprintf(stderr, "                          {total} - Total page count\n");
+    fprintf(stderr, "                          Example: '{basename}_p{page:04d}_of_{total}'\n");
+    fprintf(stderr, "  -D, --dry-run           Preview operations without writing files.\n");
+    fprintf(stderr, "  -f, --force             Force overwrite existing files without prompting.\n");
+    fprintf(stderr, "  -h, --help              Show this help message and exit.\n\n");
+    fprintf(stderr, "Arguments:\n");
+    fprintf(stderr, "  <input.pdf>             Input PDF file. If '-', reads from stdin.\n");
+    fprintf(stderr, "  [output.png]            Output PNG file. Required if not using -o or -d.\n");
+    fprintf(stderr, "                          If input is stdin and output is not specified, output goes to stdout.\n");
+    fprintf(stderr, "                          In batch mode (-a or -d), this is used as a prefix if -o is not set.\n");
+}
+
+Options parseArguments(int argc, const char *argv[]) {
+    Options options = {
+        .scale = {.scaleFactor = 1.0, .isPercentage = YES, .dpi = 144}, // Default DPI is 144 from README
+        .pageNumber = 1,
+        .inputPath = nil,
+        .outputPath = nil,
+        .outputDirectory = nil,
+        .batchMode = NO,
+        .transparentBackground = NO,
+        .pngQuality = 6, // Default PNG quality
+        .verbose = NO,
+        .includeText = NO,
+        .pageRange = nil,
+        .dryRun = NO,
+        .namingPattern = nil,
+        .forceOverwrite = NO
+    };
+
+    int opt;
+    int option_index = 0;
+    BOOL scale_explicitly_set = NO;
+    BOOL resolution_explicitly_set = NO;
+
+    // Suppress getopt's default error messages
+    // opterr = 0;
+
+    while ((opt = getopt_long(argc, (char *const *)argv, "p:ar:s:tq:o:d:vnP:Dfh", long_options, &option_index)) != -1) {
+        switch (opt) {
+            case 'p': {
+                options.pageRange = [NSString stringWithUTF8String:optarg];
+                // For single page mode compatibility, try to parse as simple number
+                NSScanner *scanner = [NSScanner scannerWithString:options.pageRange];
+                NSInteger singlePage;
+                if ([scanner scanInteger:&singlePage] && [scanner isAtEnd]) {
+                    options.pageNumber = singlePage;
+                    if (options.pageNumber < 1) {
+                        fprintf(stderr, "Error: Invalid page number: %s. Must be >= 1.\n", optarg);
+                        exit(1);
+                    }
+                } else {
+                    // It's a range or list, will be parsed later
+                    options.pageNumber = 0; // Indicates range mode
+                }
+                break;
+            }
+            case 'a':
+                options.batchMode = YES;
+                break;
+            case 'r': {
+                NSString* resStr = [NSString stringWithUTF8String:optarg];
+                if (![resStr hasSuffix:@"dpi"]) { // Ensure it's passed as Ndpi, or assume dpi
+                    resStr = [resStr stringByAppendingString:@"dpi"];
+                }
+                if (!parseScaleSpec([resStr UTF8String], &options.scale)) {
+                    fprintf(stderr, "Error: Invalid resolution specification: %s\n", optarg);
+                    printUsage(argv[0]);
+                    exit(1);
+                }
+                resolution_explicitly_set = YES;
+                break;
+            }
+            case 's':
+                if (!parseScaleSpec(optarg, &options.scale)) {
+                    reportError([NSString stringWithFormat:@"Invalid scale specification: %s", optarg],
+                               getTroubleshootingHint(@"scale format"));
+                    printUsage(argv[0]);
+                    exit(1);
+                }
+                scale_explicitly_set = YES;
+                break;
+            case 't':
+                options.transparentBackground = YES;
+                break;
+            case 'q':
+                options.pngQuality = atoi(optarg);
+                if (options.pngQuality < 0 || options.pngQuality > 9) {
+                    fprintf(stderr, "Error: Invalid PNG quality: %s. Must be between 0 and 9.\n", optarg);
+                    exit(1);
+                }
+                break;
+            case 'o':
+                options.outputPath = [NSString stringWithUTF8String:optarg];
+                break;
+            case 'd':
+                options.outputDirectory = [NSString stringWithUTF8String:optarg];
+                options.batchMode = YES; // -d implies batch mode
+                break;
+            case 'v':
+                options.verbose = YES;
+                break;
+            case 'n':
+                options.includeText = YES;
+                break;
+            case 'P':
+                options.namingPattern = [NSString stringWithUTF8String:optarg];
+                break;
+            case 'D':
+                options.dryRun = YES;
+                break;
+            case 'f':
+                options.forceOverwrite = YES;
+                break;
+            case 'h':
+                printUsage(argv[0]);
+                exit(0);
+            case '?': // Unknown option or missing argument
+                // getopt_long already prints an error message if opterr is not 0
+                // fprintf(stderr, "Error: Unknown option or missing argument.\n");
+                printUsage(argv[0]);
+                exit(1);
+            default:
+                // Should not happen
+                abort();
+        }
+    }
+
+    logMessage(options.verbose, @"Finished parsing options.");
+
+    // Handle conflicting scale/resolution. Resolution (-r) takes precedence.
+    if (resolution_explicitly_set && scale_explicitly_set && !options.scale.isDPI) {
+        // If -r was set, options.scale is already DPI based.
+        // If -s was also set but not as DPI, -r (DPI) wins.
+        // If -s was also set as DPI, the last one parsed wins, which is fine.
+        logMessage(options.verbose, @"Both -r (resolution) and -s (scale) were specified. Using resolution (-r %fdpi).", options.scale.dpi);
+    } else if (!resolution_explicitly_set && !scale_explicitly_set) {
+        // Neither -r nor -s set, use default DPI of 144
+        logMessage(options.verbose, @"No scale or resolution specified, using default %fdpi.", options.scale.dpi);
+        // Ensure scale is set to DPI based for default
+        char defaultDpiStr[16];
+        snprintf(defaultDpiStr, sizeof(defaultDpiStr), "%ddpi", (int)options.scale.dpi);
+        parseScaleSpec(defaultDpiStr, &options.scale);
+    }
+
+
+    // Handle positional arguments (input and output files)
+    int num_remaining_args = argc - optind;
+    logMessage(options.verbose, @"Number of remaining arguments: %d", num_remaining_args);
+
+    if (num_remaining_args == 0 && isatty(fileno(stdin))) {
+         fprintf(stderr, "Error: Input PDF file required, or pipe from stdin.\n");
+         printUsage(argv[0]);
+         exit(1);
+    }
+
+    // Input file
+    if (num_remaining_args > 0) {
+        NSString* first_arg = [NSString stringWithUTF8String:argv[optind]];
+        if ([first_arg isEqualToString:@"-"]) {
+            options.inputPath = nil; // stdin
+            logMessage(options.verbose, @"Input PDF: stdin");
+        } else {
+            options.inputPath = first_arg;
+            logMessage(options.verbose, @"Input PDF: %@", options.inputPath);
+        }
+        optind++;
+        num_remaining_args--;
+    } else { // No positional args, input must be stdin
+        options.inputPath = nil; // stdin
+        logMessage(options.verbose, @"Input PDF: stdin (implied)");
+    }
+
+
+    // Output file / prefix
+    if (options.outputPath == nil) { // if -o was not used
+        if (num_remaining_args > 0) {
+            options.outputPath = [NSString stringWithUTF8String:argv[optind]];
+            logMessage(options.verbose, @"Output path (from argument): %@", options.outputPath);
+            optind++;
+            num_remaining_args--;
+        } else {
+            // No -o and no second positional argument
+            if (options.inputPath == nil && !options.batchMode) { // Input is stdin, not batch mode
+                options.outputPath = @"-"; // Default to stdout
+                logMessage(options.verbose, @"Output path: stdout (implied for stdin input)");
+            } else if (options.batchMode && options.outputDirectory == nil) {
+                // Batch mode, no -d, no -o, no output arg. Use input filename as prefix.
+                // This case is handled by getOutputPrefix if options.outputPath is nil.
+                logMessage(options.verbose, @"Batch mode: Output prefix will be derived from input filename or default to 'page'.");
+            } else if (!options.batchMode && options.inputPath != nil) {
+                 fprintf(stderr, "Error: Output PNG file required when input is a file and not in batch mode.\n");
+                 printUsage(argv[0]);
+                 exit(1);
+            }
+        }
+    } else {
+        logMessage(options.verbose, @"Output path (from -o): %@", options.outputPath);
+    }
+
+    if (num_remaining_args > 0) {
+        fprintf(stderr, "Error: Too many arguments.\n");
+        printUsage(argv[0]);
+        exit(1);
+    }
+
+    // Final checks for batch mode
+    if (options.batchMode) {
+        if ([options.outputPath isEqualToString:@"-"]) {
+            fprintf(stderr, "Error: Cannot output to stdout in batch mode.\n");
+            exit(1);
+        }
+        if (options.outputDirectory == nil) {
+            // If -d is not specified, output to current directory
+            options.outputDirectory = @".";
+            logMessage(options.verbose, @"Batch mode: Output directory not specified, using current directory '.'");
+        }
+        // If outputPath was not set by -o or positional arg, getOutputPrefix will use input name or "page"
+        // If outputPath was set, it's the prefix.
+    } else { // Single page mode
+        if (options.outputDirectory != nil) {
+            fprintf(stderr, "Error: -d/--directory is only for batch mode (-a/--all).\n");
+            exit(1);
+        }
+    }
+
+    logMessage(options.verbose, @"Final Options: pageNumber=%ld, batchMode=%s, transparent=%s, quality=%d, verbose=%s",
+        (long)options.pageNumber, options.batchMode?"YES":"NO",
+        options.transparentBackground?"YES":"NO", options.pngQuality, options.verbose?"YES":"NO");
+    logMessage(options.verbose, @"ScaleSpec: factor=%.2f, dpi=%.2f, w=%.0f, h=%.0f, %%=%s, dpi_set=%s, w_set=%s, h_set=%s",
+        options.scale.scaleFactor, options.scale.dpi, options.scale.maxWidth, options.scale.maxHeight,
+        options.scale.isPercentage?"YES":"NO", options.scale.isDPI?"YES":"NO",
+        options.scale.hasWidth?"YES":"NO", options.scale.hasHeight?"YES":"NO");
+
+
+    return options;
+}
+
+
+BOOL processSinglePage(CGPDFDocumentRef pdfDocument, Options *options) {
+    @autoreleasepool {
+        logMessage(options->verbose, @"Processing single page: %ld", (long)options->pageNumber);
+
+        size_t pageCount = CGPDFDocumentGetNumberOfPages(pdfDocument);
+        if (options->pageNumber < 1 || options->pageNumber > (NSInteger)pageCount) {
+            fprintf(stderr, "Error: Page %ld does not exist (document has %zu pages).\n",
+                    (long)options->pageNumber, pageCount);
+            return NO;
+        }
+
+        CGPDFPageRef pdfPage = CGPDFDocumentGetPage(pdfDocument, options->pageNumber);
+        if (!pdfPage) {
+            fprintf(stderr, "Error: Failed to get page %ld.\n", (long)options->pageNumber);
+            return NO;
+        }
+
+        CGRect pageRect = CGPDFPageGetBoxRect(pdfPage, kCGPDFMediaBox);
+        CGFloat scaleFactor = calculateScaleFactor(&options->scale, pageRect);
+        logMessage(options->verbose, @"Calculated scale factor for page %ld: %.2f", (long)options->pageNumber, scaleFactor);
+
+        CGImageRef image = renderPDFPageToImage(pdfPage, scaleFactor, options->transparentBackground, options->verbose);
+        if (!image) {
+            fprintf(stderr, "Error: Failed to render PDF page %ld.\n", (long)options->pageNumber);
+            return NO;
+        }
+
+        BOOL success;
+        if (options->outputPath && [options->outputPath isEqualToString:@"-"]) {
+            if (options->dryRun) {
+                size_t width = CGImageGetWidth(image);
+                size_t height = CGImageGetHeight(image);
+                fprintf(stdout, "[DRY-RUN] Would write PNG to stdout\n");
+                fprintf(stdout, "          Page: %ld, Dimensions: %zux%zu\n", (long)options->pageNumber, width, height);
+                success = YES;
+            } else {
+                logMessage(options->verbose, @"Writing image to stdout.");
+                NSFileHandle *stdoutHandle = [NSFileHandle fileHandleWithStandardOutput];
+                success = writeImageAsPNG(image, stdoutHandle, options->pngQuality, options->verbose);
+            }
+        } else if (options->outputPath) {
+            logMessage(options->verbose, @"Writing image to file: %@", options->outputPath);
+            success = writeImageToFile(image, options->outputPath, options->pngQuality, options->verbose, options->dryRun, options->forceOverwrite);
+        } else {
+            // This case should ideally be caught by argument parsing, means no output specified
+            fprintf(stderr, "Error: Output path not specified for single page mode.\n");
+            success = NO;
+        }
+
+        CGImageRelease(image);
+        return success;
+    }
+}
+
+BOOL processBatchMode(CGPDFDocumentRef pdfDocument, Options *options) {
+    logMessage(options->verbose, @"Processing in batch mode. Output directory: %@", options->outputDirectory);
+
+    if (options->dryRun) {
+        fprintf(stdout, "[DRY-RUN] Would create directory: %s\n", [options->outputDirectory UTF8String]);
+    } else {
+        NSFileManager *fileManager = [NSFileManager defaultManager];
+        NSError *error = nil;
+        if (![fileManager createDirectoryAtPath:options->outputDirectory
+                    withIntermediateDirectories:YES
+                                     attributes:nil
+                                          error:&error]) {
+            fprintf(stderr, "Error: Failed to create output directory '%s': %s\n",
+                    [options->outputDirectory UTF8String],
+                    [[error localizedDescription] UTF8String]);
+            return NO;
+        }
+    }
+
+    size_t totalPageCount = CGPDFDocumentGetNumberOfPages(pdfDocument);
+    NSString *prefix = getOutputPrefix(options); // Handles nil outputPath for prefix generation
+    logMessage(options->verbose, @"Using output prefix: %@", prefix);
+
+    // Determine which pages to process
+    NSArray<NSNumber *> *pagesToProcess;
+    if (options->pageRange) {
+        pagesToProcess = parsePageRange(options->pageRange, totalPageCount);
+        if (!pagesToProcess || pagesToProcess.count == 0) {
+            reportError([NSString stringWithFormat:@"Invalid page range specification: %@", options->pageRange],
+                       getTroubleshootingHint(@"page range"));
+            return NO;
+        }
+        logMessage(options->verbose, @"Processing %lu pages from range: %@",
+                   (unsigned long)pagesToProcess.count, options->pageRange);
+    } else {
+        // Process all pages
+        NSMutableArray *allPages = [NSMutableArray arrayWithCapacity:totalPageCount];
+        for (size_t i = 1; i <= totalPageCount; i++) {
+            [allPages addObject:@(i)];
+        }
+        pagesToProcess = allPages;
+        logMessage(options->verbose, @"Processing all %zu pages", totalPageCount);
+    }
+
+    __block volatile NSInteger successCount = 0;
+    __block volatile NSInteger failCount = 0;
+    __block volatile NSInteger processedCount = 0;
+    NSObject *lock = [[NSObject alloc] init]; // For thread-safe modification of counters
+
+    logMessage(options->verbose, @"Starting batch conversion of %lu pages...",
+               (unsigned long)pagesToProcess.count);
+
+    dispatch_apply(pagesToProcess.count, dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^(size_t i) {
+        // Check for termination signal
+        if (g_shouldTerminate) {
+            return;
+        }
+
+        // Continue processing even if other pages fail
+        size_t pageNum = [pagesToProcess[i] unsignedIntegerValue];
+        logMessage(options->verbose, @"Starting processing for page %zu...", pageNum);
+
+        @autoreleasepool {
+            CGPDFPageRef pdfPage = CGPDFDocumentGetPage(pdfDocument, pageNum);
+            if (!pdfPage) {
+                fprintf(stderr, "Warning: Failed to get page %zu, skipping.\n", pageNum);
+                @synchronized(lock) {
+                    failCount++;
+                    processedCount++;
+                }
+                return;
+            }
+
+            CGRect pageRect = CGPDFPageGetBoxRect(pdfPage, kCGPDFMediaBox);
+            CGFloat scaleFactor = calculateScaleFactor(&options->scale, pageRect);
+            logMessage(options->verbose, @"Calculated scale factor for page %zu: %.2f", pageNum, scaleFactor);
+
+            CGImageRef image = renderPDFPageToImage(pdfPage, scaleFactor, options->transparentBackground, options->verbose);
+            if (!image) {
+                fprintf(stderr, "Warning: Failed to render page %zu, skipping.\n", pageNum);
+                @synchronized(lock) {
+                    failCount++;
+                    processedCount++;
+                }
+                return;
+            }
+
+            NSString *filename;
+            NSString *extractedText = nil;
+
+            // Extract text if needed (for -n flag or {text} placeholder)
+            if (options->includeText || (options->namingPattern && [options->namingPattern containsString:@"{text}"])) {
+                // Extract text from PDF page first
+                NSString *pageText = extractTextFromPDFPage(pdfPage);
+
+                // If no text found, try OCR
+                if (!pageText || pageText.length == 0) {
+                    logMessage(options->verbose, @"No text extracted from PDF, attempting OCR for page %zu", pageNum);
+                    pageText = performOCROnImage(image);
+                }
+
+                // Slugify the text if found
+                if (pageText && pageText.length > 0) {
+                    extractedText = slugifyText(pageText, 30);
+                    logMessage(options->verbose, @"Extracted text for page %zu: %@", pageNum, extractedText);
+                } else {
+                    logMessage(options->verbose, @"No text found for page %zu", pageNum);
+                }
+            }
+
+            // Generate filename using pattern or default format
+            if (options->namingPattern) {
+                filename = formatFilenameWithPattern(options->namingPattern, prefix, pageNum, totalPageCount, extractedText);
+                filename = [filename stringByAppendingString:@".png"];
+            } else {
+                filename = formatFilenameWithPattern(nil, prefix, pageNum, totalPageCount,
+                                                   options->includeText ? extractedText : nil);
+                filename = [filename stringByAppendingString:@".png"];
+            }
+
+            NSString *outputPath = [options->outputDirectory stringByAppendingPathComponent:filename];
+            logMessage(options->verbose, @"Writing image for page %zu to file: %@", pageNum, outputPath);
+
+            if (!writeImageToFile(image, outputPath, options->pngQuality, options->verbose, options->dryRun, options->forceOverwrite)) {
+                fprintf(stderr, "Warning: Failed to write page %zu to '%s', skipping.\n", pageNum, [outputPath UTF8String]);
+                @synchronized(lock) {
+                    failCount++;
+                    processedCount++;
+                }
+            } else {
+                @synchronized(lock) {
+                    successCount++;
+                    processedCount++;
+                }
+            }
+
+            CGImageRelease(image);
+
+            // Progress reporting
+            @synchronized(lock) {
+                if (!options->verbose && processedCount % 10 == 0) {
+                    fprintf(stderr, "\rProgress: %ld/%lu pages processed",
+                            (long)processedCount, (unsigned long)pagesToProcess.count);
+                    fflush(stderr);
+                }
+            }
+
+            logMessage(options->verbose, @"Finished processing for page %zu.", pageNum);
+        }
+    });
+
+    // Clear progress line if not in verbose mode
+    if (!options->verbose) {
+        fprintf(stderr, "\r%*s\r", 50, ""); // Clear the progress line
+    }
+
+    // Report results
+    if (options->dryRun) {
+        fprintf(stdout, "\n[DRY-RUN] Would convert %lu pages to PNG files\n",
+                (unsigned long)pagesToProcess.count);
+    } else if (g_shouldTerminate) {
+        fprintf(stderr, "Batch processing interrupted: %ld pages converted before interruption, %ld pages failed.\n",
+                (long)successCount, (long)failCount);
+    } else {
+        fprintf(stderr, "Batch processing complete: %ld pages converted successfully, %ld pages failed.\n",
+                (long)successCount, (long)failCount);
+    }
+
+    // Return success only if at least one page was converted
+    return successCount > 0;
+}
+
+int main(int argc, const char *argv[]) {
+    @autoreleasepool {
+        // Install signal handlers
+        signal(SIGINT, signalHandler);
+        signal(SIGTERM, signalHandler);
+
+        Options options = parseArguments(argc, argv);
+
+        logMessage(options.verbose, @"Starting pdf22png tool.");
+
+        NSData *pdfData = readPDFData(options.inputPath, options.verbose);
+        if (!pdfData || [pdfData length] == 0) {
+            fprintf(stderr, "Error: No PDF data received or PDF data is empty.\n");
+            return 1;
+        }
+
+        CGDataProviderRef provider = CGDataProviderCreateWithCFData((__bridge CFDataRef)pdfData);
+        if (!provider) {
+            fprintf(stderr, "Error: Failed to create PDF data provider.\n");
+            return 1;
+        }
+        CGPDFDocumentRef pdfDocument = CGPDFDocumentCreateWithProvider(provider);
+        CGDataProviderRelease(provider);
+
+        if (!pdfDocument) {
+            fprintf(stderr, "Error: Failed to create PDF document. Ensure the input is a valid PDF.\n");
+            return 1;
+        }
+
+        // Validate PDF document
+        if (CGPDFDocumentIsEncrypted(pdfDocument)) {
+            reportError(@"PDF document is encrypted. Password-protected PDFs are not currently supported.",
+                       getTroubleshootingHint(@"pdf encrypted password"));
+            CGPDFDocumentRelease(pdfDocument);
+            return 1;
+        }
+
+        size_t pageCount = CGPDFDocumentGetNumberOfPages(pdfDocument);
+        if (pageCount == 0) {
+            reportError(@"PDF document has no pages.",
+                       getTroubleshootingHint(@"pdf empty no pages"));
+            CGPDFDocumentRelease(pdfDocument);
+            return 1;
+        }
+
+        logMessage(options.verbose, @"PDF document loaded successfully. Total pages: %zu", pageCount);
+
+        BOOL success;
+        if (options.batchMode) {
+            success = processBatchMode(pdfDocument, &options);
+        } else {
+            success = processSinglePage(pdfDocument, &options);
+        }
+
+        CGPDFDocumentRelease(pdfDocument);
+        logMessage(options.verbose, @"Processing finished. Success: %s", success ? "YES" : "NO");
+
+        return success ? 0 : 1;
+    }
+}
+</file>
+
+<file path="src/utils.h">
+#ifndef UTILS_H
+#define UTILS_H
+
+#import <Foundation/Foundation.h>
+#import <Quartz/Quartz.h>
+#import "pdf22png.h" // For ScaleSpec and Options structs
+#import "errors.h" // For error codes and handling
+
+// Function prototypes for utility functions
+BOOL parseScaleSpec(const char *spec, ScaleSpec *scale);
+NSData *readDataFromStdin(void);
+NSData *readPDFData(NSString *inputPath, BOOL verbose); // Added verbose
+CGFloat calculateScaleFactor(ScaleSpec *scale, CGRect pageRect);
+CGImageRef renderPDFPageToImage(CGPDFPageRef pdfPage, CGFloat scaleFactor, BOOL transparentBackground, BOOL verbose); // Added transparentBackground and verbose
+BOOL writeImageAsPNG(CGImageRef image, NSFileHandle *output, int pngQuality, BOOL verbose); // Added pngQuality and verbose
+BOOL writeImageToFile(CGImageRef image, NSString *outputPath, int pngQuality, BOOL verbose, BOOL dryRun, BOOL forceOverwrite); // Added pngQuality, verbose, dryRun and forceOverwrite
+NSString *getOutputPrefix(Options *options);
+void logMessage(BOOL verbose, NSString *format, ...);
+
+// Text extraction and processing
+NSString *extractTextFromPDFPage(CGPDFPageRef page);
+NSString *performOCROnImage(CGImageRef image);
+NSString *slugifyText(NSString *text, NSUInteger maxLength);
+
+// Page range parsing
+NSArray<NSNumber *> *parsePageRange(NSString *rangeSpec, NSUInteger totalPages);
+
+// Naming pattern processing
+NSString *formatFilenameWithPattern(NSString *pattern, NSString *basename, NSUInteger pageNum,
+                                   NSUInteger totalPages, NSString *extractedText);
+
+// File overwrite protection
+BOOL fileExists(NSString *path);
+BOOL shouldOverwriteFile(NSString *path, BOOL interactive);
+BOOL promptUserForOverwrite(NSString *path);
+
+// Enhanced error reporting
+void reportError(NSString *message, NSString *troubleshootingHint);
+void reportWarning(NSString *message, NSString *troubleshootingHint);
+NSString *getTroubleshootingHint(NSString *errorContext);
+
+#endif /* UTILS_H */
+</file>
+
+<file path="src/utils.m">
+#import "utils.h"
+#import <Vision/Vision.h>
+
+void logMessage(BOOL verbose, NSString *format, ...) {
+    if (verbose) {
+        va_list args;
+        va_start(args, format);
+        NSString *message = [[NSString alloc] initWithFormat:format arguments:args];
+        va_end(args);
+        fprintf(stderr, "%s\n", [message UTF8String]);
+    }
+}
+
+BOOL parseScaleSpec(const char *spec, ScaleSpec *scale) {
+    if (!spec || !scale) return NO;
+
+    // Initialize scale
+    memset(scale, 0, sizeof(ScaleSpec));
+    scale->scaleFactor = 1.0; // Default to 100% if not specified otherwise
+
+    NSString *specStr = [NSString stringWithUTF8String:spec];
+
+    // Check for percentage (NNN%)
+    if ([specStr hasSuffix:@"%"]) {
+        NSString *numStr = [specStr substringToIndex:[specStr length] - 1];
+        scale->scaleFactor = [numStr doubleValue] / 100.0;
+        scale->isPercentage = YES;
+        if (scale->scaleFactor <= 0) {
+            reportError(@"Scale percentage must be positive.",
+                       getTroubleshootingHint(@"scale format"));
+            return NO;
+        }
+        return YES;
+    }
+
+    // Check for DPI (AAAdpi)
+    if ([specStr hasSuffix:@"dpi"]) {
+        NSString *numStr = [specStr substringToIndex:[specStr length] - 3];
+        scale->dpi = [numStr doubleValue];
+        scale->isDPI = YES;
+        if (scale->dpi <= 0) {
+            reportError(@"DPI value must be positive.",
+                       getTroubleshootingHint(@"scale format"));
+            return NO;
+        }
+        return YES;
+    }
+
+    // Check for dimensions (HHHxWWW, HHHx, xWWW)
+    NSRange xRange = [specStr rangeOfString:@"x" options:NSCaseInsensitiveSearch]; // Case insensitive 'x'
+    if (xRange.location != NSNotFound) {
+        NSString *heightStr = @"";
+        if (xRange.location > 0) {
+            heightStr = [specStr substringToIndex:xRange.location];
+        }
+        NSString *widthStr = @"";
+        if (xRange.location < [specStr length] - 1) {
+            widthStr = [specStr substringFromIndex:xRange.location + 1];
+        }
+
+        if ([heightStr length] > 0) {
+            scale->maxHeight = [heightStr doubleValue];
+            if (scale->maxHeight <= 0) {
+                fprintf(stderr, "Error: Height dimension must be positive.\n");
+                return NO;
+            }
+            scale->hasHeight = YES;
+        }
+
+        if ([widthStr length] > 0) {
+            scale->maxWidth = [widthStr doubleValue];
+            if (scale->maxWidth <= 0) {
+                fprintf(stderr, "Error: Width dimension must be positive.\n");
+                return NO;
+            }
+            scale->hasWidth = YES;
+        }
+
+        return scale->hasHeight || scale->hasWidth;
+    }
+
+    // If no known suffix or 'x' separator, try to parse as a simple number (scale factor)
+    // This makes "-s 2.0" work as scale factor 2.0
+    NSScanner *scanner = [NSScanner scannerWithString:specStr];
+    double factor;
+    if ([scanner scanDouble:&factor] && [scanner isAtEnd]) {
+        if (factor <= 0) {
+            fprintf(stderr, "Error: Scale factor must be positive.\n");
+            return NO;
+        }
+        scale->scaleFactor = factor;
+        scale->isPercentage = NO; // Explicitly not a percentage
+        scale->isDPI = NO;
+        scale->hasWidth = NO;
+        scale->hasHeight = NO;
+        return YES;
+    }
+
+    fprintf(stderr, "Error: Invalid scale specification format: %s\n", spec);
+    return NO;
+}
+
+NSData *readDataFromStdin(void) {
+    NSMutableData *data = [NSMutableData data];
+    char buffer[4096];
+    size_t bytesRead;
+
+    while ((bytesRead = fread(buffer, 1, sizeof(buffer), stdin)) > 0) {
+        [data appendBytes:buffer length:bytesRead];
+    }
+
+    if (ferror(stdin)) {
+        fprintf(stderr, "Error reading from stdin\n");
+        return nil;
+    }
+
+    return data;
+}
+
+NSData *readPDFData(NSString *inputPath, BOOL verbose) {
+    logMessage(verbose, @"Reading PDF data from: %@", inputPath ? inputPath : @"stdin");
+    if (inputPath) {
+        NSError *error = nil;
+        NSData *data = [NSData dataWithContentsOfFile:inputPath options:0 error:&error];
+        if (!data) {
+            fprintf(stderr, "Error reading file %s: %s\n",
+                    [inputPath UTF8String],
+                    [[error localizedDescription] UTF8String]);
+        }
+        return data;
+    } else {
+        return readDataFromStdin();
+    }
+}
+
+CGFloat calculateScaleFactor(ScaleSpec *scale, CGRect pageRect) {
+    if (scale->isPercentage) {
+        return scale->scaleFactor;
+    }
+
+    if (scale->isDPI) {
+        // PDF points are 72 DPI by default
+        return scale->dpi / 72.0;
+    }
+
+    // If only scaleFactor is set (e.g. from "-s 2.0")
+    if (!scale->hasWidth && !scale->hasHeight && scale->scaleFactor > 0) {
+        return scale->scaleFactor;
+    }
+
+    CGFloat scaleX = 1.0, scaleY = 1.0;
+
+    if (scale->hasWidth && pageRect.size.width > 0) {
+        scaleX = scale->maxWidth / pageRect.size.width;
+    }
+
+    if (scale->hasHeight && pageRect.size.height > 0) {
+        scaleY = scale->maxHeight / pageRect.size.height;
+    }
+
+    if (scale->hasWidth && scale->hasHeight) { // HHHxWWW, fit to smallest
+        return fmin(scaleX, scaleY);
+    } else if (scale->hasWidth) { // xWWW
+        return scaleX;
+    } else if (scale->hasHeight) { // HHHx
+        return scaleY;
+    }
+
+    return 1.0; // Default, should ideally be covered by isPercentage or direct scaleFactor
+}
+
+CGImageRef renderPDFPageToImage(CGPDFPageRef pdfPage, CGFloat scaleFactor, BOOL transparentBackground, BOOL verbose) {
+    if (!pdfPage) return NULL;
+
+    __block CGImageRef image = NULL;
+
+    @autoreleasepool {
+        logMessage(verbose, @"Rendering PDF page with scale factor: %.2f", scaleFactor);
+
+        // Get page dimensions
+        CGRect pageRect = CGPDFPageGetBoxRect(pdfPage, kCGPDFMediaBox);
+        size_t width = (size_t)round(pageRect.size.width * scaleFactor);
+        size_t height = (size_t)round(pageRect.size.height * scaleFactor);
+
+        if (width == 0 || height == 0) {
+            fprintf(stderr, "Error: Calculated image dimensions are zero (width: %zu, height: %zu). Check scale factor and PDF page size.\n", width, height);
+            return NULL;
+        }
+
+        // Create bitmap context
+        CGColorSpaceRef colorSpace = CGColorSpaceCreateDeviceRGB();
+        CGContextRef context = CGBitmapContextCreate(NULL, width, height, 8, 0, colorSpace,
+                                                    kCGImageAlphaPremultipliedLast); // Changed to PremultipliedLast for better transparency handling
+        CGColorSpaceRelease(colorSpace);
+
+        if (!context) {
+            fprintf(stderr, "Failed to create bitmap context\n");
+            return NULL;
+        }
+
+        // Set background
+        if (!transparentBackground) {
+            CGContextSetRGBFillColor(context, 1.0, 1.0, 1.0, 1.0); // White
+            CGContextFillRect(context, CGRectMake(0, 0, width, height));
+        } else {
+            CGContextClearRect(context, CGRectMake(0, 0, width, height)); // Transparent
+        }
+
+        // Save context state
+        CGContextSaveGState(context);
+
+        // Scale and translate for PDF rendering
+        CGContextScaleCTM(context, scaleFactor, scaleFactor);
+        // CGContextTranslateCTM(context, -pageRect.origin.x, -pageRect.origin.y); // This might be needed if cropbox/mediabox origin is not 0,0
+
+        // Draw PDF page
+        CGContextDrawPDFPage(context, pdfPage);
+
+        // Restore context state
+        CGContextRestoreGState(context);
+
+        // Create image from context
+        image = CGBitmapContextCreateImage(context);
+        CGContextRelease(context);
+
+        logMessage(verbose, @"Page rendered to CGImageRef successfully.");
+    }
+
+    return image;
+}
+
+BOOL writeImageAsPNG(CGImageRef image, NSFileHandle *output, int pngQuality, BOOL verbose) {
+    if (!image || !output) return NO;
+
+    logMessage(verbose, @"Writing image as PNG to stdout with quality: %d", pngQuality);
+
+    NSMutableData *imageData = [NSMutableData data];
+    CGImageDestinationRef destination = CGImageDestinationCreateWithData((__bridge CFMutableDataRef)imageData,
+                                                                        kUTTypePNG, 1, NULL);
+    if (!destination) {
+        fprintf(stderr, "Failed to create image destination for stdout\n");
+        return NO;
+    }
+
+    // PNG Quality/Compression
+    // ImageIO uses a float from 0.0 (max compression) to 1.0 (lossless)
+    // We need to map our 0-9 to this. Let's say 0 is max compression (0.0), 9 is min compression (0.9 for example)
+    // Or, more simply, use kCGImageCompressionQuality which is what the quality parameter implies
+    // For PNG, it's typically lossless, but some libraries might offer control over filter strategies or zlib level.
+    // For now, let's assume higher 'pngQuality' means less compression effort (faster) if applicable,
+    // or map to kCGImageDestinationLossyCompressionQuality if we were doing lossy.
+    // Since PNG is lossless, this 'quality' might map to compression effort/speed.
+    // The default is usually a good balance. Let's make it explicit if quality is not default (6).
+    NSDictionary *props = nil;
+    if (pngQuality >= 0 && pngQuality <= 9) { // Assuming 0-9, map to 0.0-1.0 for kCGImageDestinationLossyCompressionQuality if it were lossy
+                                          // For PNG, this specific key might not do much, but let's keep it for future.
+                                          // A value closer to 1.0 means less compression.
+        // float compressionValue = (float)pngQuality / 9.0f;
+        // props = @{(__bridge NSString *)kCGImageDestinationLossyCompressionQuality: @(compressionValue)};
+        // For PNG, there isn't a direct "quality" setting like JPEG.
+        // It's lossless. We can control things like interlace, filters, or zlib compression level,
+        // but CGImageDestination doesn't expose these directly for PNGs.
+        // So, pngQuality might be ignored here or we can log a message.
+        logMessage(verbose, @"PNG quality setting (%d) is noted, but CoreGraphics offers limited control for PNG compression levels.", pngQuality);
+    }
+
+
+    CGImageDestinationAddImage(destination, image, (__bridge CFDictionaryRef)props);
+
+    if (!CGImageDestinationFinalize(destination)) {
+        fprintf(stderr, "Failed to finalize image for stdout\n");
+        CFRelease(destination);
+        return NO;
+    }
+    CFRelease(destination);
+
+    @try {
+        [output writeData:imageData];
+    } @catch (NSException *exception) {
+        fprintf(stderr, "Error writing PNG data to stdout: %s\n", [[exception reason] UTF8String]);
+        return NO;
+    }
+
+    logMessage(verbose, @"Image written to stdout successfully.");
+    return YES;
+}
+
+BOOL writeImageToFile(CGImageRef image, NSString *outputPath, int pngQuality, BOOL verbose, BOOL dryRun, BOOL forceOverwrite) {
+    if (!image || !outputPath) return NO;
+
+    if (dryRun) {
+        // In dry-run mode, just report what would be created
+        BOOL exists = fileExists(outputPath);
+        fprintf(stdout, "[DRY-RUN] Would create: %s%s\n", [outputPath UTF8String],
+                exists ? " (overwrites existing)" : "");
+
+        // Calculate approximate file size for the image
+        size_t width = CGImageGetWidth(image);
+        size_t height = CGImageGetHeight(image);
+        size_t bitsPerPixel = CGImageGetBitsPerPixel(image);
+        size_t estimatedSize = (width * height * bitsPerPixel) / 8 / 1024; // KB
+
+        fprintf(stdout, "          Dimensions: %zux%zu, Estimated size: ~%zu KB\n", width, height, estimatedSize);
+        return YES;
+    }
+
+    // Check for overwrite protection
+    if (!forceOverwrite && !shouldOverwriteFile(outputPath, YES)) {
+        logMessage(verbose, @"Skipping %@ - file exists and overwrite denied", outputPath);
+        return NO;
+    }
+
+    logMessage(verbose, @"Writing image as PNG to file: %@ with quality: %d", outputPath, pngQuality);
+
+    NSURL *url = [NSURL fileURLWithPath:outputPath];
+    CGImageDestinationRef destination = CGImageDestinationCreateWithURL((__bridge CFURLRef)url,
+                                                                       kUTTypePNG, 1, NULL);
+    if (!destination) {
+        fprintf(stderr, "Failed to create image destination for file: %s\n", [outputPath UTF8String]);
+        return NO;
+    }
+
+    NSDictionary *props = nil;
+     if (pngQuality >= 0 && pngQuality <= 9) {
+        logMessage(verbose, @"PNG quality setting (%d) is noted, but CoreGraphics offers limited control for PNG compression levels.", pngQuality);
+    }
+
+    CGImageDestinationAddImage(destination, image, (__bridge CFDictionaryRef)props);
+
+    BOOL success = CGImageDestinationFinalize(destination);
+    if (!success) {
+        fprintf(stderr, "Failed to write image to file: %s\n", [outputPath UTF8String]);
+    }
+
+    CFRelease(destination);
+    logMessage(verbose, @"Image written to file %@ %s.", outputPath, success ? "successfully" : "failed");
+    return success;
+}
+
+NSString *getOutputPrefix(Options *options) {
+    if (options->outputPath && ![options->outputPath isEqualToString:@"-"]) { // Treat "-" as stdout for prefix
+        // If output path is a full filename (e.g., "image.png"), use "image"
+        // If it's just a prefix (e.g., "img_"), use it as is.
+        // For batch mode, -o is always a prefix.
+        return [[options->outputPath lastPathComponent] stringByDeletingPathExtension];
+    } else if (options->inputPath) {
+        // Use basename of input file
+        NSString *basename = [[options->inputPath lastPathComponent] stringByDeletingPathExtension];
+        return basename;
+    } else {
+        return @"page"; // Default prefix if input is stdin and no output path
+    }
+}
+
+// PDF operator callbacks (forward declarations)
+static void pdf_Tj(CGPDFScannerRef scanner, void *info);
+static void pdf_TJ(CGPDFScannerRef scanner, void *info);
+static void pdf_Quote(CGPDFScannerRef scanner, void *info);
+static void pdf_DoubleQuote(CGPDFScannerRef scanner, void *info);
+
+NSString *extractTextFromPDFPage(CGPDFPageRef page) {
+    if (!page) return nil;
+
+    NSMutableString *pageText = [NSMutableString string];
+
+    // Create a PDF Scanner
+    CGPDFScannerRef scanner = NULL;
+    CGPDFContentStreamRef contentStream = CGPDFContentStreamCreateWithPage(page);
+    if (contentStream) {
+        CGPDFOperatorTableRef operatorTable = CGPDFOperatorTableCreate();
+
+        // Set up operator callbacks for text extraction
+        CGPDFOperatorTableSetCallback(operatorTable, "Tj", &pdf_Tj);
+        CGPDFOperatorTableSetCallback(operatorTable, "TJ", &pdf_TJ);
+        CGPDFOperatorTableSetCallback(operatorTable, "'", &pdf_Quote);
+        CGPDFOperatorTableSetCallback(operatorTable, "\"", &pdf_DoubleQuote);
+
+        scanner = CGPDFScannerCreate(contentStream, operatorTable, (__bridge void *)pageText);
+        if (scanner) {
+            CGPDFScannerScan(scanner);
+            CGPDFScannerRelease(scanner);
+        }
+
+        CGPDFOperatorTableRelease(operatorTable);
+        CGPDFContentStreamRelease(contentStream);
+    }
+
+    // Clean up the text
+    NSString *cleanedText = [pageText stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+    cleanedText = [cleanedText stringByReplacingOccurrencesOfString:@"\\s+" withString:@" "
+                                                           options:NSRegularExpressionSearch
+                                                             range:NSMakeRange(0, cleanedText.length)];
+
+    return cleanedText.length > 0 ? cleanedText : nil;
+}
+
+// PDF operator callbacks
+static void pdf_Tj(CGPDFScannerRef scanner, void *info) {
+    CGPDFStringRef pdfString = NULL;
+    if (CGPDFScannerPopString(scanner, &pdfString)) {
+        NSString *string = (__bridge_transfer NSString *)CGPDFStringCopyTextString(pdfString);
+        if (string) {
+            NSMutableString *pageText = (__bridge NSMutableString *)info;
+            [pageText appendString:string];
+            [pageText appendString:@" "];
+        }
+    }
+}
+
+static void pdf_TJ(CGPDFScannerRef scanner, void *info) {
+    CGPDFArrayRef array = NULL;
+    if (CGPDFScannerPopArray(scanner, &array)) {
+        size_t count = CGPDFArrayGetCount(array);
+        NSMutableString *pageText = (__bridge NSMutableString *)info;
+
+        for (size_t i = 0; i < count; i++) {
+            CGPDFObjectRef object = NULL;
+            if (CGPDFArrayGetObject(array, i, &object)) {
+                CGPDFObjectType type = CGPDFObjectGetType(object);
+                if (type == kCGPDFObjectTypeString) {
+                    CGPDFStringRef pdfString = NULL;
+                    if (CGPDFObjectGetValue(object, kCGPDFObjectTypeString, &pdfString)) {
+                        NSString *string = (__bridge_transfer NSString *)CGPDFStringCopyTextString(pdfString);
+                        if (string) {
+                            [pageText appendString:string];
+                        }
+                    }
+                }
+            }
+        }
+        [pageText appendString:@" "];
+    }
+}
+
+static void pdf_Quote(CGPDFScannerRef scanner, void *info) {
+    pdf_Tj(scanner, info);
+}
+
+static void pdf_DoubleQuote(CGPDFScannerRef scanner, void *info) {
+    // Skip the two numeric parameters
+    CGPDFReal tc, tw;
+    CGPDFScannerPopNumber(scanner, &tc);
+    CGPDFScannerPopNumber(scanner, &tw);
+    pdf_Tj(scanner, info);
+}
+
+NSString *performOCROnImage(CGImageRef image) {
+    if (!image) return nil;
+
+    __block NSString *recognizedText = nil;
+    dispatch_semaphore_t semaphore = dispatch_semaphore_create(0);
+
+    @autoreleasepool {
+        // Create Vision request
+        VNRecognizeTextRequest *request = [[VNRecognizeTextRequest alloc] initWithCompletionHandler:^(VNRequest *request, NSError *error) {
+            if (error) {
+                NSLog(@"OCR Error: %@", error.localizedDescription);
+                dispatch_semaphore_signal(semaphore);
+                return;
+            }
+
+            NSMutableString *fullText = [NSMutableString string];
+            for (VNRecognizedTextObservation *observation in request.results) {
+                VNRecognizedText *topCandidate = [observation topCandidates:1].firstObject;
+                if (topCandidate) {
+                    [fullText appendString:topCandidate.string];
+                    [fullText appendString:@" "];
+                }
+            }
+
+            recognizedText = [fullText stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+            dispatch_semaphore_signal(semaphore);
+        }];
+
+        request.recognitionLevel = VNRequestTextRecognitionLevelAccurate;
+        request.recognitionLanguages = @[@"en-US"]; // Add more languages as needed
+        request.usesLanguageCorrection = YES;
+
+        // Create handler and perform request
+        VNImageRequestHandler *handler = [[VNImageRequestHandler alloc] initWithCGImage:image options:@{}];
+        NSError *error = nil;
+        [handler performRequests:@[request] error:&error];
+
+        if (error) {
+            NSLog(@"Failed to perform OCR: %@", error.localizedDescription);
+            dispatch_semaphore_signal(semaphore);
+        }
+    }
+
+    // Wait for OCR to complete (with timeout)
+    dispatch_semaphore_wait(semaphore, dispatch_time(DISPATCH_TIME_NOW, 5 * NSEC_PER_SEC));
+
+    return recognizedText;
+}
+
+NSString *slugifyText(NSString *text, NSUInteger maxLength) {
+    if (!text || text.length == 0) return @"";
+
+    // Convert to lowercase
+    NSString *lowercased = [text lowercaseString];
+
+    // Replace non-alphanumeric characters with hyphens
+    NSMutableString *slugified = [NSMutableString string];
+    NSCharacterSet *alphanumeric = [NSCharacterSet alphanumericCharacterSet];
+
+    BOOL lastWasHyphen = NO;
+    for (NSUInteger i = 0; i < lowercased.length && slugified.length < maxLength; i++) {
+        unichar ch = [lowercased characterAtIndex:i];
+
+        if ([alphanumeric characterIsMember:ch]) {
+            [slugified appendFormat:@"%C", ch];
+            lastWasHyphen = NO;
+        } else if (!lastWasHyphen && slugified.length > 0) {
+            [slugified appendString:@"-"];
+            lastWasHyphen = YES;
+        }
+    }
+
+    // Remove trailing hyphen if present
+    if ([slugified hasSuffix:@"-"]) {
+        [slugified deleteCharactersInRange:NSMakeRange(slugified.length - 1, 1)];
+    }
+
+    // Truncate to maxLength
+    if (slugified.length > maxLength) {
+        NSString *truncated = [slugified substringToIndex:maxLength];
+        // Remove partial word at end
+        NSRange lastHyphen = [truncated rangeOfString:@"-" options:NSBackwardsSearch];
+        if (lastHyphen.location != NSNotFound && lastHyphen.location > maxLength * 0.7) {
+            truncated = [truncated substringToIndex:lastHyphen.location];
+        }
+        return truncated;
+    }
+
+    return slugified;
+}
+
+NSArray<NSNumber *> *parsePageRange(NSString *rangeSpec, NSUInteger totalPages) {
+    if (!rangeSpec || rangeSpec.length == 0) {
+        return nil;
+    }
+
+    NSMutableSet *pageSet = [NSMutableSet set];
+    NSArray *parts = [rangeSpec componentsSeparatedByString:@","];
+
+    for (NSString *part in parts) {
+        NSString *trimmedPart = [part stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceCharacterSet]];
+
+        // Check if it's a range (contains hyphen)
+        NSRange hyphenRange = [trimmedPart rangeOfString:@"-"];
+        if (hyphenRange.location != NSNotFound) {
+            // Split range into start and end
+            NSArray *rangeParts = [trimmedPart componentsSeparatedByString:@"-"];
+            if (rangeParts.count == 2) {
+                NSInteger start = [rangeParts[0] integerValue];
+                NSInteger end = [rangeParts[1] integerValue];
+
+                // Validate range
+                if (start < 1) start = 1;
+                if (end > (NSInteger)totalPages) end = (NSInteger)totalPages;
+
+                if (start <= end) {
+                    for (NSInteger i = start; i <= end; i++) {
+                        [pageSet addObject:@(i)];
+                    }
+                }
+            }
+        } else {
+            // Single page number
+            NSInteger pageNum = [trimmedPart integerValue];
+            if (pageNum >= 1 && pageNum <= (NSInteger)totalPages) {
+                [pageSet addObject:@(pageNum)];
+            }
+        }
+    }
+
+    // Convert set to sorted array
+    NSArray *sortedPages = [[pageSet allObjects] sortedArrayUsingComparator:^NSComparisonResult(NSNumber *obj1, NSNumber *obj2) {
+        return [obj1 compare:obj2];
+    }];
+
+    return sortedPages;
+}
+
+NSString *formatFilenameWithPattern(NSString *pattern, NSString *basename, NSUInteger pageNum,
+                                   NSUInteger totalPages, NSString *extractedText) {
+    if (!pattern || pattern.length == 0) {
+        // Default pattern if none specified
+        if (extractedText && extractedText.length > 0) {
+            return [NSString stringWithFormat:@"%@-%03zu--%@", basename, pageNum, extractedText];
+        } else {
+            return [NSString stringWithFormat:@"%@-%03zu", basename, pageNum];
+        }
+    }
+
+    NSMutableString *result = [NSMutableString stringWithString:pattern];
+
+    // Replace {basename} or {name}
+    [result replaceOccurrencesOfString:@"{basename}" withString:basename
+                              options:0 range:NSMakeRange(0, result.length)];
+    [result replaceOccurrencesOfString:@"{name}" withString:basename
+                              options:0 range:NSMakeRange(0, result.length)];
+
+    // Replace {page} with zero-padded page number
+    NSUInteger digits = (NSUInteger)log10(totalPages > 0 ? totalPages : 1) + 1;
+    if (digits < 3) digits = 3; // Minimum 3 digits
+    NSString *pageStr = [NSString stringWithFormat:@"%0*zu", (int)digits, pageNum];
+    [result replaceOccurrencesOfString:@"{page}" withString:pageStr
+                              options:0 range:NSMakeRange(0, result.length)];
+
+    // Replace {page:03d} style formatting
+    NSRegularExpression *pageFormatRegex = [NSRegularExpression regularExpressionWithPattern:@"\\{page:0?(\\d+)d\\}"
+                                                                                    options:0 error:nil];
+    NSArray *matches = [pageFormatRegex matchesInString:result options:0
+                                               range:NSMakeRange(0, result.length)];
+
+    // Process matches in reverse order to avoid index shifting
+    for (NSTextCheckingResult *match in [matches reverseObjectEnumerator]) {
+        NSRange digitRange = [match rangeAtIndex:1];
+        NSString *digitStr = [result substringWithRange:digitRange];
+        int formatDigits = [digitStr intValue];
+        NSString *formattedPage = [NSString stringWithFormat:@"%0*zu", formatDigits, pageNum];
+        [result replaceCharactersInRange:match.range withString:formattedPage];
+    }
+
+    // Replace {text} with extracted text (if available)
+    if (extractedText && extractedText.length > 0) {
+        [result replaceOccurrencesOfString:@"{text}" withString:extractedText
+                                  options:0 range:NSMakeRange(0, result.length)];
+    } else {
+        [result replaceOccurrencesOfString:@"{text}" withString:@""
+                                  options:0 range:NSMakeRange(0, result.length)];
+    }
+
+    // Replace {date} with current date in YYYYMMDD format
+    NSDateFormatter *dateFormatter = [[NSDateFormatter alloc] init];
+    [dateFormatter setDateFormat:@"yyyyMMdd"];
+    NSString *dateStr = [dateFormatter stringFromDate:[NSDate date]];
+    [result replaceOccurrencesOfString:@"{date}" withString:dateStr
+                              options:0 range:NSMakeRange(0, result.length)];
+
+    // Replace {time} with current time in HHMMSS format
+    [dateFormatter setDateFormat:@"HHmmss"];
+    NSString *timeStr = [dateFormatter stringFromDate:[NSDate date]];
+    [result replaceOccurrencesOfString:@"{time}" withString:timeStr
+                              options:0 range:NSMakeRange(0, result.length)];
+
+    // Replace {total} with total page count
+    [result replaceOccurrencesOfString:@"{total}" withString:[NSString stringWithFormat:@"%zu", totalPages]
+                              options:0 range:NSMakeRange(0, result.length)];
+
+    return result;
+}
+
+// File overwrite protection functions
+BOOL fileExists(NSString *path) {
+    return [[NSFileManager defaultManager] fileExistsAtPath:path];
+}
+
+BOOL shouldOverwriteFile(NSString *path, BOOL interactive) {
+    if (!fileExists(path)) {
+        return YES; // File doesn't exist, safe to write
+    }
+
+    if (!interactive) {
+        return NO; // Non-interactive mode, don't overwrite
+    }
+
+    return promptUserForOverwrite(path);
+}
+
+BOOL promptUserForOverwrite(NSString *path) {
+    fprintf(stderr, "File '%s' already exists. Overwrite? (y/N): ", [path UTF8String]);
+    fflush(stderr);
+
+    char response[10];
+    if (fgets(response, sizeof(response), stdin) == NULL) {
+        return NO; // No input, default to no
+    }
+
+    // Check first character, case insensitive
+    char first = response[0];
+    return (first == 'y' || first == 'Y');
+}
+
+// Enhanced error reporting functions
+void reportError(NSString *message, NSString *troubleshootingHint) {
+    fprintf(stderr, "Error: %s\n", [message UTF8String]);
+    if (troubleshootingHint) {
+        fprintf(stderr, "Hint:  %s\n", [troubleshootingHint UTF8String]);
+    }
+}
+
+void reportWarning(NSString *message, NSString *troubleshootingHint) {
+    fprintf(stderr, "Warning: %s\n", [message UTF8String]);
+    if (troubleshootingHint) {
+        fprintf(stderr, "Hint:    %s\n", [troubleshootingHint UTF8String]);
+    }
+}
+
+NSString *getTroubleshootingHint(NSString *errorContext) {
+    if (!errorContext) return nil;
+
+    NSString *context = [errorContext lowercaseString];
+
+    // PDF-related errors
+    if ([context containsString:@"pdf"] || [context containsString:@"document"]) {
+        if ([context containsString:@"encrypted"] || [context containsString:@"password"]) {
+            return @"PDF is password-protected. Try removing the password first using Preview or pdftk.";
+        }
+        if ([context containsString:@"corrupt"] || [context containsString:@"invalid"]) {
+            return @"PDF file may be corrupted. Try opening it in Preview to verify it's readable.";
+        }
+        if ([context containsString:@"empty"] || [context containsString:@"no pages"]) {
+            return @"PDF appears to be empty or has no pages to convert.";
+        }
+        return @"Verify the PDF file is valid and readable in Preview or other PDF viewers.";
+    }
+
+    // File I/O errors
+    if ([context containsString:@"permission"] || [context containsString:@"denied"]) {
+        return @"Check file permissions. You may need to use 'sudo' or change file ownership.";
+    }
+    if ([context containsString:@"not found"] || [context containsString:@"no such file"]) {
+        return @"Verify the file path is correct and the file exists. Use absolute paths to avoid confusion.";
+    }
+    if ([context containsString:@"disk"] || [context containsString:@"space"]) {
+        return @"Check available disk space. Large PDFs can require significant storage for conversion.";
+    }
+
+    // Memory errors
+    if ([context containsString:@"memory"] || [context containsString:@"allocation"]) {
+        return @"Try processing fewer pages at once or use a smaller scale factor to reduce memory usage.";
+    }
+
+    // Image/rendering errors
+    if ([context containsString:@"image"] || [context containsString:@"render"]) {
+        return @"Try using a smaller scale factor or lower DPI setting to reduce image complexity.";
+    }
+
+    // Scale/format errors
+    if ([context containsString:@"scale"] || [context containsString:@"format"]) {
+        return @"Use formats like '150%', '2.0', '800x600', or '300dpi'. See --help for examples.";
+    }
+
+    // Page range errors
+    if ([context containsString:@"page"] || [context containsString:@"range"]) {
+        return @"Use formats like '5' (single page), '1-10' (range), or '1,3,5-10' (list). Pages start at 1.";
+    }
+
+    return @"Run with -v/--verbose flag for more detailed information, or check --help for usage examples.";
+}
+</file>
+
+<file path="Tests/test_runner.m">
+#import <Foundation/Foundation.h>
+#import "../src/utils.h"
+#import "../src/pdf22png.h"
+
+// Simple test framework macros
+#define TEST_ASSERT(condition, message) \
+    if (!(condition)) { \
+        NSLog(@"FAIL: %s - %@", __FUNCTION__, message); \
+        return NO; \
+    }
+
+#define TEST_ASSERT_EQUAL(actual, expected, message) \
+    if ((actual) != (expected)) { \
+        NSLog(@"FAIL: %s - %@. Expected: %@, Actual: %@", __FUNCTION__, message, @(expected), @(actual)); \
+        return NO; \
+    }
+
+#define TEST_ASSERT_EQUAL_FLOAT(actual, expected, accuracy, message) \
+    if (fabs((actual) - (expected)) > (accuracy)) { \
+        NSLog(@"FAIL: %s - %@. Expected: %f, Actual: %f", __FUNCTION__, message, (expected), (actual)); \
+        return NO; \
+    }
+
+// Test function declarations
+BOOL testParseScaleSpec_percentage(void);
+BOOL testParseScaleSpec_factor(void);
+BOOL testParseScaleSpec_dpi(void);
+BOOL testParseScaleSpec_dimensions(void);
+BOOL testParseScaleSpec_invalid(void);
+BOOL testParsePageRange(void);
+BOOL testExtractTextFromPDFPage(void);
+BOOL testFileExists(void);
+BOOL testShouldOverwriteFile(void);
+
+// Test implementations
+BOOL testParseScaleSpec_percentage(void) {
+    ScaleSpec scale;
+    BOOL result = parseScaleSpec("150%", &scale);
+    TEST_ASSERT(result, @"Parsing '150%' should succeed");
+    TEST_ASSERT(scale.isPercentage, @"Scale should be percentage");
+    TEST_ASSERT_EQUAL_FLOAT(scale.scaleFactor, 1.5, 0.001, @"Scale factor should be 1.5");
+    TEST_ASSERT(!scale.isDPI, @"Scale should not be DPI");
+    return YES;
+}
+
+BOOL testParseScaleSpec_factor(void) {
+    ScaleSpec scale;
+    BOOL result = parseScaleSpec("2.0", &scale);
+    TEST_ASSERT(result, @"Parsing '2.0' should succeed");
+    TEST_ASSERT(!scale.isPercentage, @"Scale should not be percentage");
+    TEST_ASSERT_EQUAL_FLOAT(scale.scaleFactor, 2.0, 0.001, @"Scale factor should be 2.0");
+    return YES;
+}
+
+BOOL testParseScaleSpec_dpi(void) {
+    ScaleSpec scale;
+    BOOL result = parseScaleSpec("300dpi", &scale);
+    TEST_ASSERT(result, @"Parsing '300dpi' should succeed");
+    TEST_ASSERT(scale.isDPI, @"Scale should be DPI");
+    TEST_ASSERT_EQUAL_FLOAT(scale.dpi, 300.0, 0.001, @"DPI should be 300");
+    return YES;
+}
+
+BOOL testParseScaleSpec_dimensions(void) {
+    ScaleSpec scale;
+
+    // Test height only (pattern: "heightx")
+    BOOL result = parseScaleSpec("800x", &scale);
+    TEST_ASSERT(result, @"Parsing '800x' should succeed");
+    TEST_ASSERT(!scale.hasWidth, @"Should not have width");
+    TEST_ASSERT(scale.hasHeight, @"Should have height");
+    TEST_ASSERT_EQUAL_FLOAT(scale.maxHeight, 800.0, 0.001, @"Height should be 800");
+
+    // Test width only (pattern: "xwidth")
+    result = parseScaleSpec("x600", &scale);
+    TEST_ASSERT(result, @"Parsing 'x600' should succeed");
+    TEST_ASSERT(scale.hasWidth, @"Should have width");
+    TEST_ASSERT(!scale.hasHeight, @"Should not have height");
+    TEST_ASSERT_EQUAL_FLOAT(scale.maxWidth, 600.0, 0.001, @"Width should be 600");
+
+    // Test both dimensions (pattern: "heightxwidth")
+    result = parseScaleSpec("800x600", &scale);
+    TEST_ASSERT(result, @"Parsing '800x600' should succeed");
+    TEST_ASSERT(scale.hasWidth, @"Should have width");
+    TEST_ASSERT(scale.hasHeight, @"Should have height");
+    TEST_ASSERT_EQUAL_FLOAT(scale.maxHeight, 800.0, 0.001, @"Height should be 800");
+    TEST_ASSERT_EQUAL_FLOAT(scale.maxWidth, 600.0, 0.001, @"Width should be 600");
+
+    return YES;
+}
+
+BOOL testParseScaleSpec_invalid(void) {
+    ScaleSpec scale;
+    BOOL result = parseScaleSpec("invalid", &scale);
+    TEST_ASSERT(!result, @"Parsing 'invalid' should fail");
+    return YES;
+}
+
+BOOL testParsePageRange(void) {
+    // Test simple single page
+    NSArray *pages = parsePageRange(@"5", 10);
+    TEST_ASSERT(pages != nil, @"parsePageRange should return array");
+    TEST_ASSERT_EQUAL(pages.count, 1, @"Should have 1 page");
+    TEST_ASSERT_EQUAL([pages[0] integerValue], 5, @"Page should be 5");
+
+    // Test range
+    pages = parsePageRange(@"1-3", 10);
+    TEST_ASSERT(pages != nil, @"parsePageRange should return array");
+    TEST_ASSERT_EQUAL(pages.count, 3, @"Should have 3 pages");
+    TEST_ASSERT_EQUAL([pages[0] integerValue], 1, @"First page should be 1");
+    TEST_ASSERT_EQUAL([pages[2] integerValue], 3, @"Last page should be 3");
+
+    // Test comma separated
+    pages = parsePageRange(@"1,3,5", 10);
+    TEST_ASSERT(pages != nil, @"parsePageRange should return array");
+    TEST_ASSERT_EQUAL(pages.count, 3, @"Should have 3 pages");
+    TEST_ASSERT_EQUAL([pages[1] integerValue], 3, @"Second page should be 3");
+
+    // Test complex
+    pages = parsePageRange(@"1-3,5,7-9", 10);
+    TEST_ASSERT(pages != nil, @"parsePageRange should return array");
+    TEST_ASSERT_EQUAL(pages.count, 7, @"Should have 7 pages");
+
+    return YES;
+}
+
+BOOL testExtractTextFromPDFPage(void) {
+    // This test would require a real PDF, so we'll just verify the function exists
+    NSString *result = extractTextFromPDFPage(nil);
+    TEST_ASSERT(result == nil, @"Should return nil for nil page");
+    return YES;
+}
+
+BOOL testFileExists(void) {
+    // Test with non-existent file
+    TEST_ASSERT(!fileExists(@"/path/that/does/not/exist"), @"Should return NO for non-existent file");
+
+    // Test with a file that should exist (create a temp file)
+    NSString *tempPath = [NSTemporaryDirectory() stringByAppendingPathComponent:@"test_file.txt"];
+    [@"test" writeToFile:tempPath atomically:YES encoding:NSUTF8StringEncoding error:nil];
+    TEST_ASSERT(fileExists(tempPath), @"Should return YES for existing temp file");
+    [[NSFileManager defaultManager] removeItemAtPath:tempPath error:nil];
+
+    return YES;
+}
+
+BOOL testShouldOverwriteFile(void) {
+    // Test with non-existent file
+    TEST_ASSERT(shouldOverwriteFile(@"/path/that/does/not/exist", NO), @"Should allow writing to non-existent file");
+    TEST_ASSERT(shouldOverwriteFile(@"/path/that/does/not/exist", YES), @"Should allow writing to non-existent file");
+
+    // Test with existing file in non-interactive mode
+    NSString *tempPath = [NSTemporaryDirectory() stringByAppendingPathComponent:@"test_file2.txt"];
+    [@"test" writeToFile:tempPath atomically:YES encoding:NSUTF8StringEncoding error:nil];
+    TEST_ASSERT(!shouldOverwriteFile(tempPath, NO), @"Should not overwrite existing file in non-interactive mode");
+    [[NSFileManager defaultManager] removeItemAtPath:tempPath error:nil];
+
+    return YES;
+}
+
+// Main test runner
+int main(int argc, const char * argv[]) {
+    @autoreleasepool {
+        NSLog(@"Running pdf22png tests...");
+
+        int passed = 0;
+        int failed = 0;
+
+        // Define test cases
+        typedef BOOL (*TestFunction)(void);
+        typedef struct {
+            const char *name;
+            TestFunction func;
+        } TestCase;
+
+        TestCase tests[] = {
+            {"testParseScaleSpec_percentage", testParseScaleSpec_percentage},
+            {"testParseScaleSpec_factor", testParseScaleSpec_factor},
+            {"testParseScaleSpec_dpi", testParseScaleSpec_dpi},
+            {"testParseScaleSpec_dimensions", testParseScaleSpec_dimensions},
+            {"testParseScaleSpec_invalid", testParseScaleSpec_invalid},
+            {"testParsePageRange", testParsePageRange},
+            {"testExtractTextFromPDFPage", testExtractTextFromPDFPage},
+            {"testFileExists", testFileExists},
+            {"testShouldOverwriteFile", testShouldOverwriteFile},
+        };
+
+        int numTests = sizeof(tests) / sizeof(tests[0]);
+
+        for (int i = 0; i < numTests; i++) {
+            NSLog(@"Running %s...", tests[i].name);
+            if (tests[i].func()) {
+                NSLog(@"PASS: %s", tests[i].name);
+                passed++;
+            } else {
+                failed++;
+            }
+        }
+
+        NSLog(@"\n====================");
+        NSLog(@"Test Results:");
+        NSLog(@"  Passed: %d", passed);
+        NSLog(@"  Failed: %d", failed);
+        NSLog(@"  Total:  %d", passed + failed);
+        NSLog(@"====================");
+
+        return failed > 0 ? 1 : 0;
+    }
+}
+</file>
+
+<file path="Makefile">
+# Variables
+PRODUCT_NAME = pdf22png
+CC = clang
+CFLAGS = -Wall -Wextra -O2 -fobjc-arc -mmacosx-version-min=10.15
+LDFLAGS = -framework Foundation -framework CoreGraphics -framework AppKit -framework Vision
+PREFIX = /usr/local
+BINDIR = $(PREFIX)/bin
+SRCDIR = src
+TESTDIR = Tests
+BUILDDIR = build
+VERSION = $(shell git describe --tags --always --dirty)
+
+# Source files
+SOURCES = $(SRCDIR)/pdf22png.m $(SRCDIR)/utils.m
+OBJECTS = $(SOURCES:.m=.o)
+TEST_SOURCES = $(TESTDIR)/test_runner.m
+TEST_OBJECTS = $(TEST_SOURCES:.m=.o)
+
+# Default target
+.PHONY: all clean install uninstall test universal release fmt lint
+
+all: build
+
+build: $(BUILDDIR)/$(PRODUCT_NAME)
+
+$(BUILDDIR)/$(PRODUCT_NAME): $(OBJECTS) | $(BUILDDIR)
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^
+
+$(BUILDDIR):
+	@mkdir -p $(BUILDDIR)
+
+%.o: %.m
+	$(CC) $(CFLAGS) -c -o $@ $<
+
+# Universal binary target
+universal:
+	@echo "Building universal binary (Objective-C)..."
+	@$(CC) $(CFLAGS) $(LDFLAGS) -arch x86_64 -arch arm64 -o $(BUILDDIR)/$(PRODUCT_NAME)-universal $(SOURCES)
+	@echo "Universal Objective-C build complete!"
+
+# Install target
+install: build
+	@echo "Installing $(PRODUCT_NAME) (Objective-C) to $(BINDIR)..."
+	@install -d $(BINDIR)
+	@install -m 755 $(BUILDDIR)/$(PRODUCT_NAME) $(BINDIR)/$(PRODUCT_NAME)
+	@echo "Installation complete!"
+
+uninstall:
+	@echo "Uninstalling $(PRODUCT_NAME)..."
+	@rm -f $(BINDIR)/$(PRODUCT_NAME)
+	@echo "Uninstallation complete!"
+
+# Test target
+test: build $(TEST_OBJECTS)
+	@echo "Running Objective-C tests..."
+	@$(CC) $(CFLAGS) $(LDFLAGS) -o $(BUILDDIR)/test_runner $(TEST_OBJECTS) $(filter-out $(SRCDIR)/pdf22png.o,$(OBJECTS))
+	@$(BUILDDIR)/test_runner
+
+# Clean target
+clean:
+	@rm -f $(OBJECTS) $(TEST_OBJECTS)
+	@rm -rf $(BUILDDIR) *.dSYM
+	@echo "Objective-C clean complete!"
+
+fmt:
+	@echo "Formatting Objective-C code..."
+	@clang-format -i $(SRCDIR)/*.m $(SRCDIR)/*.h $(TESTDIR)/*.m
+
+lint:
+	@echo "Linting Objective-C code..."
+	@if command -v oclint >/dev/null 2>&1; then \
+		oclint $(SOURCES) -- $(CFLAGS); \
+	else \
+		echo "oclint not installed, skipping Objective-C linting"; \
+	fi
+
+# Release build with version info
+release:
+	$(MAKE) clean
+	$(MAKE) build CFLAGS="$(CFLAGS) -DVERSION=\\"$(VERSION)\\""
+	@echo "Objective-C release build complete: $(VERSION)"
+</file>
+
+</files>

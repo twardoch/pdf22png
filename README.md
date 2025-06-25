@@ -49,31 +49,26 @@ Requirements:
 ```bash
 git clone https://github.com/twardoch/pdf22png.git
 cd pdf22png
-
-# Build Swift version (default)
-make
-
-# Build Objective-C version
-make objc
-
-# Build both versions
-make swift objc
-
-# Install Swift version (default)
-sudo make install
-
-# Install Objective-C version
-sudo make install-objc
+./build.sh
 ```
 
-To build a universal binary for both Intel and Apple Silicon:
-
+The build script provides several options:
 ```bash
-# Swift universal binary (default)
-make universal
+./build.sh --help  # Show all options
+./build.sh -t swift  # Build Swift version only
+./build.sh -t objc   # Build Objective-C version only
+./build.sh -u        # Build universal binary
+./build.sh -i        # Install after building
+./build.sh -c        # Clean before building
+```
 
-# Objective-C universal binary
-make universal-objc
+You can combine options:
+```bash
+# Build and install universal binaries for both implementations
+./build.sh -u -i
+
+# Clean, build and install Swift version only
+./build.sh -c -t swift -i
 ```
 
 ### Choosing Between Implementations
