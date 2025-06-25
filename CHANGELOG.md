@@ -8,253 +8,114 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- **Phase 4: Advanced Streamlining & Code Quality** - Production polish and developer experience
-  - **SwiftLint Integration**: Added comprehensive .swiftlint.yml configuration for code quality consistency
-    - Enforces 120-character line limits and reasonable function/type body lengths
-    - Prevents force unwrapping and encourages clean coding practices
-    - Covers all src/ and Tests/ directories with appropriate exclusions
-  - **Enhanced Build System**: Optimized Makefile with parallel compilation and quality gates
-    - Parallel compilation using all available CPU cores (up to system maximum)
-    - Whole-module optimization for better performance
-    - New targets: quick-build, lint, format, test-all
-    - Improved help documentation with organized command categories
-  - **Developer Experience Tools**: Complete development environment setup
-    - Created scripts/dev-setup.sh for automated contributor onboarding
-    - Automated tool detection and installation guidance
-    - Build system validation and test verification
-    - Integrated code formatting and quality analysis
-  - **Documentation Enhancement**: Updated README.md to highlight streamlined architecture
-    - Added Architecture section showcasing 46% codebase reduction achievement
-    - Updated build instructions to use modern Makefile targets
-    - Emphasized modular design and maintainability improvements
-    - Clear development workflow documentation
-
-### Changed
-- **Major Codebase Streamlining Initiative**: Complete architectural consolidation and modernization
-  - **Phase 1: Implementation Consolidation (Complete)**: 
-    - Archived Objective-C implementation to `archive/objc/` (preserving 30,270 lines of legacy code)
-    - Archived Swift SPM implementation to `archive/swift-spm/` (avoiding dependency complexity)
-    - Consolidated on single Swift standalone implementation for maximum maintainability
-    - Reduced build system complexity from 3 parallel systems to 1 focused system
-    - Removed redundant build scripts (build.sh, release.sh) and simplified CI/CD workflows
-    - Updated GitHub Actions to target single implementation with corrected artifact paths
-  - **Phase 2: Complete Code Modularization (✅ COMPLETED)**: Successfully transformed 1,382-line monolithic main.swift
-    - **Modular Architecture Achieved**: Reduced main.swift from 1,382 lines to 267 lines (81% reduction)
-    - **14 Focused Modules Created**: Split monolithic code into maintainable, single-responsibility modules
-    - **Core/ directory (6 modules)**: Business logic and system management
-      - MemoryManager.swift (126 lines) - memory monitoring and optimization
-      - PDFProcessor.swift (32 lines) - PDF loading, validation, and page extraction
-      - ImageRenderer.swift (109 lines) - page rendering and PNG output with quality control
-      - BatchProcessor.swift (134 lines) - memory-optimized batch processing with async support
-      - ResourceManager.swift (68 lines) - secure temporary file and resource management
-      - SignalHandler.swift (70 lines) - graceful shutdown and cleanup handling
-    - **Models/ directory (4 modules)**: Data structures and type definitions
-      - ProcessingOptions.swift (35 lines) - unified command-line options with computed properties
-      - ScaleSpecification.swift (43 lines) - modern enum-based scaling with parsing
-      - Errors.swift (116 lines) - comprehensive error handling with contextual troubleshooting
-      - Results.swift (73 lines) - processing results and batch statistics
-    - **CLI/ directory (2 modules)**: User interface and formatting
-      - ArgumentParser.swift (102 lines) - robust argument parsing and validation
-      - OutputFormatter.swift (142 lines) - help, version, progress, and error formatting
-    - **Utilities/ directory (2 modules)**: Support functionality
-      - ProgressReporter.swift (124 lines) - detailed progress tracking with memory monitoring
-      - InputValidator.swift (113 lines) - security-focused input validation and sanitization
-    - **Swift Concurrency Integration**: Added async/await support for batch processing
-    - **Build System Compatibility**: All modules compile together seamlessly
-    - **100% Feature Parity**: All original functionality preserved and tested
-    - **Phase 2 Verification**: Successful compilation and runtime testing of modularized architecture
-      - Help command: ✅ Working (`./pdf22png --help`)
-      - Version command: ✅ Working (`./pdf22png --version`)
-      - All 14 modules successfully integrated and compiling
-      - Maintained backward compatibility with all command-line options
-      - Preserved all error handling and troubleshooting capabilities
-  - **Phase 3: Build System & Infrastructure Modernization (✅ STARTED)**: Foundation for production-ready development
-    - **Technical Debt Elimination**: Removed src/main_old.swift (48,941 bytes - 40.6% of codebase)
-    - **Swift Package Manager Integration**: Created Package.swift for modern Swift development
-    - **Enhanced Build System**: Updated Makefile with comprehensive targets (build, clean, test, install, format, docs)
-    - **Testing Infrastructure Foundation**: 
-      - Created Tests/ directory structure with CoreTests/, CLITests/, UtilitiesTests/, IntegrationTests/, PerformanceTests/
-      - Moved test-framework.swift to proper Tests/ location
-      - Created comprehensive unit test suites:
-        - PDFProcessorTests.swift - PDF loading, validation, and page extraction tests
-        - ImageRendererTests.swift - Rendering, scaling, and image output tests  
-        - MemoryManagerTests.swift - Memory monitoring, pressure detection, and batch sizing tests
-        - ArgumentParserTests.swift - CLI argument parsing and validation tests
-        - InputValidatorTests.swift - Security-focused input validation and sanitization tests
-    - **Developer Experience Improvements**: Added make targets for formatting, documentation, and automation
-    - **Build Verification**: All modules continue to compile and function correctly with modular architecture
-    - **Codebase Statistics**: 
-      - Source files: 15 Swift modules (264-line main.swift + 14 focused modules)
-      - Test files: 6 comprehensive unit test suites covering core functionality
-      - Code reduction: Eliminated 48,941 bytes of legacy code (40.6% of total codebase)
-      - Architecture: Clean separation with Core/, Models/, CLI/, Utilities/, Tests/ structure
-    - **Fresh Codebase Analysis**: Latest repomix analysis shows optimized state
-      - Total files: 16 source files (67,435 characters, 14,590 tokens)
-      - Largest file: main.swift at 9,184 chars (13.7% of codebase) - down from previous 48,941 chars
-      - Well-distributed module sizes: No single module dominates the codebase
-      - Security: ✅ No suspicious files detected in automated security scan
-  - **Documentation Consolidation**: Streamlined from 15+ documentation files
-    - Removed outdated files: AGENTS.md, IMPLEMENTATION_STATUS.md, PROGRESS.md, CMakeLists.txt
-    - Consolidated BUILD.md and MIGRATION.md content into main documentation
-    - Maintained essential documentation: README.md, API.md, USAGE.md, EXAMPLES.md
-    - Preserved professional man page (pdf22png.1) for Unix compatibility
+- **Enhanced Progress Reporting for Batch Operations**:
+  - Real-time progress bar with visual indicators
+  - Processing speed display (pages/second)
+  - ETA (Estimated Time to Arrival) calculation
+  - Success/failure counters during processing
+  - Final summary with total time and average speed
+  - Updates every 0.5 seconds for smooth feedback
+  - Progress format: `[████████░░░░░░░░░░░░] 40% | 40/100 pages | 5.2 pages/s | ETA: 00:12 | ✓:38 ✗:2`
+- **GitHub Actions Workflows for Continuous Integration**:
+  - `benchmark.yml`: Automated performance benchmarking on PRs
+    - Runs benchmarks on every PR to main branch
+    - Compares performance against baseline
+    - Blocks merge if regression exceeds 10%
+    - Posts detailed results as PR comment
+    - Supports quick, standard, and extended benchmark modes
+  - `benchmark-history.yml`: Historical performance tracking
+    - Stores benchmark results in dedicated branch
+    - Archives CSV data for trend analysis
+    - Generates performance badges for README
+    - Maintains performance history by date
 
 ### Added
-- **Performance Optimizations (Phase 1.2)**: Significant performance improvements for batch operations
-  - **Adaptive Batch Sizing**: Dynamic adjustment of concurrent operations based on available memory
-    - Monitors system memory pressure and adjusts batch size accordingly
-    - Reduces batch size under memory pressure (50%, 70%, 85% thresholds)
-    - Increases batch size when system resources are available
-    - Adapts based on success rate and processing time metrics
-    - Real-time chunk size adjustment during batch processing
-  - **Fast Rendering Paths**: Optimized rendering for common scenarios
-    - Automatic detection of thumbnail (≤500x500) and preview (≤1000x1000) scenarios
-    - Reduced quality settings for small images where high quality isn't needed
-    - 5-bit color depth for thumbnails vs 8-bit for standard rendering
-    - Configurable antialiasing and interpolation quality per scenario
-    - Automatic fallback to standard rendering if fast path fails
-  - **Memory Pooling**: Bitmap context reuse for batch operations
-    - Reuses CGContext objects across multiple page renders
-    - Reduces memory allocation overhead in batch processing
-    - Automatic cleanup of unused contexts after 60 seconds
-    - Pool statistics tracking (total contexts, in-use, memory usage)
-    - Maximum pool size and memory limits (10 contexts, 500MB default)
-    - Thread-safe implementation with proper locking
-
-### Changed
-- **Batch Processing Loop**: Refactored to support dynamic chunk sizing
-  - Replaced fixed chunk iteration with adaptive while loop
-  - Added performance metrics tracking per chunk
-  - Improved resource constraint handling with retry logic
-  - Enhanced progress reporting with chunk-level statistics
-
-### Fixed
-- **Swift Package Manager Build Issue**: Resolved SWBBuildService.framework dependency error
-  - Modified Swift Makefile to fall back to Objective-C implementation when SPM fails
-  - Updated build script with explanatory comments about the fallback behavior
-  - Maintained full build functionality while avoiding SPM compatibility issues
-  - All build targets (`./build.sh`, `make swift`, `make all`) now work successfully
-
-### Added (Phase 2: Production Readiness)
-- **Comprehensive Man Page**: Created professional Unix manual page (pdf22png.1)
-  - Complete documentation of all command-line options
-  - Detailed examples for common use cases
-  - Memory management and signal handling documentation
-  - Exit status codes and environment variables
-  - Limitations and known issues
-  - Installation support in Makefile
-
-- **Enhanced Progress Reporting for Batch Operations**: Professional progress tracking system
-  - Real-time progress bar with percentage completion
-  - Speed metrics (pages per second)
-  - Time elapsed and estimated time remaining
-  - Per-page status indicators (✓ success, ✗ failure)
-  - Memory usage monitoring in verbose mode
-  - Chunk processing status for large batches
-  - Graceful interruption reporting
-  - Final summary with processing statistics
-
-### Added
-- **Standalone Swift Implementation**: Created production-ready Swift version without SPM dependencies
-  - Implemented complete command-line parser without ArgumentParser dependency
-  - Full feature parity with advanced Objective-C implementation
-  - Comprehensive error handling with PDF22PNGError enum
-  - Support for all command-line options and functionality
-  - Built with native Swift frameworks: Foundation, CoreGraphics, Quartz, PDFKit
-  - Universal binary support for both Intel and Apple Silicon
-  - Resolves the strategic decision to consolidate on Swift implementation
-
-### Changed
-- **Build System Enhancement**: Updated Swift build system to use standalone implementation
-  - Swift Makefile now builds standalone version instead of falling back to Objective-C
-  - Maintains full Swift build functionality without external dependencies
-  - Preserves all existing build targets and workflows
-
-### Enhanced (Phase 1: Foundation Stabilization Complete)
-- **Production-Ready Memory Management System**: Comprehensive memory monitoring and optimization
-  - Real-time system memory tracking with pressure detection
-  - Memory requirement estimation for PDF processing operations
-  - Adaptive batch sizing based on available system resources
-  - Memory pressure warnings and automatic optimization
-  - Resource exhaustion prevention with graceful degradation
-
-- **Advanced Signal Handling & Resource Cleanup**: Robust interruption handling
-  - Graceful shutdown on SIGINT, SIGTERM, and SIGHUP signals
-  - Automatic resource cleanup with registered cleanup handlers
-  - Secure temporary file management with automatic cleanup
-  - Thread-safe resource tracking and management
-  - Timeout protection for cleanup operations
-
-- **Comprehensive Input Validation & Security**: Enterprise-grade input sanitization
-  - Path traversal attack prevention with normalized path validation
-  - File size and complexity limits to prevent resource exhaustion
-  - Command injection protection through input sanitization
-  - Null byte and control character filtering
-  - Maximum path length and pattern validation
-  - PDF complexity analysis and automatic scale factor adjustment
-
-- **Enhanced Error Handling & User Experience**: Professional troubleshooting system
-  - Detailed error messages with context-aware troubleshooting hints
-  - Specific guidance for common error scenarios
-  - Recovery suggestions for file access, memory, and format issues
-  - Professional error codes with comprehensive descriptions
-  - User-friendly error reporting with actionable solutions
-
-- **Comprehensive Integration Testing Framework**: Production-quality test suite
-  - 12 comprehensive integration tests with 100% pass rate
-  - End-to-end CLI testing with real PDF processing
-  - Memory monitoring and resource management validation
-  - Error handling and edge case coverage
-  - Automated test reporting with performance metrics
-  - Integrated into build system for continuous validation
-
-### Added
-- **Unified Build Script**: New `build.sh` script for simplified building and installation
-  - Single command to build both Swift and Objective-C versions
-  - Support for universal binary builds
-  - Clean build option
-  - Installation support
-  - Colored output and improved error handling
-  - Comprehensive help with usage examples
-
+- **Comprehensive Documentation Update**:
+  - Extensive architecture documentation for both implementations
+  - Detailed technical stack descriptions
+  - Code organization diagrams with tree structure
+  - Implementation comparison table with 11 key metrics
+  - Decision guide for choosing between implementations
+  - Performance analysis with real benchmark data
+  - File size optimization comparisons
+  - Real-world performance tips and recommendations
+- **Build and Benchmark Scripts**:
+  - `build.sh`: Comprehensive build script for both implementations
+    - Supports `--objc-only` and `--swift-only` options
+    - Universal binary creation with `--universal` flag
+    - Debug builds with `--debug`
+    - Clean builds with `--clean`
+    - Automatic detection of missing binaries
+    - Colored output with build status indicators
+    - Build time: ~2 seconds (ObjC), ~10 seconds (Swift)
+  - `bench.sh`: Advanced performance benchmarking tool
+    - Statistical analysis (average, min, max, standard deviation)
+    - Multiple test scenarios with `-q` (quick) and `-e` (extended) modes
+    - CSV export with `-o` option for data analysis
+    - File size comparison between implementations
+    - Colored output with performance summaries
+    - Automatic test PDF generation if needed
+    - Warm-up runs for accurate timing
+    - Progress indicators during benchmark execution
 - **Dual Implementation Support**: Both Objective-C and Swift versions now coexist
-  - Swift implementation with full feature parity to Objective-C version
-  - Swift version uses modern language features:
-    - `swift-argument-parser` for CLI parsing
-    - Swift Concurrency (`async/await`, `TaskGroup`) for batch processing
-    - Native Swift error handling with typed errors
-    - Value types and automatic memory management
-  - Makefile updated to support building either or both versions:
-    - `make` or `make swift` - builds Swift version (default)
-    - `make objc` - builds Objective-C version
-    - `make install-swift` - installs Swift version
-    - `make install-objc` - installs Objective-C version
-  - Both versions share identical command-line interface and behavior
-  - Comprehensive test suite for Swift implementation
+  - Complete Swift port maintaining feature parity with Objective-C version
+  - Swift implementation uses modern Swift Package Manager
+  - Both versions can be built and installed side by side
+  - Objective-C binary: `pdf22png`, Swift binary: `pdf22png-swift`
+- **Comprehensive Benchmark Suite**: Performance comparison framework
+  - Automated benchmarking tool comparing ObjC vs Swift implementations
+  - Measures conversion speed, memory usage, and scalability
+  - Exports results to CSV for analysis
+  - Includes multiple test scenarios (single page, multi-page, high DPI, transparency)
+  - Sample PDF generator for consistent testing
+  - Performance results show Swift is ~33% slower than Objective-C
+- **Enhanced Build System**:
+  - `make both` builds both implementations
+  - `make benchmark` runs performance comparisons
+  - `make install-both` installs both versions
+  - `make clean-all` for complete cleanup including Swift artifacts
+  - `benchmarks/compare_implementations.sh` for quick performance testing
+
+### Performance Notes
+
+#### Speed Performance
+- **Objective-C Implementation**: 
+  - Single page (144 DPI): ~0.006s
+  - Single page (300 DPI): ~0.008s
+  - High resolution (600 DPI): ~0.032s
+  - Batch processing (10 pages): ~0.061s
+  - With transparency: ~0.007s
+- **Swift Implementation**: 
+  - Single page (144 DPI): ~0.008s (33% slower)
+  - Single page (300 DPI): ~0.010s (25% slower)
+  - High resolution (600 DPI): ~0.048s (50% slower)
+  - Batch processing (10 pages): ~0.089s (46% slower)
+  - With transparency: ~0.009s (29% slower)
+
+#### File Size Performance
+- Swift produces 65-66% smaller PNG files across all resolutions:
+  - 144 DPI: 198KB → 69KB
+  - 300 DPI: 856KB → 298KB
+  - 600 DPI: 3.2MB → 1.1MB
+
+#### Optimization Journey
+- Initial Swift implementation was 10x slower than Objective-C
+- Optimized to only ~33% slower through:
+  - Replaced PDFKit with direct Core Graphics (`CGPDFDocument`)
+  - Implemented resource caching (color spaces, contexts)
+  - Pre-allocated memory buffers
+  - Fixed deprecated API warnings
+  - Optimized PNG compression settings
+- Both implementations maintain low memory usage (9-12 MB)
+- Binary sizes: ObjC (71KB) vs Swift (1.5MB)
 
 ### Changed
-- Build system restructured to support dual implementations
-  - Default target now builds Swift version
-  - Universal binary support for both implementations
-  - Separate test targets for each version
-- Project structure organized for Swift Package Manager:
-  - `Sources/pdf22png/` - Swift implementation
-  - `src/` - Objective-C implementation (preserved)
-  - `Tests/pdf22pngTests/` - Swift tests
-- Updated README to document both implementations and build options
-
-### Documentation
-- Created comprehensive migration guide (`docs/MIGRATION.md`) for transitioning between implementations
-- Added detailed build guide (`docs/BUILD.md`) covering both Swift and Objective-C builds
-- Updated API documentation (`docs/API.md`) to cover both implementations
-- Enhanced README with dual implementation information and version selection guidance
-- Added implementation status document (`IMPLEMENTATION_STATUS.md`) summarizing project completion
-
-### Testing
-- Verified Objective-C implementation with full test suite (9/9 tests passing)
-- Created comprehensive Swift test suite covering all core functionality
-- Added test scripts for validation of both implementations
-- Confirmed feature parity through testing
+- **Reverted Swift Rewrite**: Restored the original Objective-C implementation after an incomplete Swift port.
+  - Swift conversion was incomplete and caused loss of functionality
+  - Restored all Objective-C source files from git history
+  - Maintained all existing features and enhancements developed during the ObjC phase
+  - Preserved enhanced error reporting, overwrite protection, and all other improvements
+  - Codebase is back to the stable, fully-featured Objective-C implementation
 
 ### Added
 - File overwrite protection with interactive prompts
@@ -268,7 +129,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Covers PDF-related, file I/O, memory, scaling, and page range errors
   - Improved user experience with actionable error resolution
 
+### Improved
+- Batch processing now provides detailed progress feedback
+- Better user experience with visual progress indicators
+- More informative output during long-running operations
+
 ### Fixed
+- Fixed deprecated kUTTypePNG warnings in Objective-C implementation
+  - Added UniformTypeIdentifiers framework support
+  - Created compatibility layer for macOS 10.15+
+  - Uses UTTypePNG on macOS 12+ with fallback to kUTTypePNG
+- Optimized Swift implementation performance from 10x to ~33% slower
+  - Replaced PDFKit with direct Core Graphics usage
+  - Implemented resource caching for color spaces
+  - Pre-allocated memory buffers for better performance
+  - Created PDFError enum for proper error handling
 - Fixed sign comparison warnings in utils.m (NSInteger vs NSUInteger)
 - Replaced XCTest dependency with custom test runner for better compatibility
 - Improved test coverage with overwrite protection functionality tests
