@@ -11,13 +11,8 @@ let package = Package(
     products: [
         // Main CLI executable
         .executable(
-            name: "pdf22png-swift",
-            targets: ["PDF22PNGSwiftCLI"]
-        ),
-        // Core library that can be used by other Swift packages
-        .library(
-            name: "PDF22PNGCore",
-            targets: ["PDF22PNGCore"]
+            name: "pdf22png",
+            targets: ["pdf22png"]
         )
     ],
     dependencies: [
@@ -25,38 +20,15 @@ let package = Package(
         .package(url: "https://github.com/apple/swift-argument-parser", from: "1.2.0"),
     ],
     targets: [
-        // Core functionality library
-        .target(
-            name: "PDF22PNGCore",
-            dependencies: [],
-            path: "Sources/PDF22PNGCore"
-        ),
-        // Swift CLI implementation
+        // Main executable target
         .executableTarget(
-            name: "PDF22PNGSwiftCLI",
+            name: "pdf22png",
             dependencies: [
-                "PDF22PNGCore",
                 .product(name: "ArgumentParser", package: "swift-argument-parser")
             ],
-            path: "Sources/PDF22PNGCLI"
-        ),
-        // Objective-C compatibility layer
-        .target(
-            name: "PDF22PNGObjCBridge",
-            dependencies: ["PDF22PNGCore"],
-            path: "Sources/PDF22PNGObjCBridge",
-            publicHeadersPath: "include"
-        ),
-        // Tests
-        .testTarget(
-            name: "PDF22PNGCoreTests",
-            dependencies: ["PDF22PNGCore"],
-            path: "Tests/PDF22PNGCoreTests"
-        ),
-        .testTarget(
-            name: "PDF22PNGCLITests",
-            dependencies: ["PDF22PNGSwiftCLI"],
-            path: "Tests/PDF22PNGCLITests"
+            path: "src",
+            sources: ["main.swift"],
+            exclude: ["pdf22png.m", "utils.m", "pdf22png.h", "utils.h", "errors.h", "llms.txt", "Makefile", "*.o"]
         )
     ]
 )

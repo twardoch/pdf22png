@@ -1,0 +1,183 @@
+name: Performance Benchmarks
+
+on:
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'src/**'
+      - 'Sources/**'
+      - 'benchmarks/**'
+      - '.github/workflows/benchmark.yml'
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      extended:
+        description: 'Run extended benchmarks'
+        required: false
+        default: false
+        type: boolean
+
+jobs:
+  benchmark:
+    name: Run Performance Benchmarks
+    runs-on: macos-latest
+    
+    permissions:
+      contents: read
+      pull-requests: write
+      
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    
+    - name: Setup Xcode
+      uses: maxim-lobanov/setup-xcode@v1
+      with:
+        xcode-version: latest-stable
+    
+    - name: Cache build artifacts
+      uses: actions/cache@v3
+      with:
+        path: |
+          build/
+          .build/
+        key: ${{ runner.os }}-build-${{ hashFiles('**/*.m', '**/*.swift', 'Makefile', 'Package.swift') }}
+        restore-keys: |
+          ${{ runner.os }}-build-
+    
+    - name: Build implementations
+      run: |
+        echo "::group::Building implementations"
+        ./build.sh --clean
+        echo "::endgroup::"
+    
+    - name: Verify builds
+      run: |
+        echo "::group::Verifying builds"
+        ./build/pdf22png --version
+        ./build/pdf22png-swift --version
+        echo "::endgroup::"
+    
+    - name: Run benchmarks
+      id: benchmark
+      run: |
+        echo "::group::Running benchmarks"
+        BENCH_MODE="${{ github.event.inputs.extended == 'true' && '-e' || '' }}"
+        ./bench.sh $BENCH_MODE -o benchmark-results.csv --no-build
+        
+        # Save benchmark output
+        ./bench.sh $BENCH_MODE --no-build > benchmark-output.txt 2>&1
+        
+        # Extract key metrics
+        OBJC_TIME=$(grep "Objective-C:" benchmark-output.txt | grep "Average times" -A1 | tail -1 | awk '{print $3}')
+        SWIFT_TIME=$(grep "Swift:" benchmark-output.txt | grep "Average times" -A2 | tail -1 | awk '{print $3}')
+        OVERALL=$(grep "Overall: Swift is" benchmark-output.txt | sed 's/.*Swift is //' | sed 's/ than.*//')
+        
+        echo "objc_time=$OBJC_TIME" >> $GITHUB_OUTPUT
+        echo "swift_time=$SWIFT_TIME" >> $GITHUB_OUTPUT
+        echo "overall=$OVERALL" >> $GITHUB_OUTPUT
+        echo "::endgroup::"
+    
+    - name: Upload benchmark results
+      uses: actions/upload-artifact@v3
+      with:
+        name: benchmark-results
+        path: |
+          benchmark-results.csv
+          benchmark-output.txt
+    
+    - name: Check for performance regression
+      if: github.event_name == 'pull_request'
+      run: |
+        echo "::group::Checking for performance regression"
+        # Get baseline from main branch
+        git checkout main
+        ./build.sh --clean >/dev/null 2>&1
+        ./bench.sh -q --no-build > baseline-output.txt 2>&1
+        
+        BASELINE_OBJC=$(grep "Objective-C:" baseline-output.txt | grep "Average times" -A1 | tail -1 | awk '{print $3}' | sed 's/s//')
+        BASELINE_SWIFT=$(grep "Swift:" baseline-output.txt | grep "Average times" -A2 | tail -1 | awk '{print $3}' | sed 's/s//')
+        
+        # Switch back to PR branch
+        git checkout -
+        
+        # Compare with current results
+        CURRENT_OBJC=$(echo "${{ steps.benchmark.outputs.objc_time }}" | sed 's/s//')
+        CURRENT_SWIFT=$(echo "${{ steps.benchmark.outputs.swift_time }}" | sed 's/s//')
+        
+        # Calculate regression percentage
+        OBJC_REGRESSION=$(echo "scale=2; (($CURRENT_OBJC - $BASELINE_OBJC) / $BASELINE_OBJC) * 100" | bc)
+        SWIFT_REGRESSION=$(echo "scale=2; (($CURRENT_SWIFT - $BASELINE_SWIFT) / $BASELINE_SWIFT) * 100" | bc)
+        
+        echo "ObjC regression: ${OBJC_REGRESSION}%"
+        echo "Swift regression: ${SWIFT_REGRESSION}%"
+        
+        # Fail if regression > 10%
+        if (( $(echo "$OBJC_REGRESSION > 10" | bc -l) )) || (( $(echo "$SWIFT_REGRESSION > 10" | bc -l) )); then
+          echo "::error::Performance regression detected! ObjC: ${OBJC_REGRESSION}%, Swift: ${SWIFT_REGRESSION}%"
+          exit 1
+        fi
+        echo "::endgroup::"
+    
+    - name: Comment PR with results
+      if: github.event_name == 'pull_request'
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const fs = require('fs');
+          const output = fs.readFileSync('benchmark-output.txt', 'utf8');
+          
+          // Extract key sections
+          const perfComparison = output.match(/Performance Comparison[\s\S]*?(?=\n\n)/)?.[0] || '';
+          const summary = output.match(/Summary[\s\S]*?(?=Output Quality|$)/)?.[0] || '';
+          const quality = output.match(/Output Quality[\s\S]*?(?=Benchmark completed|$)/)?.[0] || '';
+          
+          const comment = `## 📊 Performance Benchmark Results
+          
+          **Overall Performance**: Swift is ${{ steps.benchmark.outputs.overall }} than Objective-C
+          
+          ### Average Times
+          - **Objective-C**: ${{ steps.benchmark.outputs.objc_time }}
+          - **Swift**: ${{ steps.benchmark.outputs.swift_time }}
+          
+          <details>
+          <summary>Detailed Results</summary>
+          
+          \`\`\`
+          ${perfComparison}
+          \`\`\`
+          
+          \`\`\`
+          ${summary}
+          \`\`\`
+          
+          \`\`\`
+          ${quality}
+          \`\`\`
+          </details>
+          
+          [Download full benchmark results](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
+          `;
+          
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: comment
+          });
+    
+    - name: Performance badge data
+      if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+      run: |
+        # Create badge data for README
+        echo "{\"objc\": \"${{ steps.benchmark.outputs.objc_time }}\", \"swift\": \"${{ steps.benchmark.outputs.swift_time }}\", \"comparison\": \"${{ steps.benchmark.outputs.overall }}\"}" > badge-data.json
+    
+    - name: Upload badge data
+      if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+      uses: actions/upload-artifact@v3
+      with:
+        name: performance-badge-data
+        path: badge-data.json

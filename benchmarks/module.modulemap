@@ -1,0 +1,4 @@
+module PDF22PNGCore {
+    header "../.build/release/PDF22PNGCore.swiftmodule"
+    export *
+}

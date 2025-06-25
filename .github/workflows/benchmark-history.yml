@@ -1,0 +1,105 @@
+name: Benchmark History
+
+on:
+  workflow_run:
+    workflows: ["Performance Benchmarks"]
+    types:
+      - completed
+    branches: [main]
+
+jobs:
+  store-history:
+    name: Store Benchmark History
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    
+    permissions:
+      contents: write
+      
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        ref: benchmark-history
+        fetch-depth: 0
+    
+    - name: Create branch if needed
+      run: |
+        if ! git show-ref --quiet refs/heads/benchmark-history; then
+          git checkout -b benchmark-history
+          echo "# Benchmark History" > README.md
+          echo "" >> README.md
+          echo "This branch stores historical benchmark data for pdf22png." >> README.md
+          git add README.md
+          git commit -m "Initialize benchmark history branch"
+        fi
+    
+    - name: Download benchmark artifacts
+      uses: actions/download-artifact@v3
+      with:
+        name: benchmark-results
+        path: temp/
+        run-id: ${{ github.event.workflow_run.id }}
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Download badge data
+      uses: actions/download-artifact@v3
+      with:
+        name: performance-badge-data
+        path: temp/
+        run-id: ${{ github.event.workflow_run.id }}
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Process and store results
+      run: |
+        # Create data directory structure
+        YEAR=$(date +%Y)
+        MONTH=$(date +%m)
+        DAY=$(date +%d)
+        TIMESTAMP=$(date +%s)
+        
+        mkdir -p "data/$YEAR/$MONTH"
+        
+        # Store CSV results
+        if [ -f "temp/benchmark-results.csv" ]; then
+          cp "temp/benchmark-results.csv" "data/$YEAR/$MONTH/${DAY}_${TIMESTAMP}_benchmark.csv"
+        fi
+        
+        # Store badge data in root for easy access
+        if [ -f "temp/badge-data.json" ]; then
+          cp "temp/badge-data.json" "latest-badge-data.json"
+        fi
+        
+        # Update summary
+        if [ -f "temp/benchmark-output.txt" ]; then
+          echo "" >> "data/$YEAR/$MONTH/summary.md"
+          echo "## Run: $(date -u +"%Y-%m-%d %H:%M:%S UTC")" >> "data/$YEAR/$MONTH/summary.md"
+          echo "Commit: ${{ github.event.workflow_run.head_sha }}" >> "data/$YEAR/$MONTH/summary.md"
+          echo "" >> "data/$YEAR/$MONTH/summary.md"
+          grep -A 10 "Summary" "temp/benchmark-output.txt" >> "data/$YEAR/$MONTH/summary.md"
+          echo "" >> "data/$YEAR/$MONTH/summary.md"
+          echo "---" >> "data/$YEAR/$MONTH/summary.md"
+        fi
+    
+    - name: Generate performance graph
+      run: |
+        # Simple CSV aggregation for graphing tools
+        echo "date,objc_avg,swift_avg,swift_slowdown" > performance-history.csv
+        
+        # Aggregate all CSV files
+        for csv in data/*/*/*.csv; do
+          if [ -f "$csv" ]; then
+            DATE=$(basename "$csv" | cut -d'_' -f1)
+            # Extract averages from CSV (this is simplified, would need proper parsing)
+            echo "Processing $csv for date $DATE"
+          fi
+        done
+    
+    - name: Commit and push
+      run: |
+        git config user.name "github-actions[bot]"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
+        
+        git add .
+        git commit -m "Update benchmark history from run ${{ github.event.workflow_run.id }}" || true
+        git push origin benchmark-history
