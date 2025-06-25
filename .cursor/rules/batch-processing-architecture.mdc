@@ -1,71 +1,62 @@
 ---
-description: Documents the parallel processing architecture for PDF batch conversions using Grand Central Dispatch
-globs: src/pdf22png.m,src/utils.m
+description: File listings and documentation for batch conversion with parallel processing architecture using GCD
+globs: src/Core/BatchProcessor.*,src/Core/MemoryPool.*,src/Core/SmartRenderer.*
 alwaysApply: false
 ---
 
 
 # batch-processing-architecture
 
-## Parallel Processing Implementation
+## Memory-Aware Batch Processing Model
 
-The batch processing architecture utilizes Grand Central Dispatch (GCD) to parallelize PDF page conversions:
+The project implements a specialized batch processing architecture optimized for PDF-to-PNG conversions:
 
-### Core Components
-
-1. **Batch Mode Dispatcher**
-- Located in: `src/pdf22png.m`
-- Manages concurrent page processing using GCD dispatch queues
-- Handles thread synchronization for batch operations
-
-2. **Worker Thread Management**
-- Distributes page conversion tasks across multiple threads
-- Maintains thread-safe status updates for conversion progress
-- Implements autorelease pools for memory management during batch operations
-
-3. **Output Coordination**
-- Manages concurrent file writing for multiple page outputs
-- Generates sequential output filenames based on page numbers
-- Coordinates directory access for batch output files
-
-### Batch Processing Workflow
-
-1. **Initialization Phase**
-```
-Input PDF -> Page Count Analysis -> Worker Thread Pool Creation
+### Memory Pool Management
+```swift
+let maxPoolSize = 10 
+let maxMemoryUsage = 500 * 1024 * 1024 // 500MB limit
 ```
 
-2. **Distribution Phase**
+- Context pools allocated based on page characteristics
+- Time-based context lifecycle tracking 
+- Memory pressure monitoring and adaptation
+
+### Smart Rendering Pipeline
+
+Content classification system determining processing strategy:
+```swift
+enum PageComplexity {
+    case simple        // Text-dominant 
+    case moderate     // Mixed content
+    case complex      // Graphics-heavy
+    case veryComplex  // Vector-intensive
+}
 ```
-Page Tasks -> GCD Dispatch Queue -> Worker Threads
-```
 
-3. **Synchronization Phase**
-```
-Worker Results -> Status Aggregation -> Final Output
-```
+- Rendering strategy selection based on page content analysis
+- Resource allocation adjustments per content type
+- Fallback mechanisms for resource constraints
 
-### Critical Business Rules
+### Batch Scaling Logic
 
-1. **Page Processing Order**
-- Pages can be processed in any order
-- Output filenames maintain sequential numbering regardless of completion order
-- Each page conversion is atomic and independent
+Custom batch size calculations using:
+- Available system memory
+- Page complexity metrics  
+- Current memory pressure
+- Active conversion count
 
-2. **Resource Management**
-- Worker threads utilize independent autorelease pools
-- Memory allocation is managed per-page rather than globally
-- PDF document remains open for shared access across threads
+### Resource Management
 
-3. **Error Handling**
-- Individual page failures don't halt batch processing
-- Success/failure status tracked independently per page
-- Aggregate status reported after all pages complete
+Memory threshold monitoring:
+- Low memory threshold: 512MB
+- Critical threshold: 256MB
+- Dynamic batch size adjustments
+- Context pool recycling
 
-4. **Output Coordination**
-- Thread-safe file naming pattern generation
-- Directory management for multiple output files
-- Status tracking for completed conversions
+Relevant Files:
+- src/Core/BatchProcessor.swift
+- src/Core/MemoryPool.swift
+- src/Core/SmartRenderer.swift
 
 $END$
 

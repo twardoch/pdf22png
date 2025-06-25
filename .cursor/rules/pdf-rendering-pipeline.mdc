@@ -1,50 +1,61 @@
 ---
-description: Documentation and analysis of PDF to PNG rendering pipeline including page extraction, CoreGraphics rendering, and image compression
-globs: src/pdf22png.m,src/utils.m,src/*.h
+description: Specialized PDF page extraction and rendering pipeline with PNG output optimization and transparency handling
+globs: src/Core/PDFProcessor.*,src/Core/ImageRenderer.*,src/Core/MemoryManager.*,src/Models/ProcessingOptions.*
 alwaysApply: false
 ---
 
 
-# pdf-rendering-pipeline 
+# pdf-rendering-pipeline
 
-## Core Rendering Components
+## PDF Page Extraction
+- CoreGraphics context management for efficient page isolation
+- Custom page boundary detection with transparency preservation
+- Intelligent page content analysis for optimal extraction strategy
 
-### PDF Page Extraction (Importance: 95)
-- Extracts individual PDF pages using Core Graphics
-- Handles both single page and batch extraction modes
-- Validates page numbers against document bounds
-- Manages PDF document context and page references
+## Rendering Pipeline
+```swift
+enum RenderingStrategy {
+    case standardQuality   // Default balanced mode
+    case highFidelity     // Maximum quality preservation
+    case memoryOptimized  // Reduced memory footprint
+}
+```
 
-### CoreGraphics Rendering (Importance: 90)
-- Creates bitmap contexts sized to target dimensions
-- Applies transformation matrix for scaling/positioning
-- Renders PDF content through CoreGraphics drawing
-- Handles different color spaces and bit depths
-- Preserves vector quality during rasterization
+Core rendering workflow:
+1. Page content analysis
+2. CoreGraphics context setup with transparency support
+3. Color space mapping for PNG output
+4. Background layer composition
+5. Compression optimization
 
-### Transparency Handling (Importance: 85)
-- Supports transparent backgrounds through alpha channel
-- Creates RGBA bitmap contexts when transparency enabled
-- Maintains PDF transparency groups during rendering
-- Properly blends transparent elements
+## Transparency Handling
+- Alpha channel preservation during PDF extraction
+- Custom background composition modes:
+  - Full transparency
+  - White background
+  - Custom color fills
+- Intelligent alpha masking for complex page elements
 
-### PNG Compression Pipeline (Importance: 80)
-- Configurable compression levels (0-9)
-- Converts rendered bitmap to PNG format
-- Handles color space conversion for output
-- Manages PNG metadata and color profiles
-- Supports both file and stream-based output
+## PNG Compression Workflow
+```swift
+struct CompressionConfig {
+    let quality: Int        // 0-9 range
+    let colorSpace: Int     // PNG color space selection  
+    let interlaced: Bool    // Progressive loading support
+}
+```
 
-### Scale Management (Importance: 75)
-- Calculates render dimensions from scale specifications
-- Supports percentage, DPI, and fixed dimension scaling
-- Maintains aspect ratios during scaling
-- Applies appropriate transform matrices
+Optimization pipeline:
+1. Color space analysis and mapping
+2. Adaptive compression level selection
+3. Metadata preservation rules
+4. Output format validation
 
-File paths:
-- src/pdf22png.m: Main rendering pipeline implementation
-- src/utils.m: Scale calculation and image processing utilities
-- src/pdf22png.h: Rendering pipeline interfaces
+File paths containing core rendering logic:
+- src/Core/PDFProcessor.swift
+- src/Core/ImageRenderer.swift 
+- src/Core/MemoryManager.swift
+- src/Models/ProcessingOptions.swift
 
 $END$
 

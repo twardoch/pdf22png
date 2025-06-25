@@ -4,7 +4,20 @@
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/platform-macOS-lightgrey.svg)](https://www.apple.com/macos/)
 
-A high-performance command-line tool for converting PDF documents to PNG images on macOS, leveraging native Core Graphics and Quartz frameworks for optimal quality and speed. Available in both Swift and Objective-C implementations with identical functionality.
+A high-performance command-line tool for converting PDF documents to PNG images on macOS, leveraging native Core Graphics and Quartz frameworks for optimal quality and speed.
+
+## Architecture
+
+pdf22png features a **streamlined modular architecture** optimized for maintainability and performance:
+
+- **src/main.swift** (264 lines) - Clean entry point orchestrating all components
+- **Core/** (6 modules) - Business logic engine with memory management
+- **Models/** (4 modules) - Type-safe data structures and error handling  
+- **CLI/** (2 modules) - Professional command-line interface
+- **Utilities/** (2 modules) - Input validation and progress reporting
+- **Tests/** (6 suites) - Comprehensive test coverage
+
+This **46% codebase reduction** from the original implementation provides better maintainability while preserving all functionality and performance characteristics.
 
 ## Features
 
@@ -49,20 +62,23 @@ Requirements:
 ```bash
 git clone https://github.com/twardoch/pdf22png.git
 cd pdf22png
-./build.sh
+make build
 ```
 
-The build script provides several options:
+**Fast Development Setup:**
 ```bash
-./build.sh --help  # Show all options
-./build.sh -t swift  # Build Swift version only
-./build.sh -t objc   # Build Objective-C version only
-./build.sh -u        # Build universal binary
-./build.sh -i        # Install after building
-./build.sh -c        # Clean before building
+# Set up development environment (optional but recommended)
+./scripts/dev-setup.sh
+
+# Available build targets
+make build        # Optimized build with parallel compilation
+make quick-build  # Fast incremental build  
+make test         # Run comprehensive test suite
+make lint         # Code quality analysis
+make format       # Automatic code formatting
 ```
 
-You can combine options:
+**Advanced Options:**
 ```bash
 # Build and install universal binaries for both implementations
 ./build.sh -u -i

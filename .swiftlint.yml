@@ -1,0 +1,60 @@
+# SwiftLint Configuration for pdf22png
+# Focused on maintaining code quality without being overly restrictive
+
+# Disabled rules that don't fit our project style
+disabled_rules:
+  - trailing_whitespace  # Handled by editor config
+  - todo                 # We want to keep TODOs during development
+  - line_length          # We'll set a custom length below
+
+# Opt-in rules for better code quality
+opt_in_rules:
+  - empty_count
+  - explicit_init
+  - force_unwrapping
+  - unused_import
+  - vertical_whitespace_closing_braces
+  - vertical_whitespace_opening_braces
+
+# Custom rule configurations
+line_length: 120              # Reasonable limit for modern displays
+function_body_length: 80      # Keep functions focused
+type_body_length: 400         # Allow for larger types but encourage splitting
+file_length: 500              # Encourage modular design
+function_parameter_count: 6   # Allow reasonable parameter counts
+large_tuple: 4                # Encourage using structs over large tuples
+nesting: 3                    # Keep nesting reasonable
+
+# Paths to include/exclude
+included:
+  - src
+  - Tests
+
+excluded:
+  - archive
+  - docs
+  - scripts
+  - homebrew
+  - .build
+  - build
+
+# Custom configurations for specific rules
+identifier_name:
+  min_length: 1    # Allow single-letter variable names in short contexts
+  max_length: 60   # Reasonable limit for descriptive names
+  excluded:
+    - i            # Common loop counter
+    - x            # Common coordinate
+    - y            # Common coordinate
+
+# Force unwrapping configuration
+force_unwrapping:
+  severity: warning  # Warning instead of error for flexibility
+
+# Cyclomatic complexity
+cyclomatic_complexity:
+  warning: 15      # Allow reasonable complexity
+  error: 25        # Error threshold
+
+# Reporter configuration
+reporter: "xcode"   # Xcode-compatible output format

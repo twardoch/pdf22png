@@ -4,7 +4,7 @@ PRODUCT_NAME = pdf22png
 VERSION = $(shell git describe --tags --always --dirty)
 PREFIX ?= /usr/local
 
-.PHONY: all clean install uninstall test universal release fmt lint
+.PHONY: all clean install uninstall test universal release fmt lint quick-build
 
 all: build
 
@@ -20,6 +20,10 @@ release:
 universal:
 	@echo "Building universal binary..."
 	@$(MAKE) -C src universal
+
+quick-build:
+	@echo "Quick incremental build..."
+	@$(MAKE) -C src quick-build
 
 # Test targets
 test:

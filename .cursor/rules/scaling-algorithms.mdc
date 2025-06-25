@@ -1,61 +1,48 @@
 ---
-description: Specification for PDF scaling algorithms including resolution control, dimension fitting, and aspect ratio preservation
-globs: src/utils.m,src/pdf22png.m,*.h
+description: Technical documentation for PDF scaling algorithms including percentage, DPI, dimension and aspect ratio calculations
+globs: src/Models/ScaleSpecification.*,src/Core/PDFProcessor.*,src/Core/ImageRenderer.*
 alwaysApply: false
 ---
 
 
 # scaling-algorithms
 
-## Core Scaling Logic
+## Scale Specification Model
+```swift
+enum ScaleType {
+    case percentage(Double)   // "150%"
+    case factor(Double)      // "2.0" 
+    case fixedWidth(Int)     // "800x"
+    case fixedHeight(Int)    // "x600"
+    case boundingBox(Int, Int) // "800x600"
+}
+```
 
-### Scale Specification Parsing (Importance: 95)
-- Parses user scaling inputs into standardized formats:
-  - Percentage scaling (e.g. "150%")
-  - Resolution-based (DPI) scaling
-  - Fixed dimension scaling (width/height)
-  - Aspect ratio preservation
-- Located in `src/utils.m:parseScaleSpec()`
+Core scaling algorithms supporting:
 
-### Scale Factor Calculation (Importance: 90)
-- Converts parsed scale specs into concrete scaling factors:
-  - Percentage to decimal multiplier
-  - DPI to PDF-native 72 DPI ratio
-  - Dimension constraints to appropriate scale values
-- Maintains aspect ratio when scaling to fixed dimensions
-- Located in `src/utils.m:calculateScaleFactor()`
+1. Percentage-Based Scaling
+- Direct percentage multiplier (e.g. "150%")
+- Fractional percentages supported
+- Auto-adjusts for image quality preservation
 
-### Resolution Control (Importance: 85)
-- Handles DPI-based scaling calculations
-- Default resolution: 144 DPI 
-- Converts between DPI specifications and internal scale factors
-- Located in `src/pdf22png.m`
+2. DPI-Based Resolution Scaling 
+- Input DPI detection and mapping
+- Target DPI specification
+- DPI ratio calculation for scale factor
+- Default 144 DPI baseline
 
-### Dimension Fitting (Importance: 80)
-- Supports multiple dimension specification formats:
-  - Fixed width (800x)
-  - Fixed height (x600) 
-  - Bounded box (800x600)
-- Calculates appropriate scaling while preserving aspect ratio
-- Located in `src/utils.m`
+3. Dimension-Based Constraints
+- Fixed width with auto-height
+- Fixed height with auto-width
+- Bounding box fitting with aspect preservation
+- Maximum dimension limits
 
-### Aspect Ratio Preservation (Importance: 75)
-- Maintains original PDF page proportions during scaling
-- Implements "fit within" logic for bounded scaling
-- Calculates maximum scale factor that satisfies both dimensions
-- Located in `src/utils.m:calculateScaleFactor()`
+4. Aspect Ratio Logic
+- Original aspect ratio preservation
+- Intelligent fitting within constraints
+- Auto-padding for dimension alignment
 
-## Scale Application
-
-### Render Context Scaling (Importance: 70)
-- Applies calculated scale factors to Core Graphics render context
-- Handles coordinate system transformations
-- Located in `src/utils.m:renderPDFPageToImage()`
-
-### Multi-page Scaling (Importance: 65)
-- Applies consistent scaling across all pages in batch mode
-- Maintains uniform dimensions across output files
-- Located in `src/pdf22png.m`
+The scaling system implements specialized PDF-to-PNG conversion with focus on quality preservation and flexible output formats. Scale specifications support multiple input formats while maintaining consistent rendering quality through intelligent DPI and dimension management.
 
 $END$
 
