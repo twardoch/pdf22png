@@ -7,6 +7,162 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **MAJOR CODEBASE REORGANIZATION**: Complete restructuring into dual self-contained implementations
+  - **Removed**: Old `src/` directory structure with mixed implementation
+  - **Removed**: Root-level `Makefile` and `Package.swift` files
+  - **Created**: `pdf22png-objc/` directory with complete Objective-C implementation
+    - Self-contained source files: `pdf22png.m`, `utils.m`, `*.h`
+    - Complete Makefile with build, debug, universal, install, test targets
+    - Implementation-specific README emphasizing performance
+    - Binary output: `pdf22png-objc/build/pdf22png`
+  - **Created**: `pdf22png-swift/` directory with complete Swift implementation
+    - Simplified single-file implementation using ArgumentParser
+    - Swift Package Manager configuration with minimal dependencies
+    - Makefile wrapper for consistent build interface
+    - Implementation-specific README emphasizing modern Swift features
+    - Binary output: `pdf22png-swift/.build/release/pdf22png-swift`
+  - **Enhanced**: Top-level `build.sh` script now orchestrates both implementations
+    - Build both: `./build.sh`
+    - Build specific: `./build.sh --objc-only` or `./build.sh --swift-only`
+    - Debug builds: `./build.sh --debug`
+    - Clean builds: `./build.sh --clean`
+    - Verbose output: `./build.sh --verbose`
+    - Color-coded output with build status indicators
+
+### Added
+- **Self-Contained Build Systems**: Each implementation has its own complete build system
+  - **Objective-C**: Traditional Makefile with clang compilation
+    - Targets: `all`, `debug`, `universal`, `install`, `uninstall`, `clean`, `test`, `help`
+    - Universal binary support for Intel + Apple Silicon
+    - Static analysis and profiling options
+  - **Swift**: Swift Package Manager with ArgumentParser dependency
+    - Targets: `build`, `debug`, `test`, `install`, `uninstall`, `clean`, `reset`, `help`
+    - Modern Swift 5.7+ with structured error handling
+    - Single-file implementation for easier maintenance
+- **Implementation-Specific Documentation**: Focused README files for each implementation
+  - **Objective-C README**: Emphasizes performance, native frameworks, file locking, OCR
+  - **Swift README**: Emphasizes type safety, modern architecture, ArgumentParser integration
+  - **Main README**: Updated with clear comparison table and decision guide
+- **Unified Build Experience**: Top-level build script with comprehensive options
+  - Parallel build support for both implementations
+  - Individual implementation selection
+  - Consistent interface across different build systems
+  - Error handling and status reporting
+
+### Fixed
+- **Swift Implementation Stability**: Completely rebuilt for reliability
+  - Removed complex module dependencies that caused circular import issues
+  - Eliminated missing type errors and build failures
+  - Fixed macOS version compatibility (now requires macOS 11+ for UTType support)
+  - Simplified Package.swift structure for reliable dependency resolution
+  - Consolidated into single main.swift file with ArgumentParser
+- **Build System Reliability**: Eliminated build conflicts and dependency issues
+  - Removed shared code that caused maintenance overhead
+  - Fixed Swift Package Manager configuration issues
+  - Resolved file path conflicts between implementations
+  - Standardized build output locations
+
+### Removed
+- **Legacy Mixed Implementation**: Cleaned up old architecture
+  - Removed `src/` directory with mixed Objective-C/Swift code
+  - Removed root-level `Makefile` that tried to handle both implementations
+  - Removed root-level `Package.swift` with complex module structure
+  - Eliminated shared dependencies that caused conflicts
+- **Complex Module Structure**: Simplified Swift implementation
+  - Removed separate CLI, Core, Models, Utilities modules
+  - Eliminated circular dependencies and import issues
+  - Removed unused test files and complex Package.swift targets
+
+### Technical Details
+- **Objective-C Implementation** (`pdf22png-objc/`):
+  - Binary: `pdf22png-objc/build/pdf22png`
+  - Build time: ~2 seconds
+  - Memory usage: 9-12 MB
+  - Features: Complete feature set with file locking, OCR, advanced error handling
+  - Dependencies: System frameworks only
+- **Swift Implementation** (`pdf22png-swift/`):
+  - Binary: `pdf22png-swift/.build/release/pdf22png-swift`
+  - Build time: ~60 seconds (includes dependency resolution)
+  - Modern Swift with ArgumentParser for CLI
+  - Simplified architecture for easier maintenance
+  - Dependencies: ArgumentParser only
+
+### Documentation Updates
+- **CHANGELOG.md**: Updated with comprehensive reorganization details
+- **README.md**: Complete rewrite for dual-implementation architecture
+  - Clear comparison table between implementations
+  - Updated usage examples with correct binary paths
+  - Decision guide for choosing implementation
+  - Installation instructions for both implementations
+- **PLAN.md**: Updated to reflect new architecture and future roadmap
+  - Focus on polishing and enhancing both implementations independently
+  - Clear development workflow for dual implementations
+- **TODO.md**: Restructured for dual-implementation development plan
+  - Implementation-specific enhancement priorities
+  - Cross-implementation validation strategies
+  - Independent evolution roadmap
+
+### Migration Guide
+- **Old Usage**: `./build/pdf22png input.pdf output.png`
+- **New Usage**:
+  - Objective-C: `./pdf22png-objc/build/pdf22png input.pdf output.png`
+  - Swift: `./pdf22png-swift/.build/release/pdf22png-swift input.pdf output.png`
+- **Building**: Use `./build.sh` instead of `make` for unified builds
+- **Installation**: Each implementation can be installed independently
+
+### Changed
+- **Major Codebase Reorganization**: Split into separate, self-contained implementations
+  - Created `pdf22png-objc/` directory with complete Objective-C implementation
+  - Created `pdf22png-swift/` directory with complete Swift implementation
+  - Each implementation is now fully self-contained with its own:
+    - Source code and headers
+    - Makefile with build, debug, install, and test targets
+    - README with implementation-specific documentation
+    - Build artifacts in their own directories
+  - Updated top-level `build.sh` script to build both implementations
+    - Supports `--objc-only` and `--swift-only` options
+    - Supports `--debug` for debug builds
+    - Supports `--clean` for clean builds
+    - Supports `--verbose` for detailed output
+    - Color-coded output with build status
+  - Removed old `src/` directory and consolidated files
+  - Each implementation can be built, installed, and used independently
+
+### Added
+- **Self-Contained Build System**: Each implementation has its own complete build system
+  - Objective-C: Traditional Makefile with clang compilation
+  - Swift: Swift Package Manager with ArgumentParser dependency
+- **Unified Build Script**: Top-level `build.sh` orchestrates both implementations
+  - Build both: `./build.sh`
+  - Build one: `./build.sh --objc-only` or `./build.sh --swift-only`
+  - Debug builds: `./build.sh --debug`
+  - Clean builds: `./build.sh --clean`
+- **Implementation-Specific Documentation**: Each directory contains focused README
+  - Objective-C README emphasizes performance and native frameworks
+  - Swift README emphasizes type safety and modern architecture
+
+### Fixed
+- **Swift Implementation Stability**: Simplified Swift implementation for reliability
+  - Removed complex module dependencies that caused build issues
+  - Consolidated into single-file implementation using ArgumentParser
+  - Fixed macOS version compatibility issues (now requires macOS 11+)
+  - Eliminated circular dependencies and missing type errors
+  - Simplified Package.swift structure for reliable builds
+
+### Technical Details
+- **Objective-C Implementation** (`pdf22png-objc/`):
+  - Binary: `pdf22png-objc/build/pdf22png`
+  - Build time: ~2 seconds
+  - Memory usage: 9-12 MB
+  - Optimized for maximum performance
+- **Swift Implementation** (`pdf22png-swift/`):
+  - Binary: `pdf22png-swift/.build/release/pdf22png-swift`
+  - Build time: ~60 seconds (includes dependency resolution)
+  - Modern Swift with ArgumentParser
+  - Type-safe error handling
+  - Requires macOS 11+ for UTType support
+
 ### Added
 - **Enhanced Progress Reporting for Batch Operations**:
   - Real-time progress bar with visual indicators

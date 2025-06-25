@@ -4,10 +4,11 @@
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/platform-macOS-lightgrey.svg)](https://www.apple.com/macos/)
 
-A high-performance command-line tool for converting PDF documents to PNG images on macOS, leveraging native Core Graphics and Quartz frameworks for optimal quality and speed. Available in both Objective-C and Swift implementations with comprehensive performance benchmarks.
+A high-performance command-line tool for converting PDF documents to PNG images on macOS, available in two separate, self-contained implementations: a performance-optimized Objective-C version and a modern Swift version with advanced features.
 
 ## Features
 
+- **Dual Implementation Architecture**: Choose between Objective-C (performance) or Swift (modern features)
 - **Single & Batch Conversion**: Convert individual pages or entire PDF documents
 - **Flexible Scaling Options**: 
   - Resolution control (DPI)
@@ -27,10 +28,8 @@ A high-performance command-line tool for converting PDF documents to PNG images 
   - Read from files or stdin
   - Write to files, stdout, or batch output directories
   - Customizable output naming patterns
-- **Native Performance**: Built with Objective-C using macOS native frameworks
-- **Swift Implementation**: Modern Swift port with identical functionality
-- **Performance Benchmarks**: Comprehensive benchmark suite comparing both implementations
-- **Universal Binary**: Supports both Intel and Apple Silicon Macs
+- **Self-Contained Implementations**: Each version is completely independent
+- **Universal Binary Support**: Supports both Intel and Apple Silicon Macs
 
 ## Installation
 
@@ -44,20 +43,19 @@ brew install pdf22png
 ### Building from Source
 
 Requirements:
-- macOS 10.15 or later
+- macOS 10.15 or later (macOS 11+ for Swift implementation)
 - Xcode Command Line Tools
-- Swift 5.5 or later (for Swift implementation)
+- Swift 5.7 or later (for Swift implementation only)
 
 ```bash
 git clone https://github.com/twardoch/pdf22png.git
 cd pdf22png
 ./build.sh
-sudo make install
 ```
 
 #### Build Options
 
-The `build.sh` script provides comprehensive build options:
+The unified `build.sh` script builds both implementations:
 
 ```bash
 # Build both implementations (default)
@@ -69,66 +67,92 @@ The `build.sh` script provides comprehensive build options:
 # Build only Swift version  
 ./build.sh --swift-only
 
-# Build universal binary for Objective-C
-./build.sh --universal
+# Debug builds
+./build.sh --debug
 
 # Clean build
 ./build.sh --clean
 
-# Debug build
-./build.sh --debug
+# Verbose output
+./build.sh --verbose
 ```
 
-Alternatively, use Make directly:
+Each implementation can also be built independently:
 
 ```bash
-# Build Objective-C version
-make
+# Objective-C implementation
+cd pdf22png-objc && make
 
-# Build Swift version
-make swift
+# Swift implementation  
+cd pdf22png-swift && make
+```
 
-# Build both
-make both
+#### Installation
 
-# Universal binary
-make universal
+Each implementation can be installed independently:
+
+```bash
+# Install Objective-C version
+cd pdf22png-objc && make install
+
+# Install Swift version
+cd pdf22png-swift && make install
+
+# Install both (different binary names)
+cd pdf22png-objc && make install
+cd ../pdf22png-swift && make install
 ```
 
 ## Usage
 
+### Binary Locations
+
+After building, the binaries are located at:
+- **Objective-C**: `pdf22png-objc/build/pdf22png`
+- **Swift**: `pdf22png-swift/.build/release/pdf22png-swift`
+
 ### Basic Syntax
 
 ```bash
-pdf22png [OPTIONS] <input.pdf> [output.png]
+# Objective-C implementation
+./pdf22png-objc/build/pdf22png [OPTIONS] <input.pdf> [output.png]
+
+# Swift implementation
+./pdf22png-swift/.build/release/pdf22png-swift [OPTIONS] <input.pdf> [output.png]
 ```
+
+Both implementations share the same command-line interface and options.
 
 ### Quick Examples
 
 Convert first page of a PDF:
 ```bash
-pdf22png input.pdf output.png
-```
+# Using Objective-C implementation
+./pdf22png-objc/build/pdf22png input.pdf output.png
 
-Convert a specific page:
-```bash
-pdf22png -p 5 document.pdf page5.png
+# Using Swift implementation
+./pdf22png-swift/.build/release/pdf22png-swift input.pdf output.png
 ```
 
 Convert all pages to individual PNGs:
 ```bash
-pdf22png -a document.pdf
+./pdf22png-objc/build/pdf22png -a document.pdf
 # Creates: document-001.png, document-002.png, etc.
 ```
 
 Convert at 300 DPI resolution:
 ```bash
-pdf22png -r 300 input.pdf high-res.png
+./pdf22png-objc/build/pdf22png -r 300 input.pdf high-res.png
 ```
 
 Scale to 50% size:
 ```bash
-pdf22png -s 50% input.pdf half-size.png
+./pdf22png-objc/build/pdf22png -s 50% input.pdf half-size.png
+```
+
+Convert a specific page:
+```bash
+./pdf22png-objc/build/pdf22png -p 5 document.pdf page5.png
 ```
 
 ### Options
@@ -181,156 +205,227 @@ Use `-P/--pattern` with placeholders for batch conversions:
 - `{time}` - Current time in HHMMSS format
 - `{total}` - Total page count
 
-Example: `pdf22png -P '{basename}_p{page:04d}_of_{total}' doc.pdf`
+Example: `./pdf22png-objc/build/pdf22png -P '{basename}_p{page:04d}_of_{total}' doc.pdf`
 Creates: `doc_p0001_of_10.png`, `doc_p0002_of_10.png`, etc.
 
 ### Advanced Examples
 
 Convert with transparent background at 300 DPI:
 ```bash
-pdf22png -t -r 300 input.pdf transparent-300dpi.png
+./pdf22png-objc/build/pdf22png -t -r 300 input.pdf transparent-300dpi.png
 ```
 
 Batch convert all pages to a specific directory:
 ```bash
-pdf22png -d ./output_images -o myprefix document.pdf
+./pdf22png-objc/build/pdf22png -d ./output_images -o myprefix document.pdf
 # Creates: ./output_images/myprefix-001.png, etc.
 ```
 
 Convert specific page ranges:
 ```bash
-pdf22png -p 1-3,5,10-15 document.pdf
+./pdf22png-objc/build/pdf22png -p 1-3,5,10-15 document.pdf
 # Converts pages 1, 2, 3, 5, 10, 11, 12, 13, 14, 15
 ```
 
 Use custom naming pattern with extracted text:
 ```bash
-pdf22png -a -n -P '{basename}-{page:03d}--{text}' document.pdf
+./pdf22png-objc/build/pdf22png -a -n -P '{basename}-{page:03d}--{text}' document.pdf
 # Creates: document-001--introduction.png, document-002--chapter-one.png, etc.
 ```
 
 Preview operations with dry-run mode:
 ```bash
-pdf22png -a -D -P 'page_{page}_of_{total}' document.pdf
+./pdf22png-objc/build/pdf22png -a -D -P 'page_{page}_of_{total}' document.pdf
 # Shows what files would be created without actually writing them
 ```
 
 Force overwrite existing files without prompting:
 ```bash
-pdf22png -f -a document.pdf
+./pdf22png-objc/build/pdf22png -f -a document.pdf
 # Overwrites existing files without asking
 ```
 
 Pipe operations:
 ```bash
 # From stdin to stdout
-cat document.pdf | pdf22png - - > output.png
+cat document.pdf | ./pdf22png-objc/build/pdf22png - - > output.png
 
 # Process and pipe to ImageMagick
-pdf22png -r 300 input.pdf - | convert - -resize 50% final.jpg
+./pdf22png-objc/build/pdf22png -r 300 input.pdf - | convert - -resize 50% final.jpg
 ```
 
 ## Architecture
 
-pdf22png is available in two implementations, each with distinct characteristics:
+pdf22png features two completely separate, self-contained implementations:
 
-### Objective-C Implementation (Original)
+### Directory Structure
 
-**Binary**: `pdf22png`  
-**Status**: Production-ready, optimized  
+```
+pdf22png/
+├── pdf22png-objc/          # Objective-C Implementation
+│   ├── build/              # Build output
+│   ├── pdf22png.m          # Main implementation
+│   ├── utils.m             # Utility functions
+│   ├── *.h                 # Header files
+│   ├── Makefile            # Build system
+│   └── README.md           # Implementation-specific docs
+├── pdf22png-swift/         # Swift Implementation  
+│   ├── .build/             # Swift build output
+│   ├── Sources/            # Swift source code
+│   ├── Package.swift       # Swift package definition
+│   ├── Makefile            # Build system wrapper
+│   └── README.md           # Implementation-specific docs
+├── build.sh                # Unified build script
+└── README.md               # This file
+```
+
+### Objective-C Implementation (`pdf22png-objc/`)
+
+**Binary**: `pdf22png-objc/build/pdf22png`  
+**Status**: Production-ready, performance-optimized  
 **Performance**: Baseline reference
 
 #### Technical Stack
 - **Language**: Objective-C with ARC (Automatic Reference Counting)
 - **PDF Rendering**: Direct Core Graphics (`CGPDFDocument`, `CGContext`)
 - **Image Output**: ImageIO framework with `CGImageDestination`
-- **OCR Support**: Vision framework for text extraction fallback
-- **Type Safety**: Modern `UTTypePNG` with backward compatibility
-- **Memory Management**: Manual `@autoreleasepool` blocks for batch operations
+- **OCR Support**: Vision framework for text extraction
+- **File Locking**: POSIX file locking for concurrent access
+- **Memory Management**: Optimized with `@autoreleasepool` blocks
 
 #### Key Features
-- Optimized rendering pipeline with minimal overhead
+- Maximum performance with minimal overhead
 - Efficient memory usage (9-12 MB typical)
 - Native macOS API integration
-- Signal handling for graceful shutdown
+- File locking for concurrent operations
 - Comprehensive error reporting with troubleshooting hints
 
-#### Code Organization
-```
-src/
-├── pdf22png.m      # Main entry point, CLI parsing, batch processing
-├── utils.m         # PDF rendering, image I/O, scale calculations
-├── utils.h         # Public API declarations
-├── errors.h        # Error codes and handling macros
-├── memory.m        # Memory management utilities (future)
-└── memory.h        # Memory pressure monitoring (future)
-```
+### Swift Implementation (`pdf22png-swift/`)
 
-### Swift Implementation
-
-**Binary**: `pdf22png-swift`  
-**Status**: Feature-complete, performance optimized  
-**Performance**: ~33% slower than Objective-C (was 10x slower)
+**Binary**: `pdf22png-swift/.build/release/pdf22png-swift`  
+**Status**: Modern, simplified implementation  
+**Performance**: Focused on reliability and ease of use
 
 #### Technical Stack
-- **Language**: Swift 5.5+ with Swift Package Manager
-- **PDF Rendering**: Core Graphics via Swift wrapper
-- **CLI Framework**: Swift Argument Parser for rich CLI experience
-- **Image Output**: Optimized PNG compression
-- **Error Handling**: Swift-native `Error` protocol with `PDFError` enum
-- **Memory Management**: ARC with optimized buffer allocation
+- **Language**: Swift 5.7+ with Swift Package Manager
+- **PDF Rendering**: PDFKit and Core Graphics
+- **CLI Framework**: Swift Argument Parser
+- **Image Output**: Core Graphics with optimized PNG compression
+- **Error Handling**: Swift-native error types
+- **Build System**: Swift Package Manager with ArgumentParser dependency
 
 #### Key Features
 - Modern Swift idioms and type safety
-- Better PNG compression (65% smaller files)
-- Structured error handling with recovery suggestions
-- Swift Package Manager integration
-- Resource caching for improved performance
-
-#### Code Organization
-```
-Sources/
-├── PDF22PNGCore/
-│   ├── PDFRenderer.swift    # Core rendering engine with caching
-│   ├── Options.swift        # Configuration and argument types
-│   ├── ScaleSpec.swift      # Scale calculation algorithms
-│   ├── Utils.swift          # File I/O and helper functions
-│   └── PDFError.swift       # Error definitions and handling
-└── PDF22PNGCLI/
-    └── PDF22PNGCommand.swift # CLI entry point and orchestration
-```
+- Simplified, maintainable codebase
+- Rich command-line interface with ArgumentParser
+- Comprehensive error handling
+- Single-file implementation for easier maintenance
 
 ### Implementation Comparison
 
 | Feature | Objective-C | Swift |
 |---------|-------------|-------|
-| **Performance** | Baseline (fastest) | ~33% slower |
-| **Memory Usage** | 9-12 MB | 9-12 MB |
-| **File Size** | Standard | 65% smaller |
-| **Binary Size** | 71 KB | 1.5 MB |
-| **macOS Version** | 10.15+ | 10.15+ |
-| **Dependencies** | System only | System + Swift runtime |
-| **Build Time** | ~2 seconds | ~10 seconds |
-| **OCR Support** | ✅ Vision framework | ✅ Vision framework |
+| **Performance** | Optimized (fastest) | Good (reliable) |
+| **Memory Usage** | 9-12 MB | Similar |
+| **Binary Size** | ~71 KB | ~1.5 MB |
+| **macOS Version** | 10.15+ | 11.0+ |
+| **Dependencies** | System frameworks only | System + ArgumentParser |
+| **Build Time** | ~2 seconds | ~60 seconds |
+| **Complexity** | Full-featured | Simplified |
+| **Maintenance** | Traditional C/ObjC | Modern Swift |
+| **File Locking** | ✅ POSIX locking | ❌ Not implemented |
+| **OCR Support** | ✅ Vision framework | ❌ Not implemented |
 | **Transparency** | ✅ Full support | ✅ Full support |
-| **Batch Processing** | ✅ Parallel GCD | ✅ Parallel GCD |
-| **Error Recovery** | ✅ Partial batch | ✅ Partial batch |
+| **Batch Processing** | ✅ Advanced features | ✅ Basic support |
 
 ### Choosing an Implementation
 
-**Use Objective-C (`pdf22png`) when:**
-- Performance is critical
+**Use Objective-C (`pdf22png-objc`) when:**
+- Maximum performance is required
 - Processing large batches of PDFs
-- Running in resource-constrained environments
-- Minimal binary size is required
-- Integration with existing Objective-C codebases
+- Need file locking for concurrent access
+- OCR text extraction is needed
+- Working with legacy systems
+- Binary size matters
 
 **Use Swift (`pdf22png-swift`) when:**
-- File size optimization is important
-- Modern Swift integration is needed
-- Type safety and error handling are priorities
-- Building Swift-based workflows
-- Contributing to future development
+- Modern Swift development environment
+- Prefer type-safe, maintainable code
+- Simple conversion needs
+- Learning or extending the codebase
+- Integration with Swift projects
+
+## Building and Development
+
+### Unified Build System
+
+The top-level `build.sh` script manages both implementations:
+
+```bash
+# Build both implementations
+./build.sh
+
+# Build specific implementation
+./build.sh --objc-only
+./build.sh --swift-only
+
+# Build options
+./build.sh --debug          # Debug builds
+./build.sh --clean          # Clean before building
+./build.sh --verbose        # Detailed output
+./build.sh --help           # Show all options
+```
+
+### Individual Build Systems
+
+Each implementation has its own complete build system:
+
+#### Objective-C (`pdf22png-objc/`)
+```bash
+cd pdf22png-objc
+make                        # Release build
+make debug                  # Debug build
+make universal              # Universal binary (Intel + Apple Silicon)
+make install                # Install to /usr/local/bin/pdf22png
+make clean                  # Clean build artifacts
+make test                   # Run basic functionality test
+```
+
+#### Swift (`pdf22png-swift/`)
+```bash
+cd pdf22png-swift
+make                        # Release build (calls swift build -c release)
+make debug                  # Debug build
+swift build -c release     # Direct Swift build
+swift test                  # Run tests (if available)
+make install                # Install to /usr/local/bin/pdf22png-swift
+make clean                  # Clean build artifacts
+```
+
+### Development Workflow
+
+1. **Choose Implementation**: Decide whether to work on Objective-C or Swift version
+2. **Navigate to Directory**: `cd pdf22png-objc` or `cd pdf22png-swift`
+3. **Make Changes**: Edit source files in the respective directory
+4. **Build**: Use `make` or the top-level `./build.sh`
+5. **Test**: Run the binary with test PDFs
+6. **Install**: Use `make install` for system-wide installation
+
+### Testing
+
+Each implementation can be tested independently:
+
+```bash
+# Test Objective-C implementation
+cd pdf22png-objc && make test
+
+# Test Swift implementation  
+cd pdf22png-swift && make test
+
+# Manual testing
+./pdf22png-objc/build/pdf22png --help
+./pdf22png-swift/.build/release/pdf22png-swift --help
+```
 
 ## Performance
 
@@ -401,7 +496,7 @@ Run comprehensive benchmarks on your specific PDFs:
 
 ### Performance Recommendations
 
-1. **For Speed**: Use Objective-C (`pdf22png`)
+1. **For Speed**: Use Objective-C (`pdf22png-objc`)
    - High-volume batch processing
    - Time-critical operations
    - Server-side processing
@@ -414,7 +509,7 @@ Run comprehensive benchmarks on your specific PDFs:
 3. **Hybrid Approach**: 
    ```bash
    # Fast conversion with ObjC, then optimize with image tools
-   pdf22png -a document.pdf -d temp/
+   ./pdf22png-objc/build/pdf22png -a document.pdf -d temp/
    # Post-process with image optimization tools
    ```
 

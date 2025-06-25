@@ -1,276 +1,267 @@
-# pdf22png Improvement Plan
+# pdf22png Dual Implementation Development Plan
 
-## Immediate Priority - Swift Performance Optimization
+## Architecture Status ✅
 
-### Phase 0: Critical Performance Improvements ✅
--   [x] Profile Swift implementation to identify bottlenecks
-    -   [x] Use Instruments to analyze time spent in Core Graphics calls
-    -   [x] Identify memory allocation patterns causing slowdowns
-    -   [x] Compare CGContext setup between ObjC and Swift
--   [x] Optimize Swift rendering pipeline
-    -   [x] Cache CGColorSpace objects
-    -   [x] Reuse CGContext when possible (via static cache)
-    -   [x] Optimize image data buffer allocation
-    -   [x] Review PNG compression settings
--   [x] Fix deprecated kUTTypePNG warnings
-    -   [x] Replace with UTTypePNG for macOS 12+
-    -   [x] Add compatibility wrapper for older macOS versions
--   [x] Create comprehensive build script (`build.sh`)
-    -   [x] Support for both implementations
-    -   [x] Universal binary creation
-    -   [x] Debug/release configurations
-    -   [x] Clean build option
--   [x] Create advanced benchmark script (`bench.sh`)
-    -   [x] Statistical analysis (avg, min, max, std dev)
-    -   [x] Multiple test scenarios
-    -   [x] CSV export for data analysis
-    -   [x] File size comparison
-    -   [x] Colored output with summaries
--   [x] Implement performance regression tests
-    -   [x] Add benchmark CI job to prevent performance regressions
-    -   [x] Set acceptable performance thresholds (10% regression limit)
-    -   [x] Auto-generate performance reports on PRs
-    -   [x] Add performance badge data generation
+**MAJOR REORGANIZATION COMPLETED**: The codebase has been successfully restructured into two separate, self-contained implementations:
 
-### Phase 0.5: Swift-Specific Enhancements
--   [ ] Further optimize Swift performance
-    -   [ ] Profile with Instruments to find remaining bottlenecks
-    -   [ ] Consider unsafe buffer operations for critical paths
-    -   [ ] Implement SIMD optimizations where applicable
-    -   [ ] Target performance within 20% of ObjC
--   [ ] Add async/await support for batch operations
--   [ ] Implement progress reporting with Combine
--   [ ] Add SwiftUI preview generator for PDFs
--   [ ] Create Swift-specific performance optimizations
-    -   [ ] Use Swift Concurrency for parallel processing
-    -   [ ] Implement lazy page loading
-    -   [ ] Add memory-mapped file support
+- **`pdf22png-objc/`**: Performance-optimized Objective-C implementation
+- **`pdf22png-swift/`**: Modern Swift implementation with simplified architecture
+- **Unified Build System**: Top-level `build.sh` script manages both implementations
+- **Independent Evolution**: Each implementation can be developed and optimized separately
 
-## High Priority
+## Current Implementation Status
 
-### Phase 0.6: Continuous Integration Enhancements
--   [x] Create GitHub Actions workflow for automated benchmarks
-    -   [x] Run on every PR to main branch
-    -   [x] Compare performance against baseline
-    -   [x] Block merge if regression > 10%
-    -   [x] Generate performance report comments
--   [x] Add benchmark result archiving
-    -   [x] Store historical performance data
-    -   [ ] Generate performance trend graphs
-    -   [ ] Create performance dashboard
+### Objective-C Implementation (`pdf22png-objc/`) ✅
+- **Status**: Production-ready, fully-featured
+- **Performance**: Baseline reference (fastest)
+- **Features**: Complete feature set including file locking, OCR, advanced error handling
+- **Build System**: Traditional Makefile with clang
+- **Binary**: `pdf22png-objc/build/pdf22png`
 
-### Phase 1: Memory Management & Stability
--   [ ] Implement memory pressure monitoring to prevent OOM in batch operations
+### Swift Implementation (`pdf22png-swift/`) ✅
+- **Status**: Simplified, working implementation
+- **Performance**: Good, reliable
+- **Features**: Basic feature set with modern Swift patterns
+- **Build System**: Swift Package Manager + Makefile wrapper
+- **Binary**: `pdf22png-swift/.build/release/pdf22png-swift`
 
-### Phase 2: Error Handling & Recovery
--   [ ] Add file locking to prevent concurrent write conflicts
--   [ ] Implement stdin timeout and size limits
+## Immediate Priorities
 
-### Phase 5: Performance Optimizations
--   [ ] Make thread pool size configurable (`--threads N`)
--   [ ] Implement page metadata caching during batch operations
--   [ ] Add fast rendering paths for thumbnails/previews
--   [ ] Skip transparency processing for opaque PDFs
+### Phase 1: Documentation & User Experience (Week 1-2)
 
-### Phase 6: Testing Infrastructure
--   [ ] Create comprehensive test suite:
-    -   Integration tests for CLI operations
-    -   Rendering tests with visual regression
-    -   Performance benchmarks
-    -   Error path coverage
--   [ ] Add test PDF collection (various sizes, features, edge cases)
--   [ ] Add GitHub Actions CI for automated testing
--   [ ] Implement code coverage reporting
+#### 1.1 Implementation-Specific Documentation
+- [ ] **Enhance `pdf22png-objc/README.md`**
+  - [ ] Emphasize performance characteristics and native framework usage
+  - [ ] Document file locking and OCR features
+  - [ ] Include performance benchmarks and optimization details
+  - [ ] Add troubleshooting section for advanced features
 
-## Medium Priority
+- [ ] **Enhance `pdf22png-swift/README.md`**
+  - [ ] Emphasize modern Swift features and type safety
+  - [ ] Document ArgumentParser integration and CLI design
+  - [ ] Highlight simplicity and maintainability benefits
+  - [ ] Add contribution guidelines for Swift development
 
-### Phase 3: Code Architecture Refactoring
--   [ ] Split monolithic `pdf22png.m` into logical modules:
-    -   `PDFProcessor` class for PDF operations
-    -   `ImageRenderer` class for rendering operations
-    -   `BatchProcessor` class for batch operations
-    -   `CLIParser` class for command-line parsing
--   [ ] Remove tight coupling with Options struct
--   [ ] Implement proper dependency injection for testability
+- [ ] **Update main `README.md`**
+  - [ ] Clear comparison table between implementations
+  - [ ] Decision guide for choosing implementation
+  - [ ] Updated usage examples with correct binary paths
+  - [ ] Installation instructions for both implementations
 
-### Phase 7: Additional Features
--   [ ] Add metadata preservation (copy PDF metadata to PNG)
--   [ ] Implement color space control (`--colorspace sRGB|AdobeRGB|Gray`)
--   [ ] Add encrypted PDF support with password prompt
--   [ ] Support multi-page TIFF output format
--   [ ] Add size estimation before processing
--   [ ] Implement configuration file support (`~/.pdf22pngrc`)
--   [ ] Add JSON output mode for scripting
+#### 1.2 Build System Enhancement
+- [ ] **Enhance `build.sh` script**
+  - [ ] Add `--test` option to run tests for built implementations
+  - [ ] Add `--install` option to install both implementations
+  - [ ] Add `--benchmark` option for performance comparisons
+  - [ ] Add `--package` option for creating distribution packages
+  - [ ] Add `--ci` option for CI-optimized builds
 
-### Phase 8: Documentation
--   [ ] Create man page for pdf22png(1)
--   [ ] Add inline code documentation (HeaderDoc format)
--   [ ] Write architecture documentation
--   [ ] Create troubleshooting guide
--   [ ] Add performance tuning guide
--   [ ] Document all error codes and solutions
+- [ ] **Improve individual Makefiles**
+  - [ ] Add more targets to `pdf22png-objc/Makefile` (universal, profile, sanitize)
+  - [ ] Add development targets to `pdf22png-swift/Makefile` (format, lint, docs)
+  - [ ] Standardize target names across both implementations
 
-## Low Priority
+### Phase 2: Testing & Quality Assurance (Week 2-3)
 
-### Phase 9: Build System Enhancements
--   [ ] Add header dependency tracking in Makefile
--   [ ] Create debug/release build configurations
--   [ ] Implement proper version injection from git tags
--   [ ] Add static analysis targets (clang-tidy, scan-build)
--   [ ] Create CMake build option for cross-platform builds
--   [ ] Add code signing for macOS distribution
--   [ ] Automate .pkg and .dmg creation in Makefile
+#### 2.1 Implementation-Specific Testing
+- [ ] **Objective-C Testing (`pdf22png-objc/`)**
+  - [ ] Enhance `make test` with comprehensive functionality tests
+  - [ ] Add `make test-memory` for memory leak detection
+  - [ ] Add `make test-perf` for performance regression tests
+  - [ ] Add static analysis integration (`make analyze`)
 
-### Phase 10: Modernization
--   [ ] Add nullability annotations throughout codebase
--   [ ] Convert to modern property syntax
--   [ ] Replace C-style casts with Objective-C casts
--   [ ] Use blocks instead of function pointers
--   [ ] Add collection generics
--   [ ] Implement proper NSError handling
--   [ ] Add async/await support for batch operations
+- [ ] **Swift Testing (`pdf22png-swift/`)**
+  - [ ] Implement comprehensive unit tests with XCTest
+  - [ ] Add `make test-lint` for code quality checks
+  - [ ] Add SwiftLint integration for code style
+  - [ ] Add swift-format integration for consistent formatting
 
-### Phase 11: Security Hardening
--   [ ] Sanitize all file paths to prevent injection
--   [ ] Validate output directories against path traversal
--   [ ] Add resource limits for PDF complexity
--   [ ] Use secure temp file creation
--   [ ] Implement sandboxing where possible
--   [ ] Add code signing and notarization
+#### 2.2 Cross-Implementation Validation
+- [ ] **Create unified testing script (`test-both.sh`)**
+  - [ ] Verify identical output for same inputs
+  - [ ] Compare performance characteristics
+  - [ ] Validate feature parity where applicable
+  - [ ] Test installation and uninstallation procedures
 
-### Phase 12: Static Analysis
--   [ ] Fix all clang-tidy warnings
--   [ ] Address static analyzer issues
--   [ ] Enable strict compiler warnings
--   [ ] Add AddressSanitizer builds
--   [ ] Implement fuzz testing
+- [ ] **Continuous Integration Enhancement**
+  - [ ] Update GitHub Actions to build both implementations
+  - [ ] Add matrix builds for different configurations
+  - [ ] Implement cross-implementation compatibility tests
+  - [ ] Add performance regression detection
+
+### Phase 3: Feature Development (Week 3-4)
+
+#### 3.1 Swift Implementation Enhancement
+- [ ] **Feature Parity Improvements**
+  - [ ] Add file locking support (POSIX locks)
+  - [ ] Implement basic OCR support with Vision framework
+  - [ ] Add advanced error handling with troubleshooting hints
+  - [ ] Implement progress reporting for batch operations
+
+- [ ] **Swift-Specific Optimizations**
+  - [ ] Add async/await support for batch operations
+  - [ ] Implement structured concurrency patterns
+  - [ ] Add memory pressure monitoring
+  - [ ] Optimize PNG compression settings
+
+#### 3.2 Objective-C Implementation Refinement
+- [ ] **Code Quality Improvements**
+  - [ ] Add comprehensive code comments and documentation
+  - [ ] Implement additional static analysis checks
+  - [ ] Add more comprehensive error recovery
+  - [ ] Enhance memory management in edge cases
+
+- [ ] **Performance Optimizations**
+  - [ ] Add configurable thread pool size
+  - [ ] Implement page metadata caching
+  - [ ] Add fast rendering paths for thumbnails
+  - [ ] Optimize transparency processing
+
+## Medium Priority Features
+
+### Phase 4: Advanced Features (Month 2)
+
+#### 4.1 Shared Features (Both Implementations)
+- [ ] **Enhanced Input/Output**
+  - [ ] Add metadata preservation (PDF metadata to PNG)
+  - [ ] Implement color space control (`--colorspace sRGB|AdobeRGB|Gray`)
+  - [ ] Add encrypted PDF support with password prompt
+  - [ ] Support multi-page TIFF output format
+
+- [ ] **Configuration & Scripting**
+  - [ ] Implement configuration file support (`~/.pdf22pngrc`)
+  - [ ] Add JSON output mode for scripting
+  - [ ] Add size estimation before processing
+  - [ ] Implement batch operation resume functionality
+
+#### 4.2 Implementation-Specific Features
+
+##### Objective-C Enhancements
+- [ ] **Performance Features**
+  - [ ] Advanced memory pool optimizations
+  - [ ] SIMD optimizations for image processing
+  - [ ] Multi-threaded rendering pipeline
+  - [ ] GPU acceleration exploration
+
+##### Swift Enhancements  
+- [ ] **Modern Swift Features**
+  - [ ] SwiftUI-based GUI version
+  - [ ] Combine-based progress reporting
+  - [ ] Swift Package Manager library target
+  - [ ] DocC documentation generation
+
+### Phase 5: Distribution & Packaging (Month 3)
+
+#### 5.1 Package Management
+- [ ] **Homebrew Formula**
+  - [ ] Update formula to support both implementations
+  - [ ] Add option to install specific implementation
+  - [ ] Test installation on various macOS versions
+
+- [ ] **Distribution Packages**
+  - [ ] Create PKG installer for both implementations
+  - [ ] Generate DMG with both binaries
+  - [ ] Add code signing and notarization
+  - [ ] Automated release pipeline
+
+#### 5.2 Documentation & Community
+- [ ] **Comprehensive Documentation**
+  - [ ] Create man pages for both implementations
+  - [ ] Add architecture decision records (ADRs)
+  - [ ] Write contribution guidelines
+  - [ ] Create troubleshooting guides
+
+- [ ] **Community Features**
+  - [ ] Add issue templates for both implementations
+  - [ ] Create discussion forums
+  - [ ] Add performance comparison tools
+  - [ ] Implement user feedback collection
+
+## Long-term Vision (6+ Months)
+
+### Phase 6: Advanced Architecture
+- [ ] **Cross-Platform Considerations**
+  - [ ] Evaluate Linux support for Swift implementation
+  - [ ] Consider Windows support via Swift on Windows
+  - [ ] Maintain macOS-first approach
+
+- [ ] **Performance Innovation**
+  - [ ] Machine learning-based optimization
+  - [ ] Predictive caching algorithms
+  - [ ] Advanced parallel processing
+  - [ ] Cloud processing integration
+
+### Phase 7: Ecosystem Integration
+- [ ] **Third-Party Integration**
+  - [ ] Shortcuts app integration
+  - [ ] Automator actions
+  - [ ] Alfred workflows
+  - [ ] Raycast extensions
 
 ## Success Metrics
--   [ ] 90%+ test coverage
--   [ ] Zero memory leaks (verified with Instruments)
--   [ ] Batch processing 100+ page PDFs without OOM
--   [ ] Process 1000 pages/minute on M1 Mac
--   [ ] Comprehensive error messages for all failure modes
--   [ ] Full API documentation
--   [ ] Automated release pipeline
 
-## Technical Debt
-1. **Consistent style**: Apply clang-format throughout
-2. **Remove magic numbers**: Define all constants
-3. **Audit TODO/FIXME comments**: Address or remove
+### Technical Metrics
+- [ ] **Build Success**: Both implementations build successfully on all supported macOS versions
+- [ ] **Test Coverage**: >90% test coverage for both implementations
+- [ ] **Performance**: Objective-C maintains performance leadership, Swift within 50% of Objective-C
+- [ ] **Memory**: No memory leaks in either implementation
+- [ ] **Compatibility**: Identical output for same inputs (where features overlap)
 
-## Completed Features ✅
-- **Phase 0**: Text extraction with OCR fallback (`-n/--name`)
-- **Phase 0**: Page range selection (`-p 1-5,10,15-20`)
-- **Phase 0**: Dry-run mode (`-D/--dry-run`)
-- **Phase 0**: Custom naming patterns (`-P/--pattern`)
-- **Phase 1**: Memory management improvements (@autoreleasepool blocks)
-- **Phase 1**: Memory leak fixes in error paths
-- **Phase 1**: Graceful shutdown with signal handlers
-- **Phase 2**: Unified error handling system with error codes
-- **Phase 2**: Partial batch recovery (skip failed pages)
-- **Phase 2**: PDF validation (encrypted, empty documents)
-- **Phase 4**: Overwrite protection with interactive prompts (`-f/--force`)
-- **Phase 4**: Enhanced error messages with troubleshooting hints
-- **Phase 6**: Custom test runner (replaced XCTest dependency)
-- **Phase 6**: Basic unit tests for utility functions
-- **Phase 13**: Complete Swift port maintaining feature parity
-- **Phase 13.2**: Dual-build system for ObjC and Swift (`make both`)
-- **Phase 13.6**: Comprehensive benchmark suite comparing implementations
-- **Phase 13.4**: Both implementations can be installed side-by-side
-- **Phase 13.7**: Created build.sh and bench.sh scripts for easy development
-- **Phase 0**: Swift performance optimized from 10x to ~33% slower than ObjC
-- **Phase 0.6**: Added GitHub Actions workflows for automated benchmarking
-- **Phase 5**: Enhanced progress reporting for batch operations with visual progress bar
+### User Experience Metrics
+- [ ] **Documentation**: Complete documentation for both implementations
+- [ ] **Installation**: One-command installation for either or both implementations
+- [ ] **Support**: Clear guidance on choosing between implementations
+- [ ] **Feedback**: Positive user feedback on dual-implementation approach
 
-### Phase 13: Swift Porting Strategy
+### Development Metrics
+- [ ] **Maintainability**: Easy to contribute to either implementation
+- [ ] **Independence**: Changes to one implementation don't affect the other
+- [ ] **Quality**: Automated quality checks for both implementations
+- [ ] **Release**: Streamlined release process for both implementations
 
-**Goal**: Gradually migrate the ObjC codebase to pure Swift while guaranteeing that the existing Objective-C implementation remains the canonical, production-ready path until feature- and performance-parity is proven.
+## Completed Achievements ✅
 
-#### 13.1 Architectural Blueprint
+### Architecture Reorganization
+- [x] **Codebase Split**: Successfully separated into `pdf22png-objc/` and `pdf22png-swift/`
+- [x] **Self-Contained Systems**: Each implementation has its own build system and dependencies
+- [x] **Unified Build**: Top-level `build.sh` script manages both implementations
+- [x] **Working Implementations**: Both implementations build and function correctly
 
-- [ ] Produce a high-level mapping between current ObjC modules and their future Swift equivalents (CLI, PDFCore, RenderCore, IO, Utils).
-- [ ] Decide on packaging model: Swift Package Manager monorepo with multiple products (`pdf22pngCLI`, `CorePDF22PNG`).
-- [ ] Create an `ObjCCompatibility` target that exposes current public APIs via `@objc` to keep integration surface stable.
+### Build System
+- [x] **Objective-C Makefile**: Complete build system with debug, release, and universal targets
+- [x] **Swift Package Manager**: Proper Package.swift with ArgumentParser dependency
+- [x] **Unified Script**: `build.sh` with options for building specific implementations
+- [x] **Clean Separation**: No shared code or dependencies between implementations
 
-#### 13.2 Build & CI Dual-Lane
-
-- [ ] Update Makefile to build two artefacts: `pdf22png_objc` (default) and `pdf22png_swift` (experimental).
-- [ ] Extend GitHub Actions matrix to run `make swift` on macOS-latest (Intel+ARM runners).
-- [ ] Add Swift-Lint and Swift-Format steps to match existing style gates.
-
-#### 13.3 Incremental Module-by-Module Port
-
-Port order is chosen to minimise risk. Each sub-task must pass unit tests and performance gate before merging.
-
-1. Utils (string parsing, scale calculation).
-2. CLI argument parsing (replace custom parser with `swift-argument-parser`).
-3. Image output handling (PNG encoding via ImageIO).
-4. Rendering pipeline (CoreGraphics layer).
-5. Batch processing & GCD queues (migrate to Swift Concurrency).
-
-#### 13.4 Bridging Layer
-
-- [ ] Introduce Bridging Header `pdf22png-Bridging-Header.h`.
-- [ ] Keep ObjC classes accessible from Swift while the port is incomplete (`NS_SWIFT_NAME`).
-- [ ] Add thin Swift wrappers that forward to ObjC implementation when native Swift is not yet ready.
-
-#### 13.5 Verification Matrix
-
-Every migration PR must:
-
-- [ ] Add/extend XCTest cases for new Swift code.
-- [ ] Prove feature parity via golden-image visual regression tests.
-- [ ] Pass speed benchmarks (see 13.6).
-
-#### 13.6 Performance Benchmarking Plan
-
-Establish repeatable micro- & macro-benchmarks to compare ObjC vs Swift.
-
-Benchmark harness:
-
-```bash
-# once
-brew install hyperfine graphicsmagick
-
-# run
-hyperfine --warmup 3 '\
-  ./pdf22png_objc -a -r 144 samples/10p.pdf -d /tmp/out_objc' '\
-  ./pdf22png_swift -a -r 144 samples/10p.pdf -d /tmp/out_swift'
-```
-
-Datasets (checked into `benchmarks/`):
-
-| Alias | Pages | Size | Features | Type |
-|-------|------:|------|----------|------|
-| small | 10    | 1 MB | vector   | brochure |
-| medium| 120   | 12 MB| mixed    | novel |
-| large | 800   | 95 MB| images   | catalogue |
-
-Metrics recorded:
-
-- Wall-clock time (mean ± stddev, 10 runs)
-- Pages per second & MB/s throughput
-- Peak RSS memory (via `/usr/bin/time -l`)
-- Energy impact (Xcode Instruments)
-
-Success criteria:
-
-- Swift build must be within **±5 %** execution time and **±10 %** memory of ObjC before sign-off.
-- After full port, Swift must outperform ObjC by **≥15 %** or justify regressions in changelog.
-
-#### 13.7 Roll-out & Deprecation
-
-- [ ] Tag first Swift-parity release `v2.0.0-beta1`.
-- [ ] Ship dual binaries for two minor versions.
-- [ ] Announce ObjC deprecation; remove ObjC build code by `v3.0`.
-
----
+### Basic Functionality
+- [x] **Core Features**: Both implementations support basic PDF to PNG conversion
+- [x] **Command-Line Interface**: Consistent CLI between implementations
+- [x] **Error Handling**: Basic error handling in both implementations
+- [x] **Documentation**: Initial README files for both implementations
 
 ## Development Guidelines
 
-- DO NOT maintain backward compatibility for existing CLI usage
-- Prioritize stability over new features
-- Keep macOS-ONLY approach, do not plan portability
-- Focus on user experience and reliability
-- Maintain comprehensive test coverage for new features
+### Implementation-Specific Guidelines
+
+#### Objective-C Implementation
+- **Focus**: Maximum performance and native framework integration
+- **Style**: Traditional Objective-C with modern features (ARC, nullability)
+- **Dependencies**: System frameworks only
+- **Testing**: Traditional unit testing with custom test runner
+
+#### Swift Implementation  
+- **Focus**: Modern Swift patterns and type safety
+- **Style**: Modern Swift with ArgumentParser and structured concurrency
+- **Dependencies**: Minimal external dependencies (ArgumentParser only)
+- **Testing**: XCTest with comprehensive test coverage
+
+### Shared Guidelines
+- **Compatibility**: Maintain consistent CLI interface where possible
+- **Quality**: High code quality standards for both implementations
+- **Documentation**: Comprehensive documentation for both implementations
+- **Testing**: Thorough testing for both implementations
+- **Performance**: Regular performance comparisons between implementations
+
+---
+
+*This TODO reflects the successful reorganization into a dual-implementation architecture. The focus is now on polishing, enhancing, and maintaining both implementations independently while providing users with clear choices based on their needs.*

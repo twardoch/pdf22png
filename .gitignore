@@ -60,3 +60,4 @@ dist/
 # Documentation
 docs/_build/
 *.pdf
+.build/
