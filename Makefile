@@ -44,7 +44,7 @@ universal-swift:
 	@$(MAKE) -C pdf22png-swift universal
 
 # Install targets
-install: install-swift
+install: install-swift install-man
 
 install-objc:
 	@echo "Installing $(PRODUCT_NAME) (Objective-C)..."
@@ -54,10 +54,18 @@ install-swift:
 	@echo "Installing $(PRODUCT_NAME) (Swift)..."
 	@$(MAKE) -C pdf22png-swift install
 
+install-man:
+	@echo "Installing man page..."
+	@mkdir -p /usr/local/share/man/man1
+	@cp docs/pdf22png.1 /usr/local/share/man/man1/
+	@echo "Man page installed. Use 'man pdf22png' to view."
+
 uninstall:
 	@echo "Uninstalling $(PRODUCT_NAME)..."
 	@$(MAKE) -C pdf22png-objc uninstall
 	@$(MAKE) -C pdf22png-swift uninstall
+	@rm -f /usr/local/share/man/man1/pdf22png.1
+	@echo "Man page removed."
 
 # Test targets
 test: swift-test test-objc

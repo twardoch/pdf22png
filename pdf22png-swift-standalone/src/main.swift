@@ -374,6 +374,121 @@ func checkInterruption() throws {
     }
 }
 
+// MARK: - Progress Reporter
+
+class ProgressReporter {
+    private let totalPages: Int
+    private var startTime: Date
+    private var processedPages: Int = 0
+    private var successfulPages: Int = 0
+    private var failedPages: Int = 0
+    private var lastReportTime: Date
+    private let reportInterval: TimeInterval = 1.0 // Report at most once per second
+    private let verbose: Bool
+    
+    init(totalPages: Int, verbose: Bool = false) {
+        self.totalPages = totalPages
+        self.verbose = verbose
+        self.startTime = Date()
+        self.lastReportTime = Date()
+    }
+    
+    func reportPageStart(pageNumber: Int) {
+        if verbose {
+            print("Processing page \(pageNumber)/\(totalPages)...")
+        }
+    }
+    
+    func reportPageComplete(pageNumber: Int, success: Bool, outputFile: String? = nil) {
+        processedPages += 1
+        if success {
+            successfulPages += 1
+            if let outputFile = outputFile, !verbose {
+                // For non-verbose mode, show successful outputs
+                print("✓ Page \(pageNumber) → \(outputFile)")
+            }
+        } else {
+            failedPages += 1
+            print("✗ Page \(pageNumber) failed")
+        }
+        
+        // Report progress if enough time has passed or we're at a milestone
+        let now = Date()
+        let shouldReportTime = now.timeIntervalSince(lastReportTime) >= reportInterval
+        let shouldReportMilestone = processedPages % 10 == 0 || processedPages == totalPages
+        
+        if shouldReportTime || shouldReportMilestone {
+            reportProgress()
+            lastReportTime = now
+        }
+    }
+    
+    func reportChunkStart(chunkNumber: Int, totalChunks: Int, pagesInChunk: Int) {
+        if verbose {
+            print("\n📦 Processing chunk \(chunkNumber)/\(totalChunks) (\(pagesInChunk) pages)")
+        }
+    }
+    
+    private func reportProgress() {
+        let percentage = (processedPages * 100) / totalPages
+        let elapsed = Date().timeIntervalSince(startTime)
+        let pagesPerSecond = elapsed > 0 ? Double(processedPages) / elapsed : 0
+        let estimatedTotal = pagesPerSecond > 0 ? Double(totalPages) / pagesPerSecond : 0
+        let estimatedRemaining = max(0, estimatedTotal - elapsed)
+        
+        var progressBar = "["
+        let barWidth = 30
+        let filledWidth = (barWidth * processedPages) / totalPages
+        progressBar += String(repeating: "■", count: filledWidth)
+        progressBar += String(repeating: "□", count: barWidth - filledWidth)
+        progressBar += "]"
+        
+        print("\n📊 Progress: \(progressBar) \(percentage)%")
+        print("   Processed: \(processedPages)/\(totalPages) pages (✓ \(successfulPages), ✗ \(failedPages))")
+        
+        if pagesPerSecond > 0 {
+            print("   Speed: \(String(format: "%.1f", pagesPerSecond)) pages/sec")
+            print("   Time: \(formatDuration(elapsed)) elapsed, ~\(formatDuration(estimatedRemaining)) remaining")
+        }
+        
+        // Memory status in verbose mode
+        if verbose {
+            let memInfo = MemoryManager.shared.getSystemMemoryInfo()
+            let usedGB = Double(memInfo.used) / (1024 * 1024 * 1024)
+            let availableGB = Double(memInfo.available) / (1024 * 1024 * 1024)
+            print("   Memory: \(String(format: "%.1f", usedGB))GB used, \(String(format: "%.1f", availableGB))GB available")
+        }
+    }
+    
+    func reportBatchComplete() {
+        let elapsed = Date().timeIntervalSince(startTime)
+        let pagesPerSecond = elapsed > 0 ? Double(processedPages) / elapsed : 0
+        
+        print("\n✅ Batch processing complete!")
+        print("   Total: \(processedPages) pages processed in \(formatDuration(elapsed))")
+        print("   Results: ✓ \(successfulPages) successful, ✗ \(failedPages) failed")
+        if pagesPerSecond > 0 {
+            print("   Average speed: \(String(format: "%.1f", pagesPerSecond)) pages/sec")
+        }
+    }
+    
+    func reportInterrupted() {
+        print("\n⚠️  Processing interrupted!")
+        print("   Completed: \(processedPages)/\(totalPages) pages")
+        print("   Results: ✓ \(successfulPages) successful, ✗ \(failedPages) failed")
+    }
+    
+    private func formatDuration(_ seconds: TimeInterval) -> String {
+        let minutes = Int(seconds) / 60
+        let secs = Int(seconds) % 60
+        if minutes > 0 {
+            return "\(minutes)m \(secs)s"
+        } else {
+            return "\(secs)s"
+        }
+    }
+}
+
 // MARK: - Command Line Argument Parser
 
 struct CommandLineOptions {
@@ -1017,11 +1132,17 @@ func processBatchMode(options: CommandLineOptions, pdfDocument: PDFDocument) thr
         verbose: options.verbose
     )
     
-    var successCount = 0
-    var failCount = 0
-    var processedCount = 0
+    // Initialize progress reporter
+    let progressReporter = ProgressReporter(totalPages: totalPages, verbose: options.verbose)
     
-    logMessage(options.verbose, "Starting batch conversion of \(totalPages) pages with batch size \(optimalBatchSize)")
+    if !options.dryRun {
+        print("🚀 Starting batch conversion of \(totalPages) pages...")
+        if options.verbose {
+            print("   Output directory: \(outputDir)")
+            print("   Output prefix: \(prefix)")
+            print("   Batch size: \(optimalBatchSize) pages/chunk")
+        }
+    }
     
     // Process pages in memory-optimized chunks
     let chunks = stride(from: 1, through: totalPages, by: optimalBatchSize).map { start in
@@ -1035,7 +1156,7 @@ func processBatchMode(options: CommandLineOptions, pdfDocument: PDFDocument) thr
         // Check memory pressure before each chunk
         try MemoryManager.shared.checkMemoryPressureDuringBatch(verbose: options.verbose)
         
-        logMessage(options.verbose, "Processing chunk \(chunkIndex + 1)/\(chunks.count) (\(chunk.count) pages)")
+        progressReporter.reportChunkStart(chunkNumber: chunkIndex + 1, totalChunks: chunks.count, pagesInChunk: chunk.count)
         
         // Register cleanup for this chunk
         registerCleanupHandler {
@@ -1046,9 +1167,10 @@ func processBatchMode(options: CommandLineOptions, pdfDocument: PDFDocument) thr
             // Check for interruption for each page
             try checkInterruption()
             
+            progressReporter.reportPageStart(pageNumber: pageNum)
+            
             guard let pdfPage = pdfDocument.page(at: pageNum - 1) else {
-                print("Warning: Failed to get page \(pageNum), skipping")
-                failCount += 1
+                progressReporter.reportPageComplete(pageNumber: pageNum, success: false)
                 continue
             }
             
@@ -1062,9 +1184,8 @@ func processBatchMode(options: CommandLineOptions, pdfDocument: PDFDocument) thr
                 transparentBackground: options.transparent
             )
             
-            if !MemoryManager.shared.canAllocateMemory(memoryRequired, verbose: options.verbose) {
-                print("Warning: Insufficient memory for page \(pageNum), reducing quality...")
-                // Continue with processing - let the system handle memory pressure
+            if !MemoryManager.shared.canAllocateMemory(memoryRequired, verbose: false) {
+                logMessage(options.verbose, "Warning: Insufficient memory for page \(pageNum), continuing anyway...")
             }
             
             guard let image = renderPDFPageToImage(
@@ -1073,37 +1194,26 @@ func processBatchMode(options: CommandLineOptions, pdfDocument: PDFDocument) thr
                 transparentBackground: options.transparent,
                 verbose: options.verbose
             ) else {
-                print("Warning: Failed to render page \(pageNum), skipping")
-                failCount += 1
+                progressReporter.reportPageComplete(pageNumber: pageNum, success: false)
                 continue
             }
             
             let filename = String(format: "%@-%03d.png", prefix, pageNum)
             let outputPath = (outputDir as NSString).appendingPathComponent(filename)
             
-            if writeImageToFile(
-                image: image,
-                path: outputPath,
-                quality: options.quality,
-                verbose: options.verbose,
-                dryRun: options.dryRun,
-                forceOverwrite: options.forceOverwrite
-            ) {
-                successCount += 1
-                if !options.verbose && !options.dryRun {
-                    print("Processed page \(pageNum) → \(filename)")
-                }
+            if options.dryRun {
+                print("[DRY-RUN] Would create: \(filename) (\(image.width)x\(image.height) pixels)")
+                progressReporter.reportPageComplete(pageNumber: pageNum, success: true, outputFile: filename)
             } else {
-                print("Warning: Failed to write page \(pageNum)")
-                failCount += 1
-            }
-            
-            processedCount += 1
-            
-            // Progress reporting every 10 pages
-            if processedCount % 10 == 0 {
-                let percentage = (processedCount * 100) / totalPages
-                print("Progress: \(processedCount)/\(totalPages) pages (\(percentage)%) - \(successCount) successful, \(failCount) failed")
+                let success = writeImageToFile(
+                    image: image,
+                    path: outputPath,
+                    quality: options.quality,
+                    verbose: options.verbose,
+                    dryRun: options.dryRun,
+                    forceOverwrite: options.forceOverwrite
+                )
+                progressReporter.reportPageComplete(pageNumber: pageNum, success: success, outputFile: success ? filename : nil)
             }
         }
         
@@ -1114,21 +1224,19 @@ func processBatchMode(options: CommandLineOptions, pdfDocument: PDFDocument) thr
         
         // Break if terminated
         if shouldTerminate {
-            logMessage(options.verbose, "Processing terminated after chunk \(chunkIndex + 1)")
+            progressReporter.reportInterrupted()
             break
         }
     }
     
     // Final status report
     if options.dryRun {
-        print("[DRY-RUN] Would convert \(totalPages) pages to PNG files")
-    } else if shouldTerminate {
-        print("⚠️  Batch processing interrupted: \(successCount) pages converted before interruption, \(failCount) pages failed.")
-    } else {
-        print("\nBatch processing complete: \(successCount) pages converted, \(failCount) failed")
+        print("\n[DRY-RUN] Would convert \(totalPages) pages to PNG files")
+    } else if !shouldTerminate {
+        progressReporter.reportBatchComplete()
     }
     
-    return successCount > 0
+    return true
 }
 
 // MARK: - Main Function

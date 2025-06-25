@@ -1,0 +1,334 @@
+.\" Manpage for pdf22png
+.\" Contact https://github.com/twardoch/pdf22png for issues
+.TH PDF22PNG 1 "December 2024" "pdf22png 2.0.0" "User Commands"
+
+.SH NAME
+pdf22png \- convert PDF documents to PNG images
+
+.SH SYNOPSIS
+.B pdf22png
+[\fIOPTIONS\fR] \fIinput.pdf\fR [\fIoutput.png\fR]
+
+.SH DESCRIPTION
+.B pdf22png
+is a high-performance command-line tool for converting PDF documents to PNG images on macOS.
+It leverages native Core Graphics and Quartz frameworks for optimal quality and speed.
+
+The tool supports both single page and batch conversion modes, with flexible scaling options
+and advanced features including transparent background support, custom naming patterns,
+and memory-optimized batch processing.
+
+.SH OPTIONS
+.TP
+.BR \-p ", " \-\-page " \fIspec\fR"
+Specify page(s) to convert. Can be a single page number, a range, or comma-separated list.
+Examples: 1 (single page), 1-5 (range), 1,3,5-10 (mixed).
+Default: 1
+
+.TP
+.BR \-a ", " \-\-all
+Convert all pages. If -d is not specified, uses input filename as prefix.
+Output files are named <prefix>-<page_num>.png.
+
+.TP
+.BR \-r ", " \-\-resolution " \fIdpi\fR"
+Set output resolution in DPI (dots per inch).
+Example: 300 or 300dpi.
+Overrides -s if both are specified.
+
+.TP
+.BR \-s ", " \-\-scale " \fIspec\fR"
+Scaling specification. Supports multiple formats:
+.RS
+.IP \(bu 2
+\fBNNN%\fR: Percentage scaling (e.g., 150%)
+.IP \(bu 2
+\fBN.N\fR: Scale factor (e.g., 1.5)
+.IP \(bu 2
+\fBWxH\fR: Fit within WxH pixels (e.g., 800x600)
+.IP \(bu 2
+\fBWx\fR: Fit to width W pixels (e.g., 1024x)
+.IP \(bu 2
+\fBxH\fR: Fit to height H pixels (e.g., x768)
+.RE
+Default: 100% or 1.0
+
+.TP
+.BR \-t ", " \-\-transparent
+Preserve transparency in output PNG. By default, PDFs are rendered with a white background.
+
+.TP
+.BR \-q ", " \-\-quality " \fIn\fR"
+PNG compression quality (0-9). 0 = fastest/largest, 9 = slowest/smallest.
+Default: 6
+
+.TP
+.BR \-o ", " \-\-output " \fIpath\fR"
+Output PNG file or prefix for batch mode.
+Use '-' to output to stdout (single page mode only).
+
+.TP
+.BR \-d ", " \-\-directory " \fIdir\fR"
+Output directory for batch mode (converts all pages).
+If used, -o specifies filename prefix inside this directory.
+
+.TP
+.BR \-v ", " \-\-verbose
+Enable verbose output with detailed processing information,
+memory usage statistics, and diagnostic messages.
+
+.TP
+.BR \-n ", " \-\-name
+Include extracted text in output filename (batch mode only).
+Extracts text from PDF pages and includes a slugified version in the filename.
+
+.TP
+.BR \-P ", " \-\-pattern " \fIpattern\fR"
+Custom naming pattern for batch mode. Placeholders:
+.RS
+.IP \(bu 2
+\fB{basename}\fR - Input filename without extension
+.IP \(bu 2
+\fB{page}\fR - Page number (auto-padded)
+.IP \(bu 2
+\fB{page:03d}\fR - Page with custom padding
+.IP \(bu 2
+\fB{text}\fR - Extracted text (requires -n)
+.IP \(bu 2
+\fB{date}\fR - Current date (YYYYMMDD)
+.IP \(bu 2
+\fB{time}\fR - Current time (HHMMSS)
+.IP \(bu 2
+\fB{total}\fR - Total page count
+.RE
+Example: '{basename}_p{page:04d}_of_{total}'
+
+.TP
+.BR \-D ", " \-\-dry\-run
+Preview operations without writing files.
+Shows what would be created with dimensions and estimated file sizes.
+
+.TP
+.BR \-f ", " \-\-force
+Force overwrite existing files without prompting.
+
+.TP
+.BR \-h ", " \-\-help
+Show help message and exit.
+
+.TP
+.BR \-\-version
+Show version information and exit.
+
+.SH ARGUMENTS
+.TP
+.I input.pdf
+Input PDF file. Use '-' to read from stdin.
+
+.TP
+.I output.png
+Output PNG file. Required if not using -o or -d options.
+If input is stdin and output is not specified, output goes to stdout.
+In batch mode (-a or -d), this is used as a prefix if -o is not set.
+
+.SH EXAMPLES
+.SS Basic Conversion
+Convert the first page of a PDF:
+.PP
+.nf
+pdf22png document.pdf page1.png
+.fi
+
+.SS Page Selection
+Convert page 5:
+.PP
+.nf
+pdf22png -p 5 document.pdf page5.png
+.fi
+
+Convert pages 1-10 and 15:
+.PP
+.nf
+pdf22png -p 1-10,15 document.pdf
+.fi
+
+.SS Batch Conversion
+Convert all pages to individual PNGs:
+.PP
+.nf
+pdf22png -a document.pdf
+# Creates: document-001.png, document-002.png, etc.
+.fi
+
+Convert all pages to a specific directory:
+.PP
+.nf
+pdf22png -d output/ document.pdf
+.fi
+
+.SS Resolution and Scaling
+Convert at 300 DPI:
+.PP
+.nf
+pdf22png -r 300 document.pdf high-res.png
+.fi
+
+Scale to 150%:
+.PP
+.nf
+pdf22png -s 150% document.pdf scaled.png
+.fi
+
+Fit to 800x600 pixels:
+.PP
+.nf
+pdf22png -s 800x600 document.pdf fitted.png
+.fi
+
+.SS Advanced Features
+Preserve transparency:
+.PP
+.nf
+pdf22png -t document.pdf transparent.png
+.fi
+
+Custom naming pattern:
+.PP
+.nf
+pdf22png -a -P '{basename}_page{page:03d}' document.pdf
+# Creates: document_page001.png, document_page002.png, etc.
+.fi
+
+Dry run to preview operations:
+.PP
+.nf
+pdf22png -D -a document.pdf
+.fi
+
+.SS Pipeline Operations
+From stdin to stdout:
+.PP
+.nf
+cat document.pdf | pdf22png - - > output.png
+.fi
+
+Process and pipe to ImageMagick:
+.PP
+.nf
+pdf22png -r 300 input.pdf - | convert - -resize 50% final.jpg
+.fi
+
+.SH MEMORY MANAGEMENT
+pdf22png includes advanced memory management features:
+
+.IP \(bu 2
+Real-time memory pressure monitoring
+.IP \(bu 2
+Adaptive batch sizing based on available memory
+.IP \(bu 2
+Automatic scale factor adjustment for complex PDFs
+.IP \(bu 2
+Resource exhaustion prevention
+
+Use the -v flag to see memory usage statistics during processing.
+
+.SH SIGNAL HANDLING
+The tool handles interruption signals gracefully:
+
+.IP \(bu 2
+\fBSIGINT\fR (Ctrl+C): Graceful shutdown with resource cleanup
+.IP \(bu 2
+\fBSIGTERM\fR: Clean termination with partial results saved
+.IP \(bu 2
+\fBSIGHUP\fR: Handled like SIGTERM
+
+Batch operations will save completed pages before terminating.
+
+.SH EXIT STATUS
+.TP
+.B 0
+Success
+.TP
+.B 1
+General error
+.TP
+.B 2
+Invalid command line arguments
+.TP
+.B 3
+Input file not found
+.TP
+.B 4
+Failed to read input file
+.TP
+.B 5
+Failed to write output file
+.TP
+.B 6
+No input data received
+.TP
+.B 7
+Invalid PDF document
+.TP
+.B 8
+PDF document is encrypted
+.TP
+.B 9
+PDF document has no pages
+.TP
+.B 10
+Requested page does not exist
+.TP
+.B 11
+Failed to render PDF page
+.TP
+.B 12
+Memory allocation failed
+.TP
+.B 13
+Failed to create output directory
+.TP
+.B 14
+Invalid scale specification
+.TP
+.B 15
+Batch processing failed
+.TP
+.B 16
+Operation interrupted by signal
+
+.SH ENVIRONMENT
+.TP
+.B CG_PDF_VERBOSE
+Set to enable verbose Core Graphics PDF logging for debugging.
+
+.SH FILES
+.TP
+.I ~/.pdf22pngrc
+User configuration file (future feature).
+
+.SH LIMITATIONS
+.IP \(bu 2
+Password-protected PDFs are not currently supported
+.IP \(bu 2
+Maximum 5000 pages per document
+.IP \(bu 2
+Maximum 500MB input file size
+.IP \(bu 2
+PNG compression quality setting is currently informational
+
+.SH BUGS
+Report bugs at: https://github.com/twardoch/pdf22png/issues
+
+.SH AUTHOR
+Written by Adam Twardoch and contributors.
+
+.SH COPYRIGHT
+Copyright (C) 2024 Adam Twardoch. Licensed under the Apache License 2.0.
+
+.SH SEE ALSO
+.BR convert (1),
+.BR sips (1),
+.BR qlmanage (1)
+
+Project homepage: https://github.com/twardoch/pdf22png
