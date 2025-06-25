@@ -7,6 +7,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Performance Optimizations (Phase 1.2)**: Significant performance improvements for batch operations
+  - **Adaptive Batch Sizing**: Dynamic adjustment of concurrent operations based on available memory
+    - Monitors system memory pressure and adjusts batch size accordingly
+    - Reduces batch size under memory pressure (50%, 70%, 85% thresholds)
+    - Increases batch size when system resources are available
+    - Adapts based on success rate and processing time metrics
+    - Real-time chunk size adjustment during batch processing
+  - **Fast Rendering Paths**: Optimized rendering for common scenarios
+    - Automatic detection of thumbnail (≤500x500) and preview (≤1000x1000) scenarios
+    - Reduced quality settings for small images where high quality isn't needed
+    - 5-bit color depth for thumbnails vs 8-bit for standard rendering
+    - Configurable antialiasing and interpolation quality per scenario
+    - Automatic fallback to standard rendering if fast path fails
+  - **Memory Pooling**: Bitmap context reuse for batch operations
+    - Reuses CGContext objects across multiple page renders
+    - Reduces memory allocation overhead in batch processing
+    - Automatic cleanup of unused contexts after 60 seconds
+    - Pool statistics tracking (total contexts, in-use, memory usage)
+    - Maximum pool size and memory limits (10 contexts, 500MB default)
+    - Thread-safe implementation with proper locking
+
+### Changed
+- **Batch Processing Loop**: Refactored to support dynamic chunk sizing
+  - Replaced fixed chunk iteration with adaptive while loop
+  - Added performance metrics tracking per chunk
+  - Improved resource constraint handling with retry logic
+  - Enhanced progress reporting with chunk-level statistics
+
 ### Fixed
 - **Swift Package Manager Build Issue**: Resolved SWBBuildService.framework dependency error
   - Modified Swift Makefile to fall back to Objective-C implementation when SPM fails
