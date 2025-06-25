@@ -306,10 +306,9 @@ BOOL writeImageToFile(CGImageRef image, NSString *outputPath, int pngQuality, BO
         return YES;
     }
 
-    // Check for overwrite protection
-    if (!forceOverwrite && !shouldOverwriteFile(outputPath, YES)) {
-        logMessage(verbose, @"Skipping %@ - file exists and overwrite denied", outputPath);
-        return NO;
+    // Always overwrite files by default
+    if (fileExists(outputPath) && verbose) {
+        logMessage(verbose, @"Warning: Overwriting existing file: %@", outputPath);
     }
 
     logMessage(verbose, @"Writing image as PNG to file: %@ with quality: %d", outputPath, pngQuality);
@@ -664,11 +663,8 @@ BOOL shouldOverwriteFile(NSString *path, BOOL interactive) {
         return YES; // File doesn't exist, safe to write
     }
     
-    if (!interactive) {
-        return NO; // Non-interactive mode, don't overwrite
-    }
-    
-    return promptUserForOverwrite(path);
+    // Always overwrite by default (changed behavior)
+    return YES;
 }
 
 BOOL promptUserForOverwrite(NSString *path) {
