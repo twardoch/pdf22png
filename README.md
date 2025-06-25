@@ -4,7 +4,7 @@
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/platform-macOS-lightgrey.svg)](https://www.apple.com/macos/)
 
-A high-performance command-line tool for converting PDF documents to PNG images on macOS, leveraging native Core Graphics and Quartz frameworks for optimal quality and speed.
+A high-performance command-line tool for converting PDF documents to PNG images on macOS, leveraging native Core Graphics and Quartz frameworks for optimal quality and speed. Available in both Swift and Objective-C implementations with identical functionality.
 
 ## Features
 
@@ -27,8 +27,9 @@ A high-performance command-line tool for converting PDF documents to PNG images 
   - Read from files or stdin
   - Write to files, stdout, or batch output directories
   - Customizable output naming patterns
-- **Native Performance**: Built with Swift using macOS native frameworks
+- **Native Performance**: Available in both Swift and Objective-C implementations
 - **Universal Binary**: Supports both Intel and Apple Silicon Macs
+- **Dual Implementation**: Choose between modern Swift or classic Objective-C versions
 
 ## Installation
 
@@ -48,15 +49,39 @@ Requirements:
 ```bash
 git clone https://github.com/twardoch/pdf22png.git
 cd pdf22png
+
+# Build Swift version (default)
 make
+
+# Build Objective-C version
+make objc
+
+# Build both versions
+make swift objc
+
+# Install Swift version (default)
 sudo make install
+
+# Install Objective-C version
+sudo make install-objc
 ```
 
 To build a universal binary for both Intel and Apple Silicon:
 
 ```bash
+# Swift universal binary (default)
 make universal
+
+# Objective-C universal binary
+make universal-objc
 ```
+
+### Choosing Between Implementations
+
+Both Swift and Objective-C versions provide identical functionality. The Swift version is the default and recommended for most users:
+
+- **Swift version**: Modern implementation using Swift Concurrency for better performance in batch operations
+- **Objective-C version**: Classic implementation using Grand Central Dispatch, provided for compatibility
 
 ## Usage
 
@@ -195,26 +220,42 @@ pdf22png -r 300 input.pdf - | convert - -resize 50% final.jpg
 
 ## Architecture
 
-pdf22png is built using:
-- **Swift** using macOS native frameworks
+pdf22png is available in two implementations:
+
+### Swift Implementation (Default)
+- **Swift 5.7+** with modern language features
+- **Swift Argument Parser** for command-line interface
+- **Swift Concurrency** (async/await, TaskGroup) for parallel processing
 - **Core Graphics** for PDF rendering
 - **Vision** framework for OCR capabilities
 - **ImageIO** for PNG output
-- Native macOS APIs for optimal performance
-- **Swift Argument Parser** for command-line interface
 
-The codebase is organized into:
+Swift codebase organization:
 - `Package.swift` - Swift Package Manager manifest
-- `Sources/pdf22png/main.swift` - Main program logic, argument parsing, and processing workflows
-- `Sources/pdf22png/Models.swift` - Core data structures (e.g., `ProcessingOptions`, `ScaleSpecification`)
-- `Sources/pdf22png/Utilities.swift` - Utility functions for scaling, rendering, I/O, text extraction, etc.
-- `Tests/pdf22pngTests/` - XCTest-based unit tests written in Swift
+- `Sources/pdf22png/main.swift` - Main program entry point and CLI
+- `Sources/pdf22png/Models.swift` - Core data structures
+- `Sources/pdf22png/Utilities.swift` - Utility functions and helpers
+- `Tests/pdf22pngTests/` - XCTest-based unit tests
+
+### Objective-C Implementation
+- **Objective-C** with ARC (Automatic Reference Counting)
+- **getopt_long** for command-line parsing
+- **Grand Central Dispatch** for parallel processing
+- **Core Graphics** for PDF rendering
+- **Vision** framework for OCR capabilities
+- **ImageIO** for PNG output
+
+Objective-C codebase organization:
+- `src/pdf22png.m` - Main program logic and argument parsing
+- `src/utils.m` - Utility functions for scaling, rendering, and I/O
+- `src/errors.h` - Error codes and handling
+- `tests/` - Custom test runner with unit tests
 
 ## Performance
 
 pdf22png is optimized for performance:
-- Parallel processing for batch conversions using Swift Concurrency (TaskGroup)
-- Efficient memory management with Swift ARC and value types where appropriate
+- Parallel processing for batch conversions (Swift Concurrency or GCD)
+- Efficient memory management with automatic reference counting
 - Native Core Graphics rendering for best quality
 - Built-in error recovery for robust batch processing
 - Context-aware text extraction with OCR fallback
