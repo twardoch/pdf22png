@@ -92,17 +92,27 @@ class MemoryManager {
         if !verbose { return }
         
         let memInfo = getSystemMemoryInfo()
-        let totalMB = memInfo.total / (1024 * 1024)
+        let totalGB = Double(memInfo.total) / (1024 * 1024 * 1024)
         let availableMB = memInfo.available / (1024 * 1024)
         let usedMB = memInfo.used / (1024 * 1024)
-        let usagePercent = totalMB > 0 ? (usedMB * 100) / totalMB : 0
         
-        logMessage(true, "Memory status: \(usedMB)MB/\(totalMB)MB used (\(usagePercent)%), \(availableMB)MB available")
+        logMessage(true, String(format: "Memory status: %.1fGB total, %lluMB used, %lluMB available", 
+                              totalGB, usedMB, availableMB))
         
         if isMemoryPressureCritical() {
-            logMessage(true, "⚠️  Critical memory pressure detected!")
+            print("⚠️  Critical memory pressure detected!")
         } else if isMemoryPressureHigh() {
-            logMessage(true, "⚠️  High memory pressure detected")
+            print("⚠️  High memory pressure detected")
+        }
+    }
+    
+    func checkMemoryPressureDuringBatch(verbose: Bool) throws {
+        if isMemoryPressureCritical() {
+            throw PDF22PNGError.memory
+        }
+        
+        if isMemoryPressureHigh() && verbose {
+            print("⚠️  High memory pressure - consider reducing batch size")
         }
     }
 }
