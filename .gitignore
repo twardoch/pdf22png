@@ -61,3 +61,7 @@ dist/
 docs/_build/
 *.pdf
 .build/
+
+# Private and temporary directories
+_private/
+issues/
