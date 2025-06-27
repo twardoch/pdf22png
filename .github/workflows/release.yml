@@ -4,9 +4,14 @@ on:
   push:
     tags:
       - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release (e.g., 2.3.0)'
+        required: true
 
 jobs:
-  release_pdf21png:
+  release:
     runs-on: macos-latest
     
     steps:
@@ -15,63 +20,138 @@ jobs:
       with:
         fetch-depth: 0
     
-    - name: Get version from tag
+    - name: Get version
       id: version
       run: |
-        VERSION=${GITHUB_REF#refs/tags/v}
+        if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+          VERSION="${{ github.event.inputs.version }}"
+        else
+          VERSION=${GITHUB_REF#refs/tags/v}
+        fi
         echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
         echo "Building version $VERSION"
 
-    - name: Build
-      run: ./build.sh
-
-    - name: Create Release
-      uses: softprops/action-gh-release@v1
-      with:
-        tag_name: ${{ github.ref }}-pdf21png
-        name: pdf21png v${{ steps.version.outputs.VERSION }}
-        body: |
-          # pdf21png v${{ steps.version.outputs.VERSION }}
-          
-          High-performance PDF to PNG converter for macOS (Objective-C implementation).
-          
-          See [CHANGELOG.md](https://github.com/twardoch/pdf22png/blob/main/CHANGELOG.md) for details.
-        draft: false
-        prerelease: false
-        files: |
-          pdf21png/build/pdf21png
-
-  release_pdf22png:
-    runs-on: macos-latest
-
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
-
-    - name: Get version from tag
-      id: version
+    - name: Setup GitHub CLI
       run: |
-        VERSION=${GITHUB_REF#refs/tags/v}
-        echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
-        echo "Building version $VERSION"
+        brew install gh || brew upgrade gh
+        echo "${{ secrets.GITHUB_TOKEN }}" | gh auth login --with-token
 
-    - name: Build
-      run: ./build.sh
+    - name: Check dependencies
+      run: make check-deps
 
-    - name: Create Release
+    - name: Build universal binaries
+      run: |
+        # Build both implementations as universal binaries
+        make universal
+
+    - name: Create release artifacts
+      run: |
+        # Create directories
+        mkdir -p release_artifacts
+        
+        # Package pdf21png
+        if [ -f "pdf21png/build/pdf21png" ]; then
+          tar -czf "release_artifacts/pdf21png-v${{ steps.version.outputs.VERSION }}-macos-universal.tar.gz" \
+            -C "pdf21png/build" pdf21png
+          
+          # Generate SHA256
+          shasum -a 256 "release_artifacts/pdf21png-v${{ steps.version.outputs.VERSION }}-macos-universal.tar.gz" > \
+            "release_artifacts/pdf21png-v${{ steps.version.outputs.VERSION }}-macos-universal.tar.gz.sha256"
+        fi
+        
+        # Package pdf22png (try both possible locations)
+        if [ -f "pdf22png/.build/apple/Products/Release/pdf22png" ]; then
+          tar -czf "release_artifacts/pdf22png-v${{ steps.version.outputs.VERSION }}-macos-universal.tar.gz" \
+            -C "pdf22png/.build/apple/Products/Release" pdf22png
+        elif [ -f "pdf22png/.build/release/pdf22png" ]; then
+          tar -czf "release_artifacts/pdf22png-v${{ steps.version.outputs.VERSION }}-macos-universal.tar.gz" \
+            -C "pdf22png/.build/release" pdf22png
+        fi
+        
+        # Generate SHA256 for pdf22png
+        if [ -f "release_artifacts/pdf22png-v${{ steps.version.outputs.VERSION }}-macos-universal.tar.gz" ]; then
+          shasum -a 256 "release_artifacts/pdf22png-v${{ steps.version.outputs.VERSION }}-macos-universal.tar.gz" > \
+            "release_artifacts/pdf22png-v${{ steps.version.outputs.VERSION }}-macos-universal.tar.gz.sha256"
+        fi
+        
+        # List artifacts
+        ls -la release_artifacts/
+
+    - name: Build installer packages
+      run: |
+        # Build .pkg installer
+        echo "Building .pkg installer..."
+        ./scripts/build-pkg.sh
+        
+        # Build .dmg disk image
+        echo "Building .dmg disk image..."
+        ./scripts/build-dmg.sh
+        
+        # Copy to release artifacts
+        cp dist/*.pkg release_artifacts/
+        cp dist/*.dmg release_artifacts/
+        
+        # Generate SHA256 for installers
+        cd release_artifacts
+        for file in *.pkg *.dmg; do
+          if [ -f "$file" ]; then
+            shasum -a 256 "$file" > "${file}.sha256"
+          fi
+        done
+        cd ..
+        
+        # List all artifacts
+        echo "Release artifacts:"
+        ls -la release_artifacts/
+
+    - name: Generate release notes
+      id: notes
+      run: |
+        # Extract the latest changes from CHANGELOG.md
+        NOTES=$(awk '/^## \['"${{ steps.version.outputs.VERSION }}"'\]/{flag=1; next} /^## \[/{flag=0} flag' CHANGELOG.md || echo "")
+        
+        if [ -z "$NOTES" ]; then
+          NOTES="Release v${{ steps.version.outputs.VERSION }}
+          
+          - pdf21png: High-performance Objective-C implementation
+          - pdf22png: Modern Swift implementation with advanced features
+          
+          See [CHANGELOG.md](https://github.com/twardoch/pdf22png/blob/main/CHANGELOG.md) for details."
+        fi
+        
+        # Save to file for the release
+        echo "$NOTES" > release_notes.md
+
+    - name: Create GitHub Release
       uses: softprops/action-gh-release@v1
       with:
-        tag_name: ${{ github.ref }}-pdf22png
-        name: pdf22png v${{ steps.version.outputs.VERSION }}
-        body: |
-          # pdf22png v${{ steps.version.outputs.VERSION }}
-          
-          Modern, feature-rich PDF to PNG converter for macOS (Swift implementation).
-          
-          See [CHANGELOG.md](https://github.com/twardoch/pdf22png/blob/main/CHANGELOG.md) for details.
+        tag_name: v${{ steps.version.outputs.VERSION }}
+        name: Release v${{ steps.version.outputs.VERSION }}
+        body_path: release_notes.md
         draft: false
         prerelease: false
         files: |
-          pdf22png/.build/release/pdf22png
+          release_artifacts/*.tar.gz
+          release_artifacts/*.sha256
+
+    - name: Update Homebrew formulas
+      run: |
+        echo "To update Homebrew formulas:"
+        echo ""
+        
+        # Display SHA256 for pdf21png
+        if [ -f "release_artifacts/pdf21png-v${{ steps.version.outputs.VERSION }}-macos-universal.tar.gz.sha256" ]; then
+          PDF21_SHA=$(cat "release_artifacts/pdf21png-v${{ steps.version.outputs.VERSION }}-macos-universal.tar.gz.sha256" | awk '{print $1}')
+          echo "pdf21png.rb:"
+          echo "  url: https://github.com/twardoch/pdf22png/releases/download/v${{ steps.version.outputs.VERSION }}/pdf21png-v${{ steps.version.outputs.VERSION }}-macos-universal.tar.gz"
+          echo "  sha256: $PDF21_SHA"
+          echo ""
+        fi
+        
+        # Display SHA256 for pdf22png
+        if [ -f "release_artifacts/pdf22png-v${{ steps.version.outputs.VERSION }}-macos-universal.tar.gz.sha256" ]; then
+          PDF22_SHA=$(cat "release_artifacts/pdf22png-v${{ steps.version.outputs.VERSION }}-macos-universal.tar.gz.sha256" | awk '{print $1}')
+          echo "pdf22png.rb:"
+          echo "  url: https://github.com/twardoch/pdf22png/releases/download/v${{ steps.version.outputs.VERSION }}/pdf22png-v${{ steps.version.outputs.VERSION }}-macos-universal.tar.gz"
+          echo "  sha256: $PDF22_SHA"
+        fi

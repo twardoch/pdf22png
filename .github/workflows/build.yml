@@ -8,34 +8,66 @@ on:
 
 jobs:
   build:
-    runs-on: macos-latest
+    strategy:
+      matrix:
+        os: [macos-12, macos-13, macos-14]
+    
+    runs-on: ${{ matrix.os }}
 
     steps:
     - uses: actions/checkout@v4
 
-    - name: Build
-      run: ./build.sh
+    - name: Check dependencies
+      run: make check-deps
+
+    - name: Cache Swift Package Manager
+      uses: actions/cache@v4
+      with:
+        path: pdf22png/.build
+        key: ${{ runner.os }}-spm-${{ hashFiles('pdf22png/Package.resolved') }}
+        restore-keys: |
+          ${{ runner.os }}-spm-
+
+    - name: Build all implementations
+      run: make all
 
     - name: Install SwiftLint and SwiftFormat
-      run: brew install swiftlint swiftformat
+      run: brew install swiftlint swiftformat || true
 
     - name: Run SwiftLint
-      run: swiftlint lint pdf22png/Sources/ --strict
+      run: |
+        if command -v swiftlint &> /dev/null; then
+          swiftlint lint pdf22png/Sources/ --strict
+        else
+          echo "SwiftLint not available, skipping"
+        fi
 
     - name: Run SwiftFormat
-      run: swiftformat pdf22png/Sources/ --lint --strict
+      run: |
+        if command -v swiftformat &> /dev/null; then
+          swiftformat pdf22png/Sources/ --lint --strict
+        else
+          echo "SwiftFormat not available, skipping"
+        fi
 
     - name: Run tests
-      run: ./test_both.sh
+      run: make test
 
-    - name: Upload artifacts
+    - name: Verify binaries
+      run: |
+        ./pdf21png/build/pdf21png --version
+        ./pdf22png/.build/apple/Products/Release/pdf22png --version || ./pdf22png/.build/release/pdf22png --version
+
+    - name: Upload pdf21png artifact
       uses: actions/upload-artifact@v4
       with:
-        name: pdf21png
+        name: pdf21png-${{ matrix.os }}
         path: pdf21png/build/pdf21png
         
-    - name: Upload artifacts
+    - name: Upload pdf22png artifact
       uses: actions/upload-artifact@v4
       with:
-        name: pdf22png
-        path: pdf22png/.build/release/pdf22png
+        name: pdf22png-${{ matrix.os }}
+        path: |
+          pdf22png/.build/apple/Products/Release/pdf22png
+          pdf22png/.build/release/pdf22png

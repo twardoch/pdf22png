@@ -66,7 +66,7 @@ uninstall:
 	@echo "✓ Both tools uninstalled"
 
 # Run tests for both implementations
-test: test-pdf21png test-pdf22png
+test: test-pdf21png test-pdf22png integration-test
 	@echo "✓ All tests passed"
 
 # Test pdf21png
@@ -79,16 +79,43 @@ test-pdf22png: pdf22png
 	@echo "→ Testing pdf22png..."
 	@./test_both.sh --only-swift
 
+# Run integration tests
+integration-test: all
+	@echo "→ Running integration tests..."
+	@if [ -f tests/integration_test.sh ]; then \
+		./tests/integration_test.sh; \
+	else \
+		echo "Integration tests not found"; \
+	fi
+
 # Run benchmarks
 benchmark: all
 	@echo "→ Running benchmarks..."
 	@./bench.sh
 
 # Create release artifacts
-release: all test
+release: all test dist
 	@echo "→ Creating release artifacts..."
 	@./release.sh --dry-run
 	@echo "✓ Release artifacts created (dry run)"
+
+# Build distribution packages
+dist: pkg dmg
+	@echo "✓ Distribution packages built"
+
+# Build .pkg installer
+pkg: all
+	@echo "→ Building .pkg installer..."
+	@./scripts/build-pkg.sh
+
+# Build .dmg disk image  
+dmg: all
+	@echo "→ Building .dmg disk image..."
+	@./scripts/build-dmg.sh
+
+# Get version from git tags
+version:
+	@./scripts/get-version.sh
 
 # Check dependencies
 check-deps: check-deps-objc check-deps-swift
@@ -165,6 +192,10 @@ help:
 	@echo "  dev-setup        Set up development environment"
 	@echo "  format           Format Swift code"
 	@echo "  lint             Lint Swift code"
+	@echo "  dist             Build .pkg and .dmg installers"
+	@echo "  pkg              Build .pkg installer"
+	@echo "  dmg              Build .dmg disk image"
+	@echo "  version          Show current version from git tags"
 	@echo "  help             Show this help message"
 	@echo ""
 	@echo "Examples:"

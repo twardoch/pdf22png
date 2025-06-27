@@ -1,18 +1,46 @@
 class Pdf21png < Formula
   desc "High-performance PDF to PNG converter for macOS (Objective-C implementation)"
   homepage "https://github.com/twardoch/pdf22png"
-  url "https://github.com/twardoch/pdf22png/archive/refs/tags/v2.1.0.tar.gz" # Placeholder, update with actual release tag
-  sha256 "YOUR_PDF21PNG_SHA256_HERE" # Placeholder, update with actual SHA256
+  version "2.1.0"
+  
+  # NOTE: Update these values when creating a release:
+  # 1. Replace URL with: https://github.com/twardoch/pdf22png/releases/download/v2.1.0/pdf21png-v2.1.0-macos-universal.tar.gz
+  # 2. Replace SHA256 with actual checksum from release
+  url "https://github.com/twardoch/pdf22png/archive/refs/tags/v2.1.0.tar.gz"
+  sha256 "PLACEHOLDER_SHA256_UPDATE_ON_RELEASE"
+  
   license "MIT"
   head "https://github.com/twardoch/pdf22png.git", branch: "main"
 
-  depends_on :macos
+  depends_on :macos => :catalina # macOS 10.15+
 
   def install
-    # Build pdf21png (Objective-C) from its directory
-    cd "pdf21png" do
-      system "make", "install", "PREFIX=#{prefix}"
+    if build.head?
+      # Build from source for HEAD installations
+      cd "pdf21png" do
+        system "make", "clean"
+        system "make", "universal"
+      end
+      bin.install "pdf21png/build/pdf21png"
+    else
+      # Install pre-built binary from release
+      bin.install "pdf21png"
     end
+    
+    # Install man page if available
+    man1.install "docs/pdf21png.1" if File.exist?("docs/pdf21png.1")
+  end
+
+  def caveats
+    <<~EOS
+      pdf21png is the high-performance Objective-C implementation.
+      
+      For the modern Swift version with additional features, install pdf22png:
+        brew install pdf22png
+        
+      If you previously used 'pdf22png' command, it now refers to the Swift version.
+      This tool (pdf21png) is the original Objective-C implementation.
+    EOS
   end
 
   test do
@@ -34,7 +62,14 @@ class Pdf21png < Formula
       %%EOF
     EOS
 
+    # Test basic conversion
     system "#{bin}/pdf21png", "test.pdf", "output.png"
     assert_predicate testpath/"output.png", :exist?
+    
+    # Test help flag
+    assert_match "Usage:", shell_output("#{bin}/pdf21png --help 2>&1", 1)
+    
+    # Test version flag
+    assert_match "2.1", shell_output("#{bin}/pdf21png --version 2>&1")
   end
 end

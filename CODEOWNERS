@@ -1,0 +1,52 @@
+# PDF22PNG Code Owners
+# This file defines who is responsible for code in this repository
+# https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Default owners for everything in the repo
+* @twardoch
+
+# Objective-C implementation (pdf21png)
+/pdf21png/ @twardoch
+*.m @twardoch
+*.h @twardoch
+
+# Swift implementation (pdf22png)
+/pdf22png/ @twardoch
+*.swift @twardoch
+/Package.swift @twardoch
+/Package.resolved @twardoch
+
+# Build system
+/Makefile @twardoch
+*.mk @twardoch
+/build.sh @twardoch
+/release.sh @twardoch
+
+# Scripts
+/scripts/ @twardoch
+*.sh @twardoch
+
+# Documentation
+*.md @twardoch
+/docs/ @twardoch
+/man/ @twardoch
+
+# CI/CD
+/.github/ @twardoch
+/.github/workflows/ @twardoch
+
+# Homebrew
+/homebrew/ @twardoch
+*.rb @twardoch
+
+# Tests
+/tests/ @twardoch
+/testdata/ @twardoch
+/benchmarks/ @twardoch
+
+# Configuration
+.*rc @twardoch
+.*config @twardoch
+.editorconfig @twardoch
+.gitignore @twardoch
+.gitattributes @twardoch

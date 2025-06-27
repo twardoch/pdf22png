@@ -16,6 +16,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added troubleshooting section for common issues
 - Created simplified TODO.md with prioritized task list
 - Updated installation scripts (install.sh, uninstall.sh) to be Homebrew-aware with colored output
+- Created `scripts/install-deps.sh` for checking and installing build dependencies
+- Added `.editorconfig` for consistent code formatting across the project
+- Created comprehensive integration test suite in `tests/integration_test.sh`
+- Added `CODEOWNERS` file for repository ownership
+- Created new GitHub Actions workflow for automated releases
 
 ### Changed
 - Reorganized README.md structure for better user experience
@@ -25,19 +30,47 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated install.sh to intelligently detect and prefer Homebrew
 - Updated uninstall.sh to detect installation method and handle appropriately
 - Both scripts now have interactive confirmation and better error handling
+- Updated build.sh to use unified Makefile as backend
+- Enhanced Homebrew formulas with better structure, caveats, and comprehensive tests
+- Updated GitHub Actions workflows:
+  - `build.yml`: Added matrix builds for multiple macOS versions
+  - `release.yml`: Integrated with release.sh and automated SHA256 generation
 
 ### Improved
 - Installation scripts now feature colored output for better readability
 - Scripts automatically detect whether tools were installed via Homebrew or manually
 - Added non-interactive mode for automation
 - Better PATH verification after installation
+- Homebrew formulas now include version detection and migration guidance
+- Build system now has centralized dependency checking
+- GitHub Actions now cache Swift Package Manager dependencies
+- Release workflow can be triggered manually with version input
 
 ### Planned
 - Homebrew tap configuration for official distribution
 - Enhanced test coverage for both implementations
 - Developer environment improvements (.devcontainer, pre-commit hooks)
 - Performance benchmarking automation
-- Semantic versioning automation
+
+## [Unreleased] - 2025-06-27 (Phase 21: Distribution)
+
+### Added
+- Created `scripts/get-version.sh` for semantic versioning based on git tags
+- Created `scripts/build-pkg.sh` to build macOS .pkg installer
+- Created `scripts/build-dmg.sh` to build macOS .dmg disk image
+- Added distribution targets to Makefile: `dist`, `pkg`, `dmg`, `version`
+- Updated GitHub Actions release workflow to automatically build installers
+
+### Changed
+- Release workflow now creates .pkg and .dmg files with SHA256 checksums
+- Version numbering now based on git tags (e.g., v2.3.0)
+- Installers include both pdf21png and pdf22png binaries
+
+### Distribution Features
+- **PKG Installer**: Professional installer with pre/post scripts, installs to /usr/local/bin
+- **DMG Disk Image**: User-friendly drag-and-drop installation with install/uninstall scripts
+- **Version Management**: Automatic version detection from git tags with semantic versioning
+- **Automated Releases**: GitHub Actions builds all artifacts on version tag push
 
 ## [2.1.0 / 2.2.0] - 2025-06-27
 
