@@ -4,8 +4,8 @@ on:
   pull_request:
     branches: [ main ]
     paths:
-      - 'src/**'
-      - 'Sources/**'
+      - 'pdf21png/src/**'
+      - 'pdf22png/Sources/**'
       - 'benchmarks/**'
       - '.github/workflows/benchmark.yml'
   push:
@@ -42,23 +42,23 @@ jobs:
       uses: actions/cache@v3
       with:
         path: |
-          build/
-          .build/
-        key: ${{ runner.os }}-build-${{ hashFiles('**/*.m', '**/*.swift', 'Makefile', 'Package.swift') }}
+          pdf21png/build/
+          pdf22png/.build/
+        key: ${{ runner.os }}-build-${{ hashFiles('pdf21png/src/**/*.m', 'pdf22png/Sources/**/*.swift', 'pdf21png/Makefile', 'pdf21png/Package.swift') }}
         restore-keys: |
           ${{ runner.os }}-build-
     
     - name: Build implementations
       run: |
         echo "::group::Building implementations"
-        ./build.sh --clean
+        ./build.sh
         echo "::endgroup::"
     
     - name: Verify builds
       run: |
         echo "::group::Verifying builds"
-        ./build/pdf22png --version
-        ./build/pdf22png-swift --version
+        ./pdf21png/build/pdf21png --version
+        ./pdf22png/.build/release/pdf22png --version
         echo "::endgroup::"
     
     - name: Run benchmarks
@@ -66,19 +66,17 @@ jobs:
       run: |
         echo "::group::Running benchmarks"
         BENCH_MODE="${{ github.event.inputs.extended == 'true' && '-e' || '' }}"
-        ./bench.sh $BENCH_MODE -o benchmark-results.csv --no-build
+        ./bench.sh $BENCH_MODE -o benchmark-results.csv
         
         # Save benchmark output
-        ./bench.sh $BENCH_MODE --no-build > benchmark-output.txt 2>&1
+        ./bench.sh $BENCH_MODE > benchmark-output.txt 2>&1
         
         # Extract key metrics
-        OBJC_TIME=$(grep "Objective-C:" benchmark-output.txt | grep "Average times" -A1 | tail -1 | awk '{print $3}')
-        SWIFT_TIME=$(grep "Swift:" benchmark-output.txt | grep "Average times" -A2 | tail -1 | awk '{print $3}')
-        OVERALL=$(grep "Overall: Swift is" benchmark-output.txt | sed 's/.*Swift is //' | sed 's/ than.*//')
+        OBJC_TIME=$(grep "pdf21png" benchmark-output.txt | awk '{print $2}')
+        SWIFT_TIME=$(grep "pdf22png" benchmark-output.txt | awk '{print $2}')
         
         echo "objc_time=$OBJC_TIME" >> $GITHUB_OUTPUT
         echo "swift_time=$SWIFT_TIME" >> $GITHUB_OUTPUT
-        echo "overall=$OVERALL" >> $GITHUB_OUTPUT
         echo "::endgroup::"
     
     - name: Upload benchmark results
@@ -95,11 +93,11 @@ jobs:
         echo "::group::Checking for performance regression"
         # Get baseline from main branch
         git checkout main
-        ./build.sh --clean >/dev/null 2>&1
-        ./bench.sh -q --no-build > baseline-output.txt 2>&1
+        ./build.sh >/dev/null 2>&1
+        ./bench.sh -q > baseline-output.txt 2>&1
         
-        BASELINE_OBJC=$(grep "Objective-C:" baseline-output.txt | grep "Average times" -A1 | tail -1 | awk '{print $3}' | sed 's/s//')
-        BASELINE_SWIFT=$(grep "Swift:" baseline-output.txt | grep "Average times" -A2 | tail -1 | awk '{print $3}' | sed 's/s//')
+        BASELINE_OBJC=$(grep "pdf21png" baseline-output.txt | awk '{print $2}' | sed 's/s//')
+        BASELINE_SWIFT=$(grep "pdf22png" baseline-output.txt | awk '{print $2}' | sed 's/s//')
         
         # Switch back to PR branch
         git checkout -
@@ -130,32 +128,17 @@ jobs:
           const fs = require('fs');
           const output = fs.readFileSync('benchmark-output.txt', 'utf8');
           
-          // Extract key sections
-          const perfComparison = output.match(/Performance Comparison[\s\S]*?(?=\n\n)/)?.[0] || '';
-          const summary = output.match(/Summary[\s\S]*?(?=Output Quality|$)/)?.[0] || '';
-          const quality = output.match(/Output Quality[\s\S]*?(?=Benchmark completed|$)/)?.[0] || '';
-          
           const comment = `## 📊 Performance Benchmark Results
           
-          **Overall Performance**: Swift is ${{ steps.benchmark.outputs.overall }} than Objective-C
-          
           ### Average Times
-          - **Objective-C**: ${{ steps.benchmark.outputs.objc_time }}
-          - **Swift**: ${{ steps.benchmark.outputs.swift_time }}
+          - **pdf21png (Objective-C)**: ${{ steps.benchmark.outputs.objc_time }}
+          - **pdf22png (Swift)**: ${{ steps.benchmark.outputs.swift_time }}
           
           <details>
           <summary>Detailed Results</summary>
           
           \`\`\`
-          ${perfComparison}
-          \`\`\`
-          
-          \`\`\`
-          ${summary}
-          \`\`\`
-          
-          \`\`\`
-          ${quality}
+          ${output}
           \`\`\`
           </details>
           
@@ -173,7 +156,7 @@ jobs:
       if: github.event_name == 'push' && github.ref == 'refs/heads/main'
       run: |
         # Create badge data for README
-        echo "{\"objc\": \"${{ steps.benchmark.outputs.objc_time }}\", \"swift\": \"${{ steps.benchmark.outputs.swift_time }}\", \"comparison\": \"${{ steps.benchmark.outputs.overall }}\"}" > badge-data.json
+        echo "{\"objc\": \"${{ steps.benchmark.outputs.objc_time }}\", \"swift\": \"${{ steps.benchmark.outputs.swift_time }}\"}" > badge-data.json
     
     - name: Upload badge data
       if: github.event_name == 'push' && github.ref == 'refs/heads/main'

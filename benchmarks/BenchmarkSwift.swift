@@ -1,6 +1,6 @@
 import Foundation
 import CoreGraphics
-import PDF22PNGCore
+import pdf22png
 
 // Bridge functions to call from Objective-C
 @objc public class SwiftBenchmarkBridge: NSObject {

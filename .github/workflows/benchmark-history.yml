@@ -76,7 +76,7 @@ jobs:
           echo "## Run: $(date -u +"%Y-%m-%d %H:%M:%S UTC")" >> "data/$YEAR/$MONTH/summary.md"
           echo "Commit: ${{ github.event.workflow_run.head_sha }}" >> "data/$YEAR/$MONTH/summary.md"
           echo "" >> "data/$YEAR/$MONTH/summary.md"
-          grep -A 10 "Summary" "temp/benchmark-output.txt" >> "data/$YEAR/$MONTH/summary.md"
+          cat temp/benchmark-output.txt >> "data/$YEAR/$MONTH/summary.md"
           echo "" >> "data/$YEAR/$MONTH/summary.md"
           echo "---" >> "data/$YEAR/$MONTH/summary.md"
         fi
@@ -84,14 +84,15 @@ jobs:
     - name: Generate performance graph
       run: |
         # Simple CSV aggregation for graphing tools
-        echo "date,objc_avg,swift_avg,swift_slowdown" > performance-history.csv
+        echo "date,pdf21png_avg,pdf22png_avg" > performance-history.csv
         
         # Aggregate all CSV files
         for csv in data/*/*/*.csv; do
           if [ -f "$csv" ]; then
             DATE=$(basename "$csv" | cut -d'_' -f1)
-            # Extract averages from CSV (this is simplified, would need proper parsing)
-            echo "Processing $csv for date $DATE"
+            PDF21PNG_AVG=$(grep "pdf21png" "$csv" | cut -d',' -f2)
+            PDF22PNG_AVG=$(grep "pdf22png" "$csv" | cut -d',' -f2)
+            echo "$DATE,$PDF21PNG_AVG,$PDF22PNG_AVG" >> performance-history.csv
           fi
         done
     

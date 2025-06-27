@@ -5,6 +5,9 @@
 
 set -e
 
+cd "$(dirname "$0")"
+npx repomix -o llms.txt .
+
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'

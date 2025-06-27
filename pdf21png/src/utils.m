@@ -709,7 +709,7 @@ BOOL fileExists(NSString *path) {
     return [[NSFileManager defaultManager] fileExistsAtPath:path];
 }
 
-BOOL shouldOverwriteFile(NSString *path, BOOL interactive) {
+BOOL shouldOverwriteFile(NSString *path) {
     if (!fileExists(path)) {
         return YES; // File doesn't exist, safe to write
     }
@@ -876,7 +876,7 @@ BOOL writeImageToFileWithLocking(CGImageRef image, NSString *outputPath, int png
         // We need to release the lock before prompting
         releaseFileLock(lockFd);
         
-        if (!shouldOverwriteFile(outputPath, YES)) {
+        if (!shouldOverwriteFile(outputPath)) {
             logMessage(verbose, @"Skipping %@ - file exists and overwrite denied", outputPath);
             return NO;
         }

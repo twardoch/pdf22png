@@ -32,7 +32,7 @@ NSString *formatFilenameWithPattern(NSString *pattern, NSString *basename, NSUIn
 
 // File overwrite protection
 BOOL fileExists(NSString *path);
-BOOL shouldOverwriteFile(NSString *path, BOOL interactive);
+BOOL shouldOverwriteFile(NSString *path);
 BOOL promptUserForOverwrite(NSString *path);
 
 // Enhanced error reporting

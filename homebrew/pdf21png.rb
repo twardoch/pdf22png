@@ -1,19 +1,17 @@
-class Pdf22png < Formula
-  desc "Modern, feature-rich PDF to PNG converter for macOS (Swift implementation)"
+class Pdf21png < Formula
+  desc "High-performance PDF to PNG converter for macOS (Objective-C implementation)"
   homepage "https://github.com/twardoch/pdf22png"
-  url "https://github.com/twardoch/pdf22png/archive/refs/tags/v2.2.0.tar.gz" # Placeholder, update with actual release tag
-  sha256 "YOUR_PDF22PNG_SHA256_HERE" # Placeholder, update with actual SHA256
+  url "https://github.com/twardoch/pdf22png/archive/refs/tags/v2.1.0.tar.gz" # Placeholder, update with actual release tag
+  sha256 "YOUR_PDF21PNG_SHA256_HERE" # Placeholder, update with actual SHA256
   license "MIT"
   head "https://github.com/twardoch/pdf22png.git", branch: "main"
 
   depends_on :macos
-  depends_on :xcode # For Swift
 
   def install
-    # Build pdf22png (Swift) from its directory
-    cd "pdf22png" do
-      system "swift", "build", "--disable-sandbox", "-c", "release", "--product", "pdf22png"
-      bin.install ".build/release/pdf22png"
+    # Build pdf21png (Objective-C) from its directory
+    cd "pdf21png" do
+      system "make", "install", "PREFIX=#{prefix}"
     end
   end
 
@@ -36,7 +34,7 @@ class Pdf22png < Formula
       %%EOF
     EOS
 
-    system "#{bin}/pdf22png", "test.pdf", "output.png"
+    system "#{bin}/pdf21png", "test.pdf", "output.png"
     assert_predicate testpath/"output.png", :exist?
   end
 end

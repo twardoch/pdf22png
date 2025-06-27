@@ -1,27 +1,64 @@
-# PDF22PNG Project Renaming Plan
+# PDF22PNG Project Plan
 
-## CRITICAL PRIORITY: Implementation Renaming
+## COMPLETED: Implementation Renaming ✓
 
-**Objective**: Rename the two implementations to clearly differentiate their purpose and evolution:
-- **Objective-C Implementation**: `pdf22png` → `pdf21png` (mature, stable, performance-focused)
-- **Swift Implementation**: remains `pdf22png` (modern, evolving, feature-rich)
+**Successfully Renamed** (2025-06-27):
+- **Objective-C Implementation**: `pdf22png-objc` → `pdf21png` (mature, stable, performance-focused)
+- **Swift Implementation**: `pdf22png-swift` → `pdf22png` (modern, evolving, feature-rich)
 
-## Phase 0: Pre-Renaming Preparation (IMMEDIATE)
+### What Was Accomplished
+- ✓ Directory renaming: `pdf22png-objc` → `pdf21png`, `pdf22png-swift` → `pdf22png`
+- ✓ Source code updates: All references updated in both implementations
+- ✓ Build system updates: Makefiles and Package.swift updated
+- ✓ Script updates: `build.sh`, `test_both.sh`, and `bench.sh` updated
+- ✓ Binary naming: `pdf21png` for Objective-C, `pdf22png` for Swift
+- ✓ Documentation: CHANGELOG.md updated, TODO.md tasks marked complete
 
-### 0.1 Backup and Version Control
-- Create a backup branch: `pre-renaming-backup`
-- Tag current state: `v1.0-pre-rename`
-- Document current binary names and paths
+## Current Priorities (2025-06-27)
 
-### 0.2 Impact Analysis
-Total files affected: ~56 files plus directory names
-Major areas of impact:
-1. Source code files (headers, implementation)
-2. Build systems (Makefiles, Package.swift)
-3. Documentation (READMEs, man pages)
-4. Scripts (build, test, install)
-5. CI/CD configurations
-6. Package management (Homebrew)
+### Immediate Tasks (COMPLETED)
+1. **Documentation Overhaul**
+   - Rewrite README.md with user-friendly language
+   - Create comprehensive CONTRIBUTING.md for developers
+   - Update all examples and guides
+
+2. **Remaining Renaming Tasks**
+   - Update GitHub Actions workflows
+   - Create separate Homebrew formulas
+   - Update installation scripts
+
+3. **Testing and Validation**
+   - Run comprehensive test suite
+   - Benchmark both implementations
+   - Verify installation process
+
+### Swift Porting Strategy (Phase 13.1: Architectural Blueprint)
+- **Goal**: Gradually migrate the ObjC codebase to pure Swift while guaranteeing that the existing Objective-C implementation remains the canonical, production-ready path until feature- and performance-parity is proven.
+- **High-level mapping between current ObjC modules and their future Swift equivalents:**
+    - **CLI (Command Line Interface):**
+        - Objective-C: `parseArguments`, `printUsage`
+        - Swift Equivalent: Utilize `ArgumentParser` framework.
+    - **PDFCore (PDF Document Handling):**
+        - Objective-C: `readPDFData`, `parsePageRange`, `extractTextFromPDFPage`, `performOCROnImage`, direct `CoreGraphics` PDF functions.
+        - Swift Equivalent: `PDFDocument` wrapper (PDFKit/CoreGraphics), `PageRangeParser`, `TextExtractor` (Vision for OCR).
+    - **RenderCore (Image Rendering):**
+        - Objective-C: `renderPDFPageToImage`, `renderPDFPageToImageOptimized`, `calculateScaleFactor`.
+        - Swift Equivalent: `PDFRenderer` and `ScaleCalculator`.
+    - **IO (Input/Output & File Management):**
+        - Objective-C: `writeImageAsPNG`, `writeImageToFile`, `writeImageToFileWithLocking`, `fileExists`, `shouldOverwriteFile`, `promptUserForOverwrite`, `acquireFileLock`, `releaseFileLock`.
+        - Swift Equivalent: `ImageWriter`, `FileManager` extensions, `FileLocker`.
+    - **Utils (General Utilities):**
+        - Objective-C: `logMessage`, `reportError`, `reportWarning`, `getTroubleshootingHint`, `slugifyText`, `formatFilenameWithPattern`, `getOutputPrefix`, `signalHandler`.
+        - Swift Equivalent: `Logger`, `ErrorReporter`, `String` extensions, `FilenameFormatter`, `SignalHandler`.
+
+### Next Steps
+- Release version 2.1.0 for pdf21png
+- Release version 2.2.0 for pdf22png
+- Announce changes to users with migration guide
+
+---
+
+## Historical: Original Renaming Plan
 
 ## Phase 1: Core Renaming Strategy (Day 1)
 
@@ -226,4 +263,3 @@ mv pdf22png-swift pdf22png
 - **Swift**: 21.7s real time (was 23.5s), 4.6m CPU time (was 5.5m)
 - **CPU Efficiency**: 48% reduction in CPU time for both implementations
 
-[Rest of original plan content follows...]

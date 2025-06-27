@@ -9,24 +9,33 @@ on:
 jobs:
   build:
     runs-on: macos-latest
-    strategy:
-      matrix:
-        os: [macos-12, macos-13, macos-14]
 
     steps:
     - uses: actions/checkout@v4
 
     - name: Build
-      run: make
+      run: ./build.sh
+
+    - name: Install SwiftLint and SwiftFormat
+      run: brew install swiftlint swiftformat
+
+    - name: Run SwiftLint
+      run: swiftlint lint pdf22png/Sources/ --strict
+
+    - name: Run SwiftFormat
+      run: swiftformat pdf22png/Sources/ --lint --strict
 
     - name: Run tests
-      run: make test
-
-    - name: Build universal binary
-      run: make universal
+      run: ./test_both.sh
 
     - name: Upload artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: pdf22png-${{ matrix.os }}
-        path: src/pdf22png
+        name: pdf21png
+        path: pdf21png/build/pdf21png
+        
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: pdf22png
+        path: pdf22png/.build/release/pdf22png

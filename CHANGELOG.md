@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.1.0 / 2.2.0] - 2024-06-27
+## [2.1.0 / 2.2.0] - 2025-06-27
 
 ### Major Change: Implementation Renaming
 - **BREAKING CHANGE**: The project now provides two distinct implementations with different names:
@@ -19,6 +19,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - If you have scripts using `pdf22png`, they will now use the Swift implementation
 - For performance-critical applications, switch to `pdf21png`
 - Both tools maintain backward compatibility with existing command-line options
+
+### Fixed
+- Fixed "use of undeclared identifier 'programName'" error in `pdf21png.m` by replacing `programName` with `argv[0]`.
+- Fixed "conflicting types for 'shouldOverwriteFile'" and "too few arguments to function call" errors by removing the `interactive` parameter from `shouldOverwriteFile` in `utils.m` and `utils.h`.
+- Confirmed that both Objective-C and Swift implementations build and pass tests.
+- Updated `bench.sh` script to use correct binary paths after renaming
+- Cleaned up old binary artifacts from build directories
+- Marked implementation renaming tasks as complete in TODO.md
 
 ## [Unreleased]
 

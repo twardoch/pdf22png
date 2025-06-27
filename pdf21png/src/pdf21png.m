@@ -3,6 +3,8 @@
 #import <getopt.h>
 #import <signal.h>
 
+#define PDF21PNG_VERSION "2.1.0"
+
 // Global variable for signal handling
 static volatile sig_atomic_t g_shouldTerminate = 0;
 
@@ -26,6 +28,7 @@ static struct option long_options[] = {
     {"dry-run", no_argument, 0, 'D'}, // Preview operations without writing
     {"force", no_argument, 0, 'f'}, // Force overwrite without prompting
     {"help", no_argument, 0, 'h'},
+    {"version", no_argument, 0, 'V'},
     {"output", required_argument, 0, 'o'}, // For consistency with other tools
     {"directory", required_argument, 0, 'd'}, // For batch output directory
     {0, 0, 0, 0}
@@ -67,7 +70,8 @@ void printUsage(const char *programName) {
     fprintf(stderr, "                          Example: '{basename}_p{page:04d}_of_{total}'\n");
     fprintf(stderr, "  -D, --dry-run           Preview operations without writing files.\n");
     fprintf(stderr, "  -f, --force             Force overwrite existing files without prompting.\n");
-    fprintf(stderr, "  -h, --help              Show this help message and exit.\n\n");
+    fprintf(stderr, "  -h, --help              Show this help message and exit.\n");
+    fprintf(stderr, "  -V, --version           Show version information and exit.\n\n");
     fprintf(stderr, "Arguments:\n");
     fprintf(stderr, "  <input.pdf>             Input PDF file. If '-', reads from stdin.\n");
     fprintf(stderr, "  [output.png]            Output PNG file. Required if not using -o or -d.\n");
@@ -177,9 +181,7 @@ Options parseArguments(int argc, const char *argv[]) {
             case 'f':
                 options.forceOverwrite = YES;
                 break;
-            case 'h':
-                printUsage(argv[0]);
-                exit(0);
+            case 'h':                printUsage(argv[0]);                exit(0);            case 'V':                fprintf(stdout, "%s version %s\n", argv[0], PDF21PNG_VERSION);                exit(0);
             case '?': // Unknown option or missing argument
                 // getopt_long already prints an error message if opterr is not 0
                 // fprintf(stderr, "Error: Unknown option or missing argument.\n");

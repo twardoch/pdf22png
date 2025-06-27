@@ -1,65 +1,85 @@
-# PDF22PNG Todo List - Implementation Renaming Priority
+# PDF22PNG Todo List
 
-## CRITICAL: Renaming Implementation (IMMEDIATE PRIORITY)
+## Current Priorities (2025-06-27)
 
-### Objective
-- **pdf22png-objc** → **pdf21png** (mature, stable, performance-focused)
-- **pdf22png-swift** → **pdf22png** (modern, evolving, feature-rich)
+### Documentation Overhaul (COMPLETED)
+- [x] Rewrite README.md with user-friendly language explaining:
+  - Why this project exists
+  - What it does in simple terms
+  - How to install and use it
+  - Clear distinction between pdf21png and pdf22png
+- [x] Create CONTRIBUTING.md with technical details:
+  - Project architecture and structure
+  - Code requirements and standards
+  - Development workflow
+  - Testing procedures
+
+### Remaining Implementation Tasks
+- [x] Update GitHub Actions workflows for new binary names
+- [x] Create separate Homebrew formulas (pdf21png.rb and pdf22png.rb)
+- [x] Update installation scripts to support both implementations
+- [x] Add version command support to pdf21png (Objective-C)
+
+## COMPLETED: Implementation Renaming ✓
+
+### Objective (COMPLETED)
+- **pdf22png-objc** → **pdf21png** (mature, stable, performance-focused) ✓
+- **pdf22png-swift** → **pdf22png** (modern, evolving, feature-rich) ✓
 
 ## Day 1: Pre-Renaming and Objective-C Implementation
 
 ### Pre-Renaming Preparation
-- [ ] Create backup branch: `git checkout -b pre-renaming-backup`
-- [ ] Tag current state: `git tag v1.0-pre-rename`
-- [ ] Document current state in CHANGELOG.md
+- [x] Create backup branch: `git checkout -b pre-renaming-backup`
+- [x] Tag current state: `git tag v1.0-pre-rename`
+- [x] Document current state in CHANGELOG.md
 
 ### Objective-C Implementation Renaming (pdf22png-objc → pdf21png)
-- [ ] Rename source files:
-  - [ ] `mv pdf22png-objc/src/pdf22png.m pdf22png-objc/src/pdf21png.m`
-  - [ ] `mv pdf22png-objc/src/pdf22png.h pdf22png-objc/src/pdf21png.h`
+- [x] Rename source files:
+  - [x] `mv pdf22png-objc/src/pdf22png.m pdf22png-objc/src/pdf21png.m`
+  - [x] `mv pdf22png-objc/src/pdf22png.h pdf22png-objc/src/pdf21png.h`
   
-- [ ] Update source code content:
-  - [ ] In `pdf21png.m`: Replace all "pdf22png" with "pdf21png"
-  - [ ] In `pdf21png.h`: Update header guards and definitions
-  - [ ] In `utils.h`: Update include statements
-  - [ ] In `utils.m`: Update references
-  - [ ] In `errors.h`: Update any references
+- [x] Update source code content:
+  - [x] In `pdf21png.m`: Replace all "pdf22png" with "pdf21png"
+  - [x] In `pdf21png.h`: Update header guards and definitions
+  - [x] In `utils.h`: Update include statements
+  - [x] In `utils.m`: Update references
+  - [x] In `errors.h`: Update any references
   
-- [ ] Update Makefile:
-  - [ ] Change `TARGET = pdf22png` to `TARGET = pdf21png`
-  - [ ] Update `SOURCES = src/pdf22png.m` to `SOURCES = src/pdf21png.m`
-  - [ ] Update installation paths
+- [x] Update Makefile:
+  - [x] Change `TARGET = pdf22png` to `TARGET = pdf21png`
+  - [x] Update `SOURCES = src/pdf22png.m` to `SOURCES = src/pdf21png.m`
+  - [x] Update installation paths
   
-- [ ] Rename directory:
-  - [ ] `mv pdf22png-objc pdf21png`
+- [x] Rename directory:
+  - [x] `mv pdf22png-objc pdf21png`
   
-- [ ] Update README.md in pdf21png/:
-  - [ ] Replace all references to pdf22png with pdf21png
-  - [ ] Update description to emphasize stability and performance
+- [x] Update README.md in pdf21png/:
+  - [x] Replace all references to pdf22png with pdf21png
+  - [x] Update description to emphasize stability and performance
 
 ## Day 2: Swift Implementation Updates
 
 ### Swift Implementation Updates (pdf22png-swift → pdf22png)
-- [ ] Update Package.swift:
-  - [ ] Change executable name from "pdf22png-swift" to "pdf22png"
-  - [ ] Update product name
-  - [ ] Update target names if needed
+- [x] Update Package.swift:
+  - [x] Change executable name from "pdf22png-swift" to "pdf22png"
+  - [x] Update product name
+  - [x] Update target names if needed
   
-- [ ] Update source code:
-  - [ ] In `Sources/main.swift`: Update program identification
-  - [ ] Update help text and version strings
-  - [ ] Remove "-swift" suffix from all references
+- [x] Update source code:
+  - [x] In `Sources/main.swift`: Update program identification
+  - [x] Update help text and version strings
+  - [x] Remove "-swift" suffix from all references
   
-- [ ] Update Makefile:
-  - [ ] Update binary name references
-  - [ ] Change output paths
+- [x] Update Makefile:
+  - [x] Update binary name references
+  - [x] Change output paths
   
 - [ ] Update Tests:
   - [ ] Update test file references
   - [ ] Update expected output in tests
   
-- [ ] Rename directory:
-  - [ ] `mv pdf22png-swift pdf22png`
+- [x] Rename directory:
+  - [x] `mv pdf22png-swift pdf22png`
 
 ## Day 3: Core Documentation Updates
 
@@ -85,19 +105,19 @@
 ## Day 4: Scripts and Build System Updates
 
 ### Build Scripts
-- [ ] Update build.sh:
-  - [ ] Update directory names (pdf21png, pdf22png)
-  - [ ] Update binary output names
-  - [ ] Update build messages
+- [x] Update build.sh:
+  - [x] Update directory names (pdf21png, pdf22png)
+  - [x] Update binary output names
+  - [x] Update build messages
   
-- [ ] Update test_both.sh:
-  - [ ] Change binary paths: `./pdf21png/build/pdf21png`
-  - [ ] Change binary paths: `./pdf22png/.build/release/pdf22png`
-  - [ ] Update output directory names
+- [x] Update test_both.sh:
+  - [x] Change binary paths: `./pdf21png/build/pdf21png`
+  - [x] Change binary paths: `./pdf22png/.build/release/pdf22png`
+  - [x] Update output directory names
   
-- [ ] Update bench.sh:
-  - [ ] Update binary references
-  - [ ] Update benchmark output naming
+- [x] Update bench.sh:
+  - [x] Update binary references
+  - [x] Update benchmark output naming
 
 ### Installation Scripts
 - [ ] Update scripts/install.sh:
@@ -202,8 +222,3 @@
 - Aligns version numbers with product names (2.1 for pdf21png, 2.2 for pdf22png)
 - Sets foundation for independent evolution of each tool
 
----
-
-## Previous Todo Items (NOW SECONDARY)
-
-[All previous performance optimization and feature development tasks move to secondary priority until renaming is complete]

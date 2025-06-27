@@ -92,13 +92,13 @@ echo
 
 # Ensure binaries exist or build them
 if [ "$BUILD_FIRST" = true ]; then
-    if [ ! -f "$BUILD_DIR/pdf22png" ] || [ ! -f "$BUILD_DIR/pdf22png-swift" ]; then
+    if [ ! -f "pdf21png/build/pdf21png" ] || [ ! -f "pdf22png/.build/release/pdf22png" ]; then
         echo -e "${YELLOW}Building implementations...${NC}"
         ./build.sh --clean >/dev/null 2>&1
         echo -e "${GREEN}✓ Build complete${NC}\n"
     fi
 else
-    if [ ! -f "$BUILD_DIR/pdf22png" ] || [ ! -f "$BUILD_DIR/pdf22png-swift" ]; then
+    if [ ! -f "pdf21png/build/pdf21png" ] || [ ! -f "pdf22png/.build/release/pdf22png" ]; then
         echo -e "${RED}Error: Binaries not found. Run ./build.sh first${NC}"
         exit 1
     fi
@@ -243,7 +243,7 @@ echo -e "${BLUE}Objective-C Implementation${NC}"
 echo "--------------------------"
 for test in "${TESTS[@]}"; do
     IFS='|' read -r test_id test_name test_cmd <<< "$test"
-    run_benchmark "objc" "$test_id" "$BUILD_DIR/pdf22png $test_cmd"
+    run_benchmark "objc" "$test_id" "pdf21png/build/pdf21png $test_cmd"
 done
 echo
 
@@ -251,7 +251,7 @@ echo -e "${BLUE}Swift Implementation${NC}"
 echo "--------------------"
 for test in "${TESTS[@]}"; do
     IFS='|' read -r test_id test_name test_cmd <<< "$test"
-    run_benchmark "swift" "$test_id" "$BUILD_DIR/pdf22png-swift $test_cmd"
+    run_benchmark "swift" "$test_id" "pdf22png/.build/release/pdf22png $test_cmd"
 done
 echo
 

@@ -43,6 +43,9 @@ coverage/
 *.gcda
 *.gcno
 
+# Swift Package Manager build products
+.build/
+
 # IDEs
 .vscode/
 .idea/
@@ -60,8 +63,12 @@ dist/
 # Documentation
 docs/_build/
 *.pdf
-.build/
 
 # Private and temporary directories
 _private/
 issues/
+
+# Explicitly include Swift test sources
+!/pdf22png/Tests/
+!/pdf22png/Tests/**/*.swift
+testdata/test.pdf-oc/.test*
