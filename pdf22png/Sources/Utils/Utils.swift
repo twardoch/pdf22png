@@ -37,9 +37,9 @@ public func parseScaleSpec(_ spec: String) -> ScaleSpec? {
     }
 
     // Check for DPI (AAAdpi) - case insensitive
-    let lowerSpec = spec.lowercased()
+    let lowerSpec = trimmedSpec.lowercased()
     if lowerSpec.hasSuffix("dpi") {
-        let numStr = String(spec.dropLast(3))
+        let numStr = String(trimmedSpec.dropLast(3))
         if let value = Double(numStr) {
             scale.dpi = value
             scale.isDPI = true
@@ -52,8 +52,8 @@ public func parseScaleSpec(_ spec: String) -> ScaleSpec? {
     }
 
     // Check for dimensions (WxH, Wx, xH)
-    if spec.contains("x") {
-        let parts = spec.split(separator: "x", maxSplits: 1, omittingEmptySubsequences: false)
+    if trimmedSpec.contains("x") {
+        let parts = trimmedSpec.split(separator: "x", maxSplits: 1, omittingEmptySubsequences: false)
         let widthStr = String(parts[0])
         let heightStr = parts.count > 1 ? String(parts[1]) : ""
 
@@ -85,7 +85,7 @@ public func parseScaleSpec(_ spec: String) -> ScaleSpec? {
     }
 
     // If no known suffix or 'x' separator, try to parse as a simple number (scale factor)
-    if let factor = Double(spec) {
+    if let factor = Double(trimmedSpec) {
         if factor <= 0 {
             fputs("Error: Scale factor must be positive.\n", stderr)
             return nil
@@ -98,7 +98,7 @@ public func parseScaleSpec(_ spec: String) -> ScaleSpec? {
         return scale
     }
 
-    fputs("Error: Invalid scale specification format: \(spec)\n", stderr)
+    fputs("Error: Invalid scale specification format: \(trimmedSpec)\n", stderr)
     return nil
 }
 
