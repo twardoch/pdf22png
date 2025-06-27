@@ -92,11 +92,11 @@ fi
 # Clean if requested
 if [ "$CLEAN" = true ]; then
     echo -e "${YELLOW}Cleaning previous builds...${NC}"
-    if [ "$BUILD_OBJC" = true ] && [ -d "pdf22png-objc" ]; then
-        cd pdf22png-objc && make clean && cd ..
+    if [ "$BUILD_OBJC" = true ] && [ -d "pdf21png" ]; then
+        cd pdf21png && make clean && cd ..
     fi
-    if [ "$BUILD_SWIFT" = true ] && [ -d "pdf22png-swift" ]; then
-        cd pdf22png-swift && make clean && cd ..
+    if [ "$BUILD_SWIFT" = true ] && [ -d "pdf22png" ]; then
+        cd pdf22png && make clean && cd ..
     fi
     echo -e "${GREEN}✓ Clean completed${NC}"
     echo ""
@@ -105,8 +105,8 @@ fi
 # Build Objective-C implementation
 if [ "$BUILD_OBJC" = true ]; then
     echo -e "${YELLOW}Building Objective-C Implementation...${NC}"
-    if [ -d "pdf22png-objc" ]; then
-        cd pdf22png-objc
+    if [ -d "pdf21png" ]; then
+        cd pdf21png
         if [ "$BUILD_TYPE" = "debug" ]; then
             make debug
         else
@@ -115,7 +115,7 @@ if [ "$BUILD_OBJC" = true ]; then
         cd ..
         echo -e "${GREEN}✓ Objective-C implementation built successfully${NC}"
     else
-        echo -e "${RED}✗ pdf22png-objc directory not found${NC}"
+        echo -e "${RED}✗ pdf21png directory not found${NC}"
         exit 1
     fi
     echo ""
@@ -124,8 +124,8 @@ fi
 # Build Swift implementation
 if [ "$BUILD_SWIFT" = true ]; then
     echo -e "${YELLOW}Building Swift Implementation...${NC}"
-    if [ -d "pdf22png-swift" ]; then
-        cd pdf22png-swift
+    if [ -d "pdf22png" ]; then
+        cd pdf22png
         if [ "$BUILD_TYPE" = "debug" ]; then
             make debug
         else
@@ -134,7 +134,7 @@ if [ "$BUILD_SWIFT" = true ]; then
         cd ..
         echo -e "${GREEN}✓ Swift implementation built successfully${NC}"
     else
-        echo -e "${RED}✗ pdf22png-swift directory not found${NC}"
+        echo -e "${RED}✗ pdf22png directory not found${NC}"
         exit 1
     fi
     echo ""
@@ -145,16 +145,16 @@ echo -e "${BLUE}Build Summary${NC}"
 echo -e "${BLUE}=============${NC}"
 
 if [ "$BUILD_OBJC" = true ]; then
-    if [ -f "pdf22png-objc/build/pdf22png" ] || [ -f "pdf22png-objc/build/pdf22png-debug" ]; then
-        echo -e "${GREEN}✓ Objective-C: pdf22png-objc/build/pdf22png${NC}"
+    if [ -f "pdf21png/build/pdf21png" ] || [ -f "pdf21png/build/pdf21png-debug" ]; then
+        echo -e "${GREEN}✓ Objective-C: pdf21png/build/pdf21png${NC}"
     else
         echo -e "${RED}✗ Objective-C build failed${NC}"
     fi
 fi
 
 if [ "$BUILD_SWIFT" = true ]; then
-    if [ -f "pdf22png-swift/.build/release/pdf22png-swift" ] || [ -f "pdf22png-swift/.build/debug/pdf22png-swift" ]; then
-        echo -e "${GREEN}✓ Swift: pdf22png-swift/.build/$BUILD_TYPE/pdf22png-swift${NC}"
+    if [ -f "pdf22png/.build/release/pdf22png" ] || [ -f "pdf22png/.build/debug/pdf22png" ]; then
+        echo -e "${GREEN}✓ Swift: pdf22png/.build/$BUILD_TYPE/pdf22png${NC}"
     else
         echo -e "${RED}✗ Swift build failed${NC}"
     fi
@@ -167,8 +167,8 @@ echo -e "${GREEN}Build completed!${NC}"
 echo ""
 echo -e "${BLUE}Usage Examples:${NC}"
 if [ "$BUILD_OBJC" = true ]; then
-    echo "  ./pdf22png-objc/build/pdf22png input.pdf output.png"
+    echo "  ./pdf21png/build/pdf21png input.pdf output.png"
 fi
 if [ "$BUILD_SWIFT" = true ]; then
-    echo "  ./pdf22png-swift/.build/$BUILD_TYPE/pdf22png-swift input.pdf output.png"
+    echo "  ./pdf22png/.build/$BUILD_TYPE/pdf22png input.pdf output.png"
 fi

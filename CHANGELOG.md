@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.0 / 2.2.0] - 2024-06-27
+
+### Major Change: Implementation Renaming
+- **BREAKING CHANGE**: The project now provides two distinct implementations with different names:
+  - **pdf21png** (v2.1.0): The Objective-C implementation, formerly `pdf22png`
+  - **pdf22png** (v2.2.0): The Swift implementation, formerly `pdf22png-swift`
+- This change clarifies the purpose and evolution of each tool:
+  - pdf21png = Mature, stable, performance-focused (version 2.1)
+  - pdf22png = Modern, evolving, feature-rich (version 2.2)
+
+### Migration Guide
+- If you have scripts using `pdf22png`, they will now use the Swift implementation
+- For performance-critical applications, switch to `pdf21png`
+- Both tools maintain backward compatibility with existing command-line options
+
 ## [Unreleased]
 
 ### Changed
