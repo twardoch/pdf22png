@@ -1,4 +1,4 @@
-# PDF22PNG Objective-C Implementation Makefile
+# PDF21PNG Objective-C Implementation Makefile
 
 # Build configuration
 BUILD_DIR = build
@@ -14,9 +14,9 @@ FRAMEWORKS = -framework Foundation -framework CoreGraphics -framework ImageIO \
              -framework UniformTypeIdentifiers
 
 # Source files
-SOURCES = src/pdf22png.m src/utils.m
-HEADERS = src/pdf22png.h src/utils.h src/errors.h
-TARGET = pdf22png
+SOURCES = src/pdf21png.m src/utils.m
+HEADERS = src/pdf21png.h src/utils.h src/errors.h
+TARGET = pdf21png
 
 # Default target
 all: $(BUILD_DIR)/$(TARGET)
@@ -26,7 +26,7 @@ $(BUILD_DIR):
 
 # Main build target
 $(BUILD_DIR)/$(TARGET): $(SOURCES) $(HEADERS) | $(BUILD_DIR)
-	@echo "Building PDF22PNG Objective-C implementation..."
+	@echo "Building PDF21PNG Objective-C implementation..."
 	$(CC) $(CFLAGS) $(FRAMEWORKS) -DVERSION=\"$(VERSION)\" $(SOURCES) -o $@
 	@echo "✓ Built: $@"
 
@@ -71,7 +71,7 @@ test: $(BUILD_DIR)/$(TARGET)
 
 # Help
 help:
-	@echo "PDF22PNG Objective-C Build System"
+	@echo "PDF21PNG Objective-C Build System"
 	@echo "================================="
 	@echo ""
 	@echo "Targets:"

@@ -1,4 +1,4 @@
-# PDF22PNG - Objective-C Implementation
+# PDF21PNG - Objective-C Implementation
 
 High-performance PDF to PNG converter built with native macOS frameworks.
 
@@ -26,7 +26,7 @@ make universal         # Build universal binary (Intel + Apple Silicon)
 ## Installation
 
 ```bash
-make install           # Install to /usr/local/bin/pdf22png
+make install           # Install to /usr/local/bin/pdf21png
 make uninstall         # Remove installation
 ```
 
@@ -34,16 +34,16 @@ make uninstall         # Remove installation
 
 ```bash
 # Convert single page
-./build/pdf22png input.pdf output.png
+./build/pdf21png input.pdf output.png
 
 # Convert all pages
-./build/pdf22png -a document.pdf
+./build/pdf21png -a document.pdf
 
 # Convert at 300 DPI
-./build/pdf22png -r 300 input.pdf high-res.png
+./build/pdf21png -r 300 input.pdf high-res.png
 
 # Batch with custom naming
-./build/pdf22png -a -P '{basename}_page_{page:03d}' document.pdf
+./build/pdf21png -a -P '{basename}_page_{page:03d}' document.pdf
 ```
 
 ## Implementation Details

@@ -3,7 +3,7 @@
 
 #import <Foundation/Foundation.h>
 #import <Quartz/Quartz.h>
-#import "pdf22png.h" // For ScaleSpec and Options structs
+#import "pdf21png.h" // For ScaleSpec and Options structs
 #import "errors.h" // For error codes and handling
 
 // Function prototypes for utility functions

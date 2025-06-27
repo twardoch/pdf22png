@@ -1,4 +1,4 @@
-#import "pdf22png.h"
+#import "pdf21png.h"
 #import "utils.h"
 #import <getopt.h>
 #import <signal.h>
@@ -418,7 +418,7 @@ BOOL processBatchMode(CGPDFDocumentRef pdfDocument, Options *options) {
     // Optimize concurrency - limit to 2x CPU cores for better memory usage
     NSUInteger optimalConcurrency = MIN(pagesToProcess.count, [[NSProcessInfo processInfo] activeProcessorCount] * 2);
     dispatch_semaphore_t semaphore = dispatch_semaphore_create(optimalConcurrency);
-    dispatch_queue_t renderQueue = dispatch_queue_create("com.pdf22png.render", DISPATCH_QUEUE_CONCURRENT);
+    dispatch_queue_t renderQueue = dispatch_queue_create("com.pdf21png.render", DISPATCH_QUEUE_CONCURRENT);
     dispatch_group_t group = dispatch_group_create();
     
     // Create shared color space to reduce allocations
@@ -527,7 +527,7 @@ int main(int argc, const char *argv[]) {
         
         Options options = parseArguments(argc, argv);
 
-        logMessage(options.verbose, @"Starting pdf22png tool.");
+        logMessage(options.verbose, @"Starting pdf21png tool.");
 
         NSData *pdfData = readPDFData(options.inputPath, options.verbose);
         if (!pdfData || [pdfData length] == 0) {
