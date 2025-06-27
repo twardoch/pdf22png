@@ -64,10 +64,15 @@ clean:
 	rm -rf $(BUILD_DIR)
 	rm -f *.o
 
-# Test (basic functionality test)
+# Test (run XCTest suite if available, otherwise basic test)
 test: $(BUILD_DIR)/$(TARGET)
-	@echo "Running basic functionality test..."
-	@$(BUILD_DIR)/$(TARGET) --help > /dev/null && echo "✓ Help command works"
+	@echo "Running PDF21PNG tests..."
+	@if [ -f "Tests/run-tests.sh" ]; then \
+		./Tests/run-tests.sh; \
+	else \
+		echo "Running basic functionality test..."; \
+		$(BUILD_DIR)/$(TARGET) --help > /dev/null && echo "✓ Help command works"; \
+	fi
 
 # Help
 help:
