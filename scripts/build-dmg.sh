@@ -79,13 +79,21 @@ prepare_contents() {
     mkdir -p "$CONTENT_DIR/bin"
     
     # Copy binaries
-    if [ -f "$PROJECT_ROOT/pdf21png/build/pdf21png" ]; then
+    # Copy pdf21png (check universal build location first)
+    if [ -f "$PROJECT_ROOT/pdf21png/build/pdf21png-universal" ]; then
+        cp "$PROJECT_ROOT/pdf21png/build/pdf21png-universal" "$CONTENT_DIR/bin/pdf21png"
+        chmod 755 "$CONTENT_DIR/bin/pdf21png"
+        print_success "Copied pdf21png (universal)"
+    elif [ -f "$PROJECT_ROOT/pdf21png/build/pdf21png" ]; then
         cp "$PROJECT_ROOT/pdf21png/build/pdf21png" "$CONTENT_DIR/bin/"
         chmod 755 "$CONTENT_DIR/bin/pdf21png"
         print_success "Copied pdf21png"
     fi
     
-    if [ -f "$PROJECT_ROOT/pdf22png/.build/apple/Products/Release/pdf22png" ]; then
+    # Copy pdf22png (try multiple possible locations)
+    if [ -f "$PROJECT_ROOT/pdf22png/build/pdf22png" ]; then
+        cp "$PROJECT_ROOT/pdf22png/build/pdf22png" "$CONTENT_DIR/bin/"
+    elif [ -f "$PROJECT_ROOT/pdf22png/.build/apple/Products/Release/pdf22png" ]; then
         cp "$PROJECT_ROOT/pdf22png/.build/apple/Products/Release/pdf22png" "$CONTENT_DIR/bin/"
     elif [ -f "$PROJECT_ROOT/pdf22png/.build/release/pdf22png" ]; then
         cp "$PROJECT_ROOT/pdf22png/.build/release/pdf22png" "$CONTENT_DIR/bin/"
@@ -183,12 +191,10 @@ EOF
     
     chmod +x "$CONTENT_DIR/Uninstall Command Line Tools.command"
     
-    # Create a simple background image (placeholder)
-    # In a real scenario, you'd include a designed background image
-    cat > "$CONTENT_DIR/.background/background.png" << 'EOF'
-# This would be a real PNG background image
-EOF
+    # Create background directory (placeholder for real image)
     mkdir -p "$CONTENT_DIR/.background"
+    # In a real scenario, you'd copy a designed background image here
+    # touch "$CONTENT_DIR/.background/background.png"
     
     print_success "Prepared DMG contents"
 }
@@ -200,9 +206,14 @@ create_dmg() {
     # Create temporary DMG
     local TEMP_DMG="$BUILD_DIR/temp.dmg"
     
-    # Calculate size (add 20% buffer)
+    # Calculate size (add 50% buffer for better compatibility)
     local SIZE=$(du -sm "$BUILD_DIR/content" | cut -f1)
-    local DMG_SIZE=$((SIZE * 120 / 100))
+    local DMG_SIZE=$((SIZE * 150 / 100))
+    
+    # Ensure minimum size of 10MB
+    if [ "$DMG_SIZE" -lt 10 ]; then
+        DMG_SIZE=10
+    fi
     
     # Create DMG
     hdiutil create \

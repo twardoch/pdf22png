@@ -5,6 +5,8 @@
 - [x] Semver versioning based on git tags
 - [x] Building should build a .pkg file that installs both tools into `/usr/local/bin`, and a .dmg
 - [x] GitHub actions on `vA.B.C` git tag should build the binaries and the .pkg and .dmg files and upload them as GitHub release artifacts
+- [x] Fixed issue 303: Added missing universal target to pdf22png/Makefile
+- [x] Fixed DMG size calculation issues
 
 ## Phase 22: Homebrew Installation (Immediate) ✅
 

@@ -72,8 +72,12 @@ build_binaries() {
 copy_binaries() {
     print_info "Copying binaries to package root..."
     
-    # Copy pdf21png
-    if [ -f "$PROJECT_ROOT/pdf21png/build/pdf21png" ]; then
+    # Copy pdf21png (check universal build location first)
+    if [ -f "$PROJECT_ROOT/pdf21png/build/pdf21png-universal" ]; then
+        cp "$PROJECT_ROOT/pdf21png/build/pdf21png-universal" "$BUILD_DIR/root$INSTALL_LOCATION/pdf21png"
+        chmod 755 "$BUILD_DIR/root$INSTALL_LOCATION/pdf21png"
+        print_success "Copied pdf21png (universal)"
+    elif [ -f "$PROJECT_ROOT/pdf21png/build/pdf21png" ]; then
         cp "$PROJECT_ROOT/pdf21png/build/pdf21png" "$BUILD_DIR/root$INSTALL_LOCATION/"
         chmod 755 "$BUILD_DIR/root$INSTALL_LOCATION/pdf21png"
         print_success "Copied pdf21png"
@@ -82,8 +86,10 @@ copy_binaries() {
         exit 1
     fi
     
-    # Copy pdf22png (try both possible locations)
-    if [ -f "$PROJECT_ROOT/pdf22png/.build/apple/Products/Release/pdf22png" ]; then
+    # Copy pdf22png (try multiple possible locations)
+    if [ -f "$PROJECT_ROOT/pdf22png/build/pdf22png" ]; then
+        cp "$PROJECT_ROOT/pdf22png/build/pdf22png" "$BUILD_DIR/root$INSTALL_LOCATION/"
+    elif [ -f "$PROJECT_ROOT/pdf22png/.build/apple/Products/Release/pdf22png" ]; then
         cp "$PROJECT_ROOT/pdf22png/.build/apple/Products/Release/pdf22png" "$BUILD_DIR/root$INSTALL_LOCATION/"
     elif [ -f "$PROJECT_ROOT/pdf22png/.build/release/pdf22png" ]; then
         cp "$PROJECT_ROOT/pdf22png/.build/release/pdf22png" "$BUILD_DIR/root$INSTALL_LOCATION/"

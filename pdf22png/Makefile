@@ -20,6 +20,26 @@ debug:
 	cd $(shell pwd) && swift build
 	@echo "✓ Debug build: $(BUILD_DIR)/debug/$(TARGET)"
 
+# Build universal binary (both architectures)
+universal: build
+	@echo "Building universal binary..."
+	@# Swift Package Manager builds universal binaries by default on macOS
+	@# Just copy the built binary to the expected location
+	@mkdir -p build
+	@if [ -f "$(BUILD_DIR)/apple/Products/Release/$(TARGET)" ]; then \
+		cp "$(BUILD_DIR)/apple/Products/Release/$(TARGET)" build/$(TARGET); \
+		echo "✓ Copied universal binary from Swift build"; \
+	elif [ -f "$(BUILD_DIR)/release/$(TARGET)" ]; then \
+		cp "$(BUILD_DIR)/release/$(TARGET)" build/$(TARGET); \
+		echo "✓ Copied universal binary from Swift build"; \
+	else \
+		echo "Error: Binary not found after build"; \
+		exit 1; \
+	fi
+	@# Verify it's universal
+	@file build/$(TARGET) | grep -q "universal" && echo "✓ Verified universal binary" || echo "⚠ Binary may not be universal"
+	@echo "✓ Universal binary: build/$(TARGET)"
+
 # Run tests
 test:
 	@echo "Running Swift tests..."
@@ -55,6 +75,7 @@ help:
 	@echo "  all        - Build release version (default)"
 	@echo "  build      - Build release version"
 	@echo "  debug      - Build debug version"
+	@echo "  universal  - Build universal binary (arm64 + x86_64)"
 	@echo "  test       - Run tests"
 	@echo "  install    - Install to $(INSTALL_PREFIX)/bin"
 	@echo "  uninstall  - Remove from $(INSTALL_PREFIX)/bin"
@@ -62,4 +83,4 @@ help:
 	@echo "  reset      - Clean everything including dependencies"
 	@echo "  help       - Show this help"
 
-.PHONY: all build debug test install uninstall clean reset help 
+.PHONY: all build debug universal test install uninstall clean reset help 

@@ -21,6 +21,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Created comprehensive integration test suite in `tests/integration_test.sh`
 - Added `CODEOWNERS` file for repository ownership
 - Created new GitHub Actions workflow for automated releases
+- Phase 21: Distribution system with semantic versioning
+  - Created `scripts/get-version.sh` for git tag-based versioning
+  - Created `scripts/build-pkg.sh` for building macOS .pkg installer
+  - Created `scripts/build-dmg.sh` for building macOS .dmg disk image
+  - Added `dist`, `pkg`, `dmg`, and `version` targets to root Makefile
+  - Updated GitHub Actions release workflow to build installers
 
 ### Changed
 - Reorganized README.md structure for better user experience
@@ -38,6 +44,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Improved
 - Installation scripts now feature colored output for better readability
+
+### Fixed
+- Issue 303: Fixed missing `universal` target in pdf22png/Makefile
+  - Added universal target that builds and copies Swift binary to expected location
+  - Updated build scripts to handle multiple binary locations gracefully
+  - Fixed DMG size calculation to prevent "No space left on device" errors
 - Scripts automatically detect whether tools were installed via Homebrew or manually
 - Added non-interactive mode for automation
 - Better PATH verification after installation
