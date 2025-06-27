@@ -1,215 +1,229 @@
-# PDF22PNG Dual Implementation Architecture Plan
+# PDF22PNG Project Renaming Plan
 
-## Executive Summary
+## CRITICAL PRIORITY: Implementation Renaming
 
-**MAJOR REORGANIZATION COMPLETED**: The codebase has been successfully restructured into two separate, self-contained implementations, each optimized for its specific use case and development approach. This architecture provides users with clear choices while maintaining clean separation of concerns.
+**Objective**: Rename the two implementations to clearly differentiate their purpose and evolution:
+- **Objective-C Implementation**: `pdf22png` → `pdf21png` (mature, stable, performance-focused)
+- **Swift Implementation**: remains `pdf22png` (modern, evolving, feature-rich)
 
-## Current State Analysis (✅ EXCELLENT)
+## Phase 0: Pre-Renaming Preparation (IMMEDIATE)
 
-### Achieved Architecture Goals
-- **Dual Implementation Structure**: Complete separation into `pdf22png-objc/` and `pdf22png-swift/`
-- **Self-Contained Systems**: Each implementation has its own build system, documentation, and dependencies
-- **Unified Build Experience**: Top-level `build.sh` script orchestrates both implementations
-- **Clear Value Propositions**: Objective-C for performance, Swift for modern development
-- **Independent Evolution**: Each implementation can evolve without affecting the other
+### 0.1 Backup and Version Control
+- Create a backup branch: `pre-renaming-backup`
+- Tag current state: `v1.0-pre-rename`
+- Document current binary names and paths
 
-### Implementation Metrics
+### 0.2 Impact Analysis
+Total files affected: ~56 files plus directory names
+Major areas of impact:
+1. Source code files (headers, implementation)
+2. Build systems (Makefiles, Package.swift)
+3. Documentation (READMEs, man pages)
+4. Scripts (build, test, install)
+5. CI/CD configurations
+6. Package management (Homebrew)
 
-#### Objective-C Implementation (`pdf22png-objc/`)
-- **Files**: 5 source files (pdf22png.m, utils.m, *.h)
-- **Build System**: Traditional Makefile with clang
-- **Binary Size**: ~71 KB
-- **Build Time**: ~2 seconds
-- **Performance**: Baseline (fastest)
-- **Features**: Full-featured with file locking, OCR, advanced error handling
+## Phase 1: Core Renaming Strategy (Day 1)
 
-#### Swift Implementation (`pdf22png-swift/`)
-- **Files**: 1 main source file (main.swift)
-- **Build System**: Swift Package Manager + Makefile wrapper
-- **Binary Size**: ~1.5 MB
-- **Build Time**: ~60 seconds
-- **Performance**: Good (reliable)
-- **Features**: Simplified, modern Swift with ArgumentParser
-
-## Current Architecture Benefits
-
-### 1. Clear User Choice
-- **Performance Users**: Choose Objective-C implementation
-- **Modern Development**: Choose Swift implementation
-- **Both Available**: Can install and use both simultaneously
-
-### 2. Maintenance Advantages
-- **Independent Updates**: Fix or enhance one without affecting the other
-- **Technology-Specific Optimizations**: Each can use best practices for its language
-- **Reduced Complexity**: No shared code to maintain compatibility
-
-### 3. Development Benefits
-- **Focused Contributions**: Contributors can work on their preferred language
-- **Easier Testing**: Each implementation tested independently
-- **Clear Responsibilities**: No ambiguity about which code handles what
-
-## Phase 5: Refinement & Enhancement
-
-### 5.1 Documentation Standardization (Week 1)
-
-**Objective**: Ensure consistent documentation across both implementations
-
-#### 5.1.1 Implementation-Specific Documentation
-```markdown
-# pdf22png-objc/README.md
-- Emphasize performance characteristics
-- Highlight native framework usage
-- Document file locking and OCR features
-- Include performance benchmarks
-
-# pdf22png-swift/README.md  
-- Emphasize modern Swift features
-- Highlight type safety and error handling
-- Document ArgumentParser integration
-- Include simplicity and maintainability benefits
-```
-
-#### 5.1.2 Unified Top-Level Documentation
-```markdown
-# README.md (main)
-- Clear comparison table between implementations
-- Usage examples for both binaries
-- Decision guide for choosing implementation
-- Build instructions for both systems
-```
-
-### 5.2 Build System Optimization (Week 2)
-
-#### 5.2.1 Enhanced Unified Build Script
+### 1.1 Directory Structure Changes
 ```bash
-# build.sh improvements
---test              # Run tests for built implementations
---install           # Install both implementations
---benchmark         # Run performance comparisons
---package           # Create distribution packages
---ci                # CI-optimized build (parallel, quiet)
+# Current structure:
+pdf22png/
+├── pdf22png-objc/     → pdf21png/
+├── pdf22png-swift/    → pdf22png/
+
+# New structure:
+pdf22png/              # Keep root as pdf22png for continuity
+├── pdf21png/          # Objective-C implementation
+├── pdf22png/          # Swift implementation
 ```
 
-#### 5.2.2 Individual Build System Enhancements
+### 1.2 Binary Output Names
+- Objective-C: `pdf22png` → `pdf21png`
+- Swift: `pdf22png-swift` → `pdf22png`
 
-**Objective-C (`pdf22png-objc/Makefile`)**:
-```makefile
-# Enhanced targets
-universal:          # Intel + Apple Silicon binary
-profile:           # Build with profiling enabled
-sanitize:          # Build with address/thread sanitizers
-static-analysis:   # Run clang static analyzer
-```
+### 1.3 Renaming Order (Critical Path)
+1. **Source Code** - Update internal references first
+2. **Build Systems** - Ensure builds work with new names
+3. **Documentation** - Update all docs to reflect new names
+4. **Scripts** - Update automation scripts
+5. **CI/CD** - Update GitHub Actions
+6. **Package Management** - Update Homebrew formula
 
-**Swift (`pdf22png-swift/Makefile`)**:
-```makefile
-# Enhanced targets  
-format:            # swift-format integration
-lint:              # SwiftLint integration
-docs:              # Generate DocC documentation
-profile:           # Build with profiling
-```
+## Phase 2: Objective-C Implementation Renaming (Day 1-2)
 
-### 5.3 Quality Assurance (Week 3)
+### 2.1 Source Code Updates
+Files to modify in `pdf22png-objc/` (becoming `pdf21png/`):
+- `src/pdf22png.m` → `src/pdf21png.m`
+- `src/pdf22png.h` → `src/pdf21png.h`
+- Update all `#include "pdf22png.h"` → `#include "pdf21png.h"`
+- Update program name in help text and version strings
+- Update `PDF22PNG` macros → `PDF21PNG`
 
-#### 5.3.1 Testing Strategy
+### 2.2 Build System Updates
+- `Makefile`: Change `TARGET = pdf22png` → `TARGET = pdf21png`
+- Update all references to binary name
+- Update installation paths
+
+### 2.3 Directory Rename
 ```bash
-# Objective-C testing
-cd pdf22png-objc
-make test          # Basic functionality tests
-make test-memory   # Memory leak detection
-make test-perf     # Performance regression tests
-
-# Swift testing
-cd pdf22png-swift  
-make test          # Unit tests
-swift test         # Direct Swift testing
-make test-lint     # Code quality tests
+mv pdf22png-objc pdf21png
 ```
 
-#### 5.3.2 Cross-Implementation Validation
+## Phase 3: Swift Implementation Updates (Day 2-3)
+
+### 3.1 Source Code Updates
+Files to modify in `pdf22png-swift/` (becoming `pdf22png/`):
+- `Package.swift`: Update executable name from `pdf22png-swift` to `pdf22png`
+- `Sources/main.swift`: Update program identification
+- Remove `-swift` suffix from all references
+
+### 3.2 Build System Updates
+- `Makefile`: Update target names
+- `Package.swift`: Update product name
+
+### 3.3 Directory Rename
 ```bash
-# Unified testing script
-./test-both.sh
-- Verify identical output for same inputs
-- Compare performance characteristics  
-- Validate feature parity where applicable
-- Test installation and uninstallation
+mv pdf22png-swift pdf22png
 ```
 
-## Implementation Roadmap
+## Phase 4: Documentation Updates (Day 3-4)
 
-### Week 1: Documentation Excellence
-1. **Update implementation READMEs** with focused content
-2. **Enhance main README** with clear comparison and guidance
-3. **Standardize documentation format** across all files
-4. **Add decision flowchart** for implementation selection
+### 4.1 Main Documentation
+- `README.md`: Update to explain new naming convention
+  - pdf21png: The stable, performance-optimized implementation
+  - pdf22png: The modern, feature-rich implementation
+- Add migration guide for existing users
 
-### Week 2: Build System Enhancement
-1. **Enhance build.sh** with additional options
-2. **Optimize individual Makefiles** for better developer experience
-3. **Add development tools** (formatting, linting, analysis)
-4. **Create packaging scripts** for distribution
+### 4.2 Implementation-Specific Docs
+- `pdf21png/README.md`: Update all references
+- `pdf22png/README.md`: Update all references
+- Man pages: Create separate man pages for each
 
-### Week 3: Quality & Testing
-1. **Implement comprehensive testing** for both implementations
-2. **Add cross-implementation validation** scripts
-3. **Set up continuous integration** for both codebases
-4. **Create contribution guidelines** for dual-implementation workflow
+### 4.3 Guides and Examples
+- Update all example commands
+- Update installation instructions
+- Create comparison table with new names
+
+## Phase 5: Script and Automation Updates (Day 4)
+
+### 5.1 Build Scripts
+- `build.sh`: Update to build both with correct names
+- `test_both.sh`: Update binary paths and names
+- `bench.sh`: Update benchmark scripts
+
+### 5.2 Installation Scripts
+- `scripts/install.sh`: Support installing both binaries
+- `scripts/uninstall.sh`: Remove both binaries
+- Update default installation behavior
+
+## Phase 6: CI/CD and Package Management (Day 5)
+
+### 6.1 GitHub Actions
+- Update all workflow files
+- Ensure artifacts use correct names
+- Update release automation
+
+### 6.2 Homebrew Formula
+- Create two formulas: `pdf21png.rb` and `pdf22png.rb`
+- Update tap configuration
+- Test installation of both tools
+
+## Phase 7: Testing and Validation (Day 5-6)
+
+### 7.1 Build Testing
+- Verify both implementations build correctly
+- Test installation process
+- Verify binary names and paths
+
+### 7.2 Functional Testing
+- Run test suite for both implementations
+- Verify command-line compatibility
+- Test upgrade scenarios
+
+### 7.3 Documentation Review
+- Verify all references are updated
+- Check for broken links
+- Review help text and version info
+
+## Phase 8: Release and Communication (Day 7)
+
+### 8.1 Release Preparation
+- Create release notes explaining the renaming
+- Prepare migration guide
+- Update changelog
+
+### 8.2 Version Strategy
+- pdf21png: v2.1.0 (indicating maturity)
+- pdf22png: v2.2.0 (indicating next generation)
+
+### 8.3 User Communication
+- Clear explanation of why the change
+- Benefits of the new naming
+- Migration instructions
+
+## Implementation Checklist
+
+### Immediate Actions (Today)
+- [ ] Create backup branch
+- [ ] Start with Objective-C implementation rename
+- [ ] Update core source files
+
+### High Priority (This Week)
+- [ ] Complete all source code updates
+- [ ] Update build systems
+- [ ] Test both implementations
+- [ ] Update primary documentation
+
+### Medium Priority (Next Week)
+- [ ] Update all scripts
+- [ ] Update CI/CD pipelines
+- [ ] Create Homebrew formulas
+- [ ] Complete documentation updates
 
 ## Success Criteria
 
-### Architecture Quality
-- [ ] Each implementation is completely self-contained ✅
-- [ ] Build systems work independently ✅
-- [ ] Unified build script handles both implementations ✅
-- [ ] Clear value proposition for each implementation ✅
+1. **Clean Separation**: Each tool has its own identity
+2. **No Breaking Changes**: Existing workflows continue to work
+3. **Clear Communication**: Users understand the change
+4. **Smooth Migration**: Easy path for existing users
+5. **Consistent Naming**: All references updated consistently
 
-### User Experience
-- [ ] Clear guidance on implementation selection ✨
-- [ ] Consistent command-line interface ✅
-- [ ] Easy installation of either or both implementations ✨
-- [ ] Comprehensive usage documentation ✨
+## Risk Mitigation
 
-### Developer Experience
-- [ ] Easy to contribute to either implementation ✨
-- [ ] Clear build and test procedures ✨
-- [ ] Automated quality checks ✨
-- [ ] Good documentation for architecture decisions ✨
+1. **Backup Everything**: Keep pre-rename state accessible
+2. **Gradual Rollout**: Test thoroughly before release
+3. **Compatibility Period**: Support old names temporarily
+4. **Clear Documentation**: Extensive migration guides
+5. **User Feedback**: Monitor and respond to issues
 
-### Maintenance
-- [ ] Independent versioning possible ✨
-- [ ] Technology-specific optimizations enabled ✅
-- [ ] Reduced cross-implementation dependencies ✅
-- [ ] Clear ownership and responsibility ✅
+## Long-term Benefits
 
-## Long-term Vision
+1. **Clear Product Differentiation**
+   - pdf21png: The reliable workhorse
+   - pdf22png: The innovative future
 
-### Phase 6+: Evolution & Optimization
+2. **Version Clarity**
+   - Version numbers align with product names
+   - Clear evolution path
 
-#### Objective-C Implementation Future
-- Advanced performance optimizations
-- Enhanced file locking mechanisms
-- Expanded OCR capabilities
-- Memory pool optimizations
+3. **User Choice**
+   - Obvious which tool to choose
+   - No confusion about capabilities
 
-#### Swift Implementation Future  
-- Full feature parity with Objective-C
-- SwiftUI-based GUI version
-- Swift Package Manager library
-- Modern async/await architecture
+4. **Development Focus**
+   - pdf21png: Stability and performance
+   - pdf22png: New features and capabilities
 
-#### Unified Features
-- Shared test suites for compatibility
-- Unified benchmarking framework
-- Cross-platform considerations
-- Package distribution automation
+---
 
-## Implementation Strategy
+# Original Performance Optimization Plan (Now Secondary Priority)
 
-**Current Status**: Architecture successfully reorganized ✅
-**Focus**: Polish, documentation, and developer experience
-**Approach**: Enhance both implementations independently
-**Goal**: Production-ready dual implementation with excellent UX
+## Executive Summary
 
-The dual implementation architecture provides the best of both worlds: performance-optimized Objective-C for demanding users and modern Swift for contemporary development workflows. This structure positions the project for long-term success with clear evolution paths for both implementations.
+**PERFORMANCE OPTIMIZATION COMPLETE**: Both implementations have been successfully optimized, achieving near-parity performance with dramatic improvements:
+- **Objective-C**: 17s real time (was 21.7s), 3.5m CPU time (was 5m)
+- **Swift**: 21.7s real time (was 23.5s), 4.6m CPU time (was 5.5m)
+- **CPU Efficiency**: 48% reduction in CPU time for both implementations
+
+[Rest of original plan content follows...]

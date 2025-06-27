@@ -4,6 +4,14 @@ import PDFKit
 import ArgumentParser
 import Dispatch
 
+// Extension to print to stderr
+struct StandardError: TextOutputStream {
+    func write(_ string: String) {
+        fputs(string, stderr)
+    }
+}
+var standardError = StandardError()
+
 // MARK: - Error Types
 
 enum PDF22PNGError: Int, Error {
@@ -247,8 +255,9 @@ struct PDF22PNGCommand: ParsableCommand {
             throw PDF22PNGError.fileWrite
         }
         
-        if verbose {
-            print("✓ Saved: \(outputPath)")
+        // Print the path that was written (unless it's stdout)
+        if outputPath != "-" {
+            print(outputPath)
         }
     }
     
@@ -337,6 +346,57 @@ struct PDF22PNGCommand: ParsableCommand {
         }
         
         return (baseName: baseName, outputPath: outputPath, isStdout: isStdout)
+    }
+    
+    private func generateBatchOutputPathOptimized(baseName: String, pageNumber: Int, totalPages: Int, currentDate: String, currentTime: String) -> String {
+        let outputDir = directory ?? "."
+        
+        if let pattern = pattern {
+            // Custom pattern processing
+            var result = pattern
+            
+            // Replace placeholders
+            result = result.replacingOccurrences(of: "{basename}", with: baseName)
+            result = result.replacingOccurrences(of: "{total}", with: String(totalPages))
+            result = result.replacingOccurrences(of: "{date}", with: currentDate)
+            result = result.replacingOccurrences(of: "{time}", with: currentTime)
+            
+            // Page number with custom padding
+            if let regex = try? NSRegularExpression(pattern: "\\{page:([0-9]+)d\\}", options: []) {
+                let nsString = result as NSString
+                if let match = regex.firstMatch(in: result, options: [], range: NSRange(location: 0, length: nsString.length)) {
+                    let paddingRange = match.range(at: 1)
+                    let paddingStr = nsString.substring(with: paddingRange)
+                    if let padding = Int(paddingStr) {
+                        let paddedPage = String(format: "%0\(padding)d", pageNumber)
+                        result = regex.stringByReplacingMatches(in: result, options: [], range: NSRange(location: 0, length: nsString.length), withTemplate: paddedPage)
+                    }
+                } else {
+                    // Default page padding
+                    let digits = String(totalPages).count
+                    let paddedPage = String(format: "%0\(digits)d", pageNumber)
+                    result = result.replacingOccurrences(of: "{page}", with: paddedPage)
+                }
+            } else {
+                // Default page padding
+                let digits = String(totalPages).count
+                let paddedPage = String(format: "%0\(digits)d", pageNumber)
+                result = result.replacingOccurrences(of: "{page}", with: paddedPage)
+            }
+            
+            // Text placeholder (if -n flag is set)
+            if name {
+                // TODO: Extract text from page
+                result = result.replacingOccurrences(of: "{text}", with: "page\(pageNumber)")
+            }
+            
+            return "\(outputDir)/\(result).png"
+        } else {
+            // Default naming - use 3 digits minimum to match Objective-C version
+            let digits = max(3, String(totalPages).count)
+            let paddedPage = String(format: "%0\(digits)d", pageNumber)
+            return "\(outputDir)/\(baseName)-\(paddedPage).png"
+        }
     }
     
     private func generateBatchOutputPath(baseName: String, pageNumber: Int, totalPages: Int) -> String {
@@ -461,6 +521,8 @@ struct PDF22PNGCommand: ParsableCommand {
         }
         
         FileHandle.standardOutput.write(data as Data)
+        
+        // Don't print path for stdout output
     }
     
     private func parseScale(_ scaleString: String) -> ScaleSpecification {
@@ -529,58 +591,67 @@ struct PDF22PNGCommand: ParsableCommand {
     }
     
     private func convertPagesInParallel(document: PDFDocument, pages: [Int], baseName: String, totalPages: Int) throws {
-        let queue = DispatchQueue.global(qos: .userInitiated)
+        let renderQueue = DispatchQueue(label: "com.pdf22png.render", qos: .userInitiated, attributes: .concurrent)
         let group = DispatchGroup()
         let serialQueue = DispatchQueue(label: "progress.updates")
         
-        var processedCount = 0
         var successCount = 0
         var errorCount = 0
         
-        if verbose {
-            print("Starting batch conversion of \(pages.count) pages...")
-        }
-        
-        // Use concurrent processing with optimal concurrency
+        // Optimize concurrency based on memory and CPU
         let optimalConcurrency = min(pages.count, ProcessInfo.processInfo.activeProcessorCount * 2)
         let semaphore = DispatchSemaphore(value: optimalConcurrency)
         
+        // Pre-calculate shared resources
+        let sharedColorSpace = CGColorSpace(name: CGColorSpace.sRGB)!
+        let scaleSpec = parseScale(resolution ?? scale)
+        
+        // Cache date formatters for batch naming
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "yyyyMMdd"
+        let timeFormatter = DateFormatter()
+        timeFormatter.dateFormat = "HHmmss"
+        let currentDate = dateFormatter.string(from: Date())
+        let currentTime = timeFormatter.string(from: Date())
+        
         for pageNum in pages {
             group.enter()
-            queue.async { [self] in
+            
+            renderQueue.async { [self] in
+                semaphore.wait()
                 defer {
                     semaphore.signal()
                     group.leave()
                 }
                 
-                semaphore.wait()
-                
                 autoreleasepool {
                     do {
                         let pageIndex = pageNum - 1
-                        let outputPath = generateBatchOutputPath(
+                        let outputPath = generateBatchOutputPathOptimized(
                             baseName: baseName,
                             pageNumber: pageNum,
-                            totalPages: totalPages
+                            totalPages: totalPages,
+                            currentDate: currentDate,
+                            currentTime: currentTime
                         )
                         
-                        try convertPageSyncOptimized(document: document, pageIndex: pageIndex, outputPath: outputPath)
+                        try convertPageSyncOptimized2(
+                            document: document,
+                            pageIndex: pageIndex,
+                            outputPath: outputPath,
+                            colorSpace: sharedColorSpace,
+                            scaleSpec: scaleSpec
+                        )
                         
                         serialQueue.sync {
                             successCount += 1
-                            processedCount += 1
-                            
-                            if processedCount % 10 == 0 {
-                                print("Progress: \(processedCount)/\(pages.count) pages processed", terminator: "")
-                            }
+                            print(outputPath)
                         }
                     } catch {
                         serialQueue.sync {
                             errorCount += 1
-                            processedCount += 1
-                            
                             if verbose {
-                                print("Error converting page \(pageNum): \(error)")
+                                print("Error converting page \(pageNum): \(error)", to: &standardError)
                             }
                         }
                     }
@@ -590,10 +661,77 @@ struct PDF22PNGCommand: ParsableCommand {
         
         group.wait()
         
-        print("\nBatch processing complete: \(successCount) pages converted successfully, \(errorCount) pages failed.")
-        
         if errorCount > 0 {
             throw PDF22PNGError.renderFailed
+        }
+    }
+    
+    private func convertPageSyncOptimized2(document: PDFDocument, pageIndex: Int, outputPath: String, colorSpace: CGColorSpace, scaleSpec: ScaleSpecification) throws {
+        guard let page = document.page(at: pageIndex) else {
+            throw PDF22PNGError.pageNotFound
+        }
+        
+        let pageRect = page.bounds(for: .mediaBox)
+        let scaleFactor = calculateScaleFactor(spec: scaleSpec, pageRect: pageRect)
+        
+        let scaledSize = CGSize(
+            width: pageRect.width * scaleFactor,
+            height: pageRect.height * scaleFactor
+        )
+        
+        // Use aligned memory for better performance
+        let bytesPerRow = (Int(scaledSize.width) * 4 + 15) & ~15
+        let bitmapData = UnsafeMutableRawPointer.allocate(byteCount: bytesPerRow * Int(scaledSize.height), alignment: 16)
+        defer { bitmapData.deallocate() }
+        
+        let bitmapInfo: CGBitmapInfo = transparent ? 
+            [.byteOrder32Big, CGBitmapInfo(rawValue: CGImageAlphaInfo.premultipliedFirst.rawValue)] :
+            [.byteOrder32Big, CGBitmapInfo(rawValue: CGImageAlphaInfo.noneSkipFirst.rawValue)]
+        
+        guard let context = CGContext(
+            data: bitmapData,
+            width: Int(scaledSize.width),
+            height: Int(scaledSize.height),
+            bitsPerComponent: 8,
+            bytesPerRow: bytesPerRow,
+            space: colorSpace,
+            bitmapInfo: bitmapInfo.rawValue
+        ) else {
+            throw PDF22PNGError.renderFailed
+        }
+        
+        if !transparent {
+            context.setFillColor(CGColor.white)
+            context.fill(CGRect(origin: .zero, size: scaledSize))
+        }
+        
+        context.scaleBy(x: scaleFactor, y: scaleFactor)
+        context.translateBy(x: -pageRect.minX, y: -pageRect.minY)
+        
+        // Use high-quality rendering
+        context.interpolationQuality = .high
+        context.setAllowsAntialiasing(true)
+        context.setShouldAntialias(true)
+        
+        page.draw(with: .mediaBox, to: context)
+        
+        guard let image = context.makeImage() else {
+            throw PDF22PNGError.renderFailed
+        }
+        
+        let url = URL(fileURLWithPath: outputPath)
+        guard let destination = CGImageDestinationCreateWithURL(url as CFURL, "public.png" as CFString, 1, nil) else {
+            throw PDF22PNGError.fileWrite
+        }
+        
+        let options: [CFString: Any] = [
+            kCGImageDestinationLossyCompressionQuality: Double(quality) / 9.0
+        ]
+        
+        CGImageDestinationAddImage(destination, image, options as CFDictionary)
+        
+        guard CGImageDestinationFinalize(destination) else {
+            throw PDF22PNGError.fileWrite
         }
     }
     
@@ -667,84 +805,6 @@ struct PDF22PNGCommand: ParsableCommand {
         guard CGImageDestinationFinalize(destination) else {
             throw PDF22PNGError.fileWrite
         }
-        }
-    }
-    
-    private func convertPageSync(document: PDFDocument, pageIndex: Int, outputPath: String) throws {
-        guard let page = document.page(at: pageIndex) else {
-            throw PDF22PNGError.pageNotFound
-        }
-        
-        // Check if file exists and handle accordingly
-        // Note: We now overwrite by default to match expected behavior
-        if !force && FileManager.default.fileExists(atPath: outputPath) {
-            // Only show warning if verbose, but still overwrite
-            if verbose {
-                print("Warning: Overwriting existing file: \(outputPath)")
-            }
-        }
-        
-        let pageRect = page.bounds(for: .mediaBox)
-        let scaleSpec = parseScale(resolution ?? scale)
-        let scaleFactor = calculateScaleFactor(spec: scaleSpec, pageRect: pageRect)
-        
-        let scaledSize = CGSize(
-            width: pageRect.width * scaleFactor,
-            height: pageRect.height * scaleFactor
-        )
-        
-        if verbose {
-            print("Converting page \(pageIndex + 1): \(Int(scaledSize.width))x\(Int(scaledSize.height))")
-        }
-        
-        let colorSpace = CGColorSpace(name: CGColorSpace.sRGB)!
-        let bitmapInfo: CGBitmapInfo = transparent ? 
-            [.byteOrder32Big, CGBitmapInfo(rawValue: CGImageAlphaInfo.premultipliedFirst.rawValue)] :
-            [.byteOrder32Big, CGBitmapInfo(rawValue: CGImageAlphaInfo.noneSkipFirst.rawValue)]
-        
-        guard let context = CGContext(
-            data: nil,
-            width: Int(scaledSize.width),
-            height: Int(scaledSize.height),
-            bitsPerComponent: 8,
-            bytesPerRow: 0,
-            space: colorSpace,
-            bitmapInfo: bitmapInfo.rawValue
-        ) else {
-            throw PDF22PNGError.renderFailed
-        }
-        
-        if !transparent {
-            context.setFillColor(CGColor.white)
-            context.fill(CGRect(origin: .zero, size: scaledSize))
-        }
-        
-        context.scaleBy(x: scaleFactor, y: scaleFactor)
-        context.translateBy(x: -pageRect.minX, y: -pageRect.minY)
-        
-        page.draw(with: .mediaBox, to: context)
-        
-        guard let image = context.makeImage() else {
-            throw PDF22PNGError.renderFailed
-        }
-        
-        let url = URL(fileURLWithPath: outputPath)
-        guard let destination = CGImageDestinationCreateWithURL(url as CFURL, "public.png" as CFString, 1, nil) else {
-            throw PDF22PNGError.fileWrite
-        }
-        
-        let options: [CFString: Any] = [
-            kCGImageDestinationLossyCompressionQuality: Double(quality) / 9.0
-        ]
-        
-        CGImageDestinationAddImage(destination, image, options as CFDictionary)
-        
-        guard CGImageDestinationFinalize(destination) else {
-            throw PDF22PNGError.fileWrite
-        }
-        
-        if verbose {
-            print("✓ Saved: \(outputPath)")
         }
     }
     

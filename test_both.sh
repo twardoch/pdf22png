@@ -1,51 +1,26 @@
 #!/bin/bash
 # Test both Objective-C and Swift implementations
+# Change to script directory
 
 set -e
 
-echo "Building Objective-C implementation..."
-make clean
-make
-
-echo -e "\nBuilding Swift implementation..."
-make swift
-
-echo -e "\nGenerating test PDF..."
-cat > /tmp/test.ps << 'EOF'
-%!PS
-/Helvetica findfont 24 scalefont setfont
-newpath
-72 720 moveto
-(Test Page for pdf22png) show
-72 680 moveto
-(This is a test document) show
-showpage
-EOF
-
-ps2pdf /tmp/test.ps /tmp/test.pdf
-rm /tmp/test.ps
-
-echo -e "\nTesting Objective-C implementation..."
-./build/pdf22png -v /tmp/test.pdf /tmp/test_objc.png
-ls -la /tmp/test_objc.png
-
-echo -e "\nTesting Swift implementation..."
-./build/pdf22png_swift -v /tmp/test.pdf /tmp/test_swift.png
-ls -la /tmp/test_swift.png
-
-echo -e "\nComparing output files..."
-if command -v compare &> /dev/null; then
-    # ImageMagick compare
-    compare -metric AE /tmp/test_objc.png /tmp/test_swift.png /tmp/diff.png 2>&1 || true
-    echo "Difference visualization saved to /tmp/diff.png"
+# Use default test PDF if none provided
+if [ -z "$1" ]; then
+    PDF=$(realpath "./testdata/test.pdf")
 else
-    echo "Install ImageMagick to compare images visually"
+    PDF=$(realpath "$1")
 fi
 
-echo -e "\nFile sizes:"
-ls -lh /tmp/test_objc.png /tmp/test_swift.png
+cd "$(dirname "$0")"
 
-echo -e "\nCleanup..."
-rm -f /tmp/test.pdf /tmp/test_objc.png /tmp/test_swift.png /tmp/diff.png
+./build.sh
 
-echo -e "\nTest complete!"
+PDF_DIR=$(dirname $PDF)
+PDF_NAME=$(basename $PDF)
+PNG_DIR_OC="$PDF_DIR/$PDF_NAME-oc"
+PNG_DIR_SW="$PDF_DIR/$PDF_NAME-sw"
+
+echo "ObjC: $PNG_DIR_OC"
+time ./pdf22png-objc/build/pdf22png -s "4096x4096" -d "$PNG_DIR_OC" "$PDF"
+echo "Swift: $PNG_DIR_SW"
+time ./pdf22png-swift/.build/release/pdf22png-swift -s "4096x4096" -d "$PNG_DIR_SW" "$PDF"

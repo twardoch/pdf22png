@@ -14,8 +14,8 @@ FRAMEWORKS = -framework Foundation -framework CoreGraphics -framework ImageIO \
              -framework UniformTypeIdentifiers
 
 # Source files
-SOURCES = pdf22png.m utils.m
-HEADERS = pdf22png.h utils.h errors.h
+SOURCES = src/pdf22png.m src/utils.m
+HEADERS = src/pdf22png.h src/utils.h src/errors.h
 TARGET = pdf22png
 
 # Default target
