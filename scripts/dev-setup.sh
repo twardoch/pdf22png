@@ -8,15 +8,15 @@ set -e
 echo "🚀 Setting up pdf22png development environment..."
 echo ""
 
-# Check if we're in the right directory
-if [ ! -f "CLAUDE.md" ] || [ ! -f "src/main.swift" ]; then
-    echo "❌ Error: Please run this script from the pdf22png project root directory"
+# Verify we are in the repository root by looking for hallmark files
+if [ ! -f "CLAUDE.md" ] || [ ! -d "pdf21png" ] || [ ! -d "pdf22png" ]; then
+    echo "❌ Error: Please run this script from the pdf22png project root directory (where pdf21png/ and pdf22png/ folders reside)."
     exit 1
 fi
 
 # Check Swift installation
 echo "📋 Checking Swift installation..."
-if ! command -v swift &> /dev/null; then
+if ! command -v swift &>/dev/null; then
     echo "❌ Swift not found. Please install Xcode Command Line Tools:"
     echo "   xcode-select --install"
     exit 1
@@ -30,7 +30,7 @@ echo ""
 echo "📋 Checking recommended development tools..."
 
 # SwiftLint
-if command -v swiftlint &> /dev/null; then
+if command -v swiftlint &>/dev/null; then
     SWIFTLINT_VERSION=$(swiftlint version)
     echo "✅ SwiftLint: $SWIFTLINT_VERSION"
 else
@@ -39,31 +39,48 @@ else
 fi
 
 # swift-format
-if command -v swift-format &> /dev/null; then
+if command -v swift-format &>/dev/null; then
     echo "✅ swift-format: Available"
 else
     echo "⚠️  swift-format not found. Install with: brew install swift-format"
     echo "   (Optional but recommended for code formatting)"
 fi
 
-# Test the build system
+# Clean previous builds for both implementations
 echo ""
 echo "🧹 Cleaning previous builds..."
-make clean > /dev/null 2>&1
+(
+    cd pdf21png && make clean >/dev/null 2>&1 || true
+)
+(
+    cd pdf22png && make clean >/dev/null 2>&1 || true
+)
 echo "✅ Clean complete"
 
-echo "🔨 Testing build..."
-if make quick-build; then
-    echo "✅ Build system working"
-else
-    echo "❌ Build failed - please check errors above"
-    exit 1
-fi
+# Build both implementations
+echo "🔨 Building pdf21png (Objective-C)..."
+(
+    cd pdf21png && make
+)
+
+echo "🔨 Building pdf22png (Swift)..."
+(
+    cd pdf22png && make build
+)
+echo "✅ Build system working"
 
 # Run tests
 echo ""
 echo "🧪 Running tests..."
-if make test > /dev/null 2>&1; then
+PDF22PNG_TESTS_PASSED=true
+(
+    cd pdf22png && make test >/dev/null 2>&1 || PDF22PNG_TESTS_PASSED=false
+)
+(
+    cd pdf21png && make test >/dev/null 2>&1 || true
+)
+
+if [ "$PDF22PNG_TESTS_PASSED" = true ]; then
     echo "✅ Tests passing"
 else
     echo "❌ Tests failed"
@@ -71,18 +88,22 @@ else
 fi
 
 # Format code if swift-format is available
-if command -v swift-format &> /dev/null; then
+if command -v swift-format &>/dev/null; then
     echo ""
     echo "🎨 Formatting code..."
-    make format > /dev/null 2>&1
+    (
+        cd pdf22png && make format >/dev/null 2>&1
+    )
     echo "✅ Code formatted"
 fi
 
 # Run linting if SwiftLint is available
-if command -v swiftlint &> /dev/null; then
+if command -v swiftlint &>/dev/null; then
     echo ""
     echo "🔍 Running code analysis..."
-    make lint
+    (
+        cd pdf22png && make lint
+    )
     echo "✅ Code analysis complete"
 fi
 

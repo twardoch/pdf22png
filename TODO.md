@@ -97,10 +97,10 @@
   - [x] Explain rationale for the change
 
 - [ ] Update docs/:
-  - [ ] `docs/USAGE.md`: Update all command examples
-  - [ ] `docs/API.md`: Update API references
-  - [ ] `docs/EXAMPLES.md`: Update all examples
-  - [ ] `docs/pdf22png.1`: Create two man pages (pdf21png.1 and pdf22png.1)
+  - [x] `docs/USAGE.md`: Update all command examples
+  - [x] `docs/API.md`: Update API references
+  - [x] `docs/EXAMPLES.md`: Update all examples
+  - [x] `docs/pdf22png.1`: Create two man pages (pdf21png.1 and pdf22png.1)
 
 ## Day 4: Scripts and Build System Updates
 
@@ -120,15 +120,15 @@
   - [x] Update benchmark output naming
 
 ### Installation Scripts
-- [ ] Update scripts/install.sh:
-  - [ ] Support installing both pdf21png and pdf22png
-  - [ ] Update binary names in installation
+- [x] Update scripts/install.sh:
+  - [x] Support installing both pdf21png and pdf22png
+  - [x] Update binary names in installation
   
-- [ ] Update scripts/uninstall.sh:
-  - [ ] Remove both pdf21png and pdf22png
+- [x] Update scripts/uninstall.sh:
+  - [x] Remove both pdf21png and pdf22png
   
-- [ ] Update scripts/dev-setup.sh:
-  - [ ] Update development environment setup
+- [x] Update scripts/dev-setup.sh:
+  - [x] Update development environment setup
 
 ## Day 5: Benchmarks and Tests
 

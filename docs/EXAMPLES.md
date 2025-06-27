@@ -1,4 +1,6 @@
-# pdf22png Examples
+# pdf22png / pdf21png Examples
+
+All examples below show the Swift binary `pdf22png`.  If you prefer the Objective-C implementation simply replace the executable name with `pdf21png` – the flags and behaviour are identical.
 
 This page shows common use cases and examples for the `pdf22png` command-line tool.
 

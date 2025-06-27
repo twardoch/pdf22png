@@ -1,4 +1,10 @@
-# pdf22png Usage
+# pdf22png / pdf21png Usage
+
+> **Which binary should I use?**  
+> • `pdf21png` – Objective-C implementation, mature & performance-focused  
+> • `pdf22png` – Swift implementation, modern & feature-rich  
+>
+> Unless stated otherwise the commands below use `pdf22png` but **they work the same with `pdf21png`** – simply replace the executable name.
 
 `pdf22png` is a command-line tool to convert PDF documents to PNG images on macOS.
 
