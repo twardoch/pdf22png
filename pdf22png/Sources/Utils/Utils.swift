@@ -17,11 +17,14 @@ public struct ScaleSpec {
 // MARK: - Scale Parsing
 
 public func parseScaleSpec(_ spec: String) -> ScaleSpec? {
+    // Trim whitespace
+    let trimmedSpec = spec.trimmingCharacters(in: .whitespaces)
+    
     var scale = ScaleSpec(scaleFactor: 1.0, maxWidth: 0, maxHeight: 0, dpi: 0, isPercentage: false, isDPI: false, hasWidth: false, hasHeight: false)
 
     // Check for percentage (NNN%)
-    if spec.hasSuffix("%") {
-        let numStr = String(spec.dropLast())
+    if trimmedSpec.hasSuffix("%") {
+        let numStr = String(trimmedSpec.dropLast())
         if let value = Double(numStr) {
             scale.scaleFactor = value / 100.0
             scale.isPercentage = true
@@ -33,8 +36,9 @@ public func parseScaleSpec(_ spec: String) -> ScaleSpec? {
         }
     }
 
-    // Check for DPI (AAAdpi)
-    if spec.hasSuffix("dpi") {
+    // Check for DPI (AAAdpi) - case insensitive
+    let lowerSpec = spec.lowercased()
+    if lowerSpec.hasSuffix("dpi") {
         let numStr = String(spec.dropLast(3))
         if let value = Double(numStr) {
             scale.dpi = value
@@ -50,19 +54,8 @@ public func parseScaleSpec(_ spec: String) -> ScaleSpec? {
     // Check for dimensions (WxH, Wx, xH)
     if spec.contains("x") {
         let parts = spec.split(separator: "x", maxSplits: 1, omittingEmptySubsequences: false)
-        let heightStr = String(parts[0])
-        let widthStr = parts.count > 1 ? String(parts[1]) : ""
-
-        if !heightStr.isEmpty {
-            if let value = Double(heightStr) {
-                scale.maxHeight = value
-                if scale.maxHeight <= 0 {
-                    fputs("Error: Height dimension must be positive.\n", stderr)
-                    return nil
-                }
-                scale.hasHeight = true
-            }
-        }
+        let widthStr = String(parts[0])
+        let heightStr = parts.count > 1 ? String(parts[1]) : ""
 
         if !widthStr.isEmpty {
             if let value = Double(widthStr) {
@@ -72,6 +65,17 @@ public func parseScaleSpec(_ spec: String) -> ScaleSpec? {
                     return nil
                 }
                 scale.hasWidth = true
+            }
+        }
+
+        if !heightStr.isEmpty {
+            if let value = Double(heightStr) {
+                scale.maxHeight = value
+                if scale.maxHeight <= 0 {
+                    fputs("Error: Height dimension must be positive.\n", stderr)
+                    return nil
+                }
+                scale.hasHeight = true
             }
         }
         
