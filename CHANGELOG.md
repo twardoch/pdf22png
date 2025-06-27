@@ -50,6 +50,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Added universal target that builds and copies Swift binary to expected location
   - Updated build scripts to handle multiple binary locations gracefully
   - Fixed DMG size calculation to prevent "No space left on device" errors
+- Phase 22: Homebrew Tap Setup
+  - Created `scripts/setup-homebrew-tap.sh` for guided tap repository setup
+  - Created comprehensive `docs/HOMEBREW_TAP.md` documentation
+  - Enhanced `scripts/release.sh` with full release automation
+  - Created `docs/RELEASE_PROCESS.md` with detailed release guide
+  - Updated GitHub Actions to include .pkg and .dmg in releases
 - Scripts automatically detect whether tools were installed via Homebrew or manually
 - Added non-interactive mode for automation
 - Better PATH verification after installation

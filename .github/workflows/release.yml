@@ -132,6 +132,8 @@ jobs:
         prerelease: false
         files: |
           release_artifacts/*.tar.gz
+          release_artifacts/*.pkg
+          release_artifacts/*.dmg
           release_artifacts/*.sha256
 
     - name: Update Homebrew formulas
