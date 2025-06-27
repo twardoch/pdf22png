@@ -64,6 +64,51 @@ pdf21png -r 300 document.pdf output.png
 pdf21png -s 50% document.pdf output.png
 ```
 
+## Migration Guide
+
+### For Existing Users
+
+If you've been using the original `pdf22png` command, here's what you need to know:
+
+- The original Objective-C implementation is now called `pdf21png`
+- The new Swift implementation is now called `pdf22png`
+- All command-line options remain the same
+- Your existing scripts will continue to work, but will now use the Swift version
+
+To continue using the original Objective-C version:
+```bash
+# Replace pdf22png with pdf21png in your scripts
+pdf21png [same options as before]
+```
+
+To use the new Swift version:
+```bash
+# Continue using pdf22png as before
+pdf22png [same options as before]
+```
+
+### Choosing Between Implementations
+
+| Feature | pdf21png (Objective-C) | pdf22png (Swift) |
+|---------|----------------------|------------------|
+| Performance | ⭐⭐⭐⭐⭐ Fastest | ⭐⭐⭐⭐ Fast |
+| Memory Usage | ⭐⭐⭐⭐⭐ Minimal | ⭐⭐⭐⭐ Efficient |
+| Stability | ⭐⭐⭐⭐⭐ Battle-tested | ⭐⭐⭐⭐ Modern |
+| Features | Core functionality | Extended features |
+| macOS Support | 10.15+ | 11.0+ |
+| Architecture | Universal Binary | Universal Binary |
+
+Use `pdf21png` when:
+- Performance is critical
+- Processing large batches
+- Running on older macOS versions
+- Stability is paramount
+
+Use `pdf22png` when:
+- You want the latest features
+- Modern Swift integration is important
+- You're building new workflows
+
 ## Contributing
 
 Contributions are welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for details.

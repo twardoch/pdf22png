@@ -28,6 +28,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Cleaned up old binary artifacts from build directories
 - Marked implementation renaming tasks as complete in TODO.md
 
+### Updated (2025-06-27)
+- Updated Swift implementation's `main.swift` to use "pdf22png" as commandName instead of "pdf22png-swift"
+- Updated version number in Swift implementation to 2.2.0 for consistency
+- Added comprehensive migration guide to root README.md explaining the differences between implementations
+- Added comparison table to help users choose between pdf21png and pdf22png
+- Verified all tests pass after renaming (both implementations generate 134 PNG files successfully)
+- Verified Homebrew formulas exist for both pdf21png and pdf22png
+- Confirmed GitHub Actions workflows are updated with correct paths
+- Marked completed tasks in TODO.md
+
+### Remaining Tasks
+The following tasks remain for future completion:
+- Update documentation files in docs/ directory for dual implementation structure
+- Update installation scripts (install.sh, uninstall.sh, dev-setup.sh)
+- Update benchmark files to use new binary names
+- Create man pages for both pdf21png and pdf22png
+
 ## [Unreleased]
 
 ### Changed

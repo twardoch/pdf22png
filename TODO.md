@@ -74,9 +74,9 @@
   - [x] Update binary name references
   - [x] Change output paths
   
-- [ ] Update Tests:
-  - [ ] Update test file references
-  - [ ] Update expected output in tests
+- [x] Update Tests:
+  - [x] Update test file references
+  - [x] Update expected output in tests
   
 - [x] Rename directory:
   - [x] `mv pdf22png-swift pdf22png`
@@ -84,17 +84,17 @@
 ## Day 3: Core Documentation Updates
 
 ### Main Documentation
-- [ ] Update root README.md:
-  - [ ] Add clear explanation of naming:
-    - [ ] pdf21png = Objective-C (stable, performance)
-    - [ ] pdf22png = Swift (modern, features)
-  - [ ] Update all example commands
-  - [ ] Add migration guide section
-  - [ ] Update installation instructions
+- [x] Update root README.md:
+  - [x] Add clear explanation of naming:
+    - [x] pdf21png = Objective-C (stable, performance)
+    - [x] pdf22png = Swift (modern, features)
+  - [x] Update all example commands
+  - [x] Add migration guide section
+  - [x] Update installation instructions
 
-- [ ] Update CHANGELOG.md:
-  - [ ] Document the renaming as major version change
-  - [ ] Explain rationale for the change
+- [x] Update CHANGELOG.md:
+  - [x] Document the renaming as major version change
+  - [x] Explain rationale for the change
 
 - [ ] Update docs/:
   - [ ] `docs/USAGE.md`: Update all command examples
@@ -160,13 +160,13 @@
   - [ ] Update benchmark paths
 
 ### Homebrew Formula
-- [ ] Create homebrew/pdf21png.rb:
-  - [ ] New formula for Objective-C implementation
-  - [ ] Update URLs and descriptions
+- [x] Create homebrew/pdf21png.rb:
+  - [x] New formula for Objective-C implementation
+  - [x] Update URLs and descriptions
   
-- [ ] Update homebrew/pdf22png.rb:
-  - [ ] Update to install Swift implementation
-  - [ ] Remove -swift suffix references
+- [x] Update homebrew/pdf22png.rb:
+  - [x] Update to install Swift implementation
+  - [x] Remove -swift suffix references
 
 ## Day 7: Final Validation and Release
 

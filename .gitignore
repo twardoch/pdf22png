@@ -1,74 +1,53 @@
-# macOS
-.DS_Store
-.AppleDouble
-.LSOverride
-._*
-.Spotlight-V100
-.Trashes
 
-# Xcode
-*.xcworkspace
-xcuserdata/
-*.xcscmblueprint
-*.xccheckout
-DerivedData/
-*.moved-aside
-*.pbxuser
-!default.pbxuser
-*.mode1v3
-!default.mode1v3
-*.mode2v3
-!default.mode2v3
-*.perspectivev3
-!default.perspectivev3
-
-# Build products
-build/
-*.o
-*.a
-*.dylib
-pdf22png
-*.dSYM/
-
-# CMake
-CMakeCache.txt
-CMakeFiles/
-cmake_install.cmake
-Makefile.cmake
-
-# Testing
-test-results/
-coverage/
-*.gcov
-*.gcda
-*.gcno
-
-# Swift Package Manager build products
-.build/
-
-# IDEs
-.vscode/
-.idea/
-*.swp
-*.swo
-*~
-.cursorindexingignore
-
-# Distribution
-dist/
-*.tar.gz
-*.zip
-*.dmg
-
-# Documentation
-docs/_build/
-*.pdf
-
-# Private and temporary directories
 _private/
-issues/
-
-# Explicitly include Swift test sources
 !/pdf22png/Tests/
 !/pdf22png/Tests/**/*.swift
+!default.mode1v3
+!default.mode2v3
+!default.pbxuser
+!default.perspectivev3
+._*
+.AppleDouble
+.build/
+.cursorindexingignore
+.DS_Store
+.idea/
+.LSOverride
+.Spotlight-V100
+.Trashes
+.vscode/
+*.a
+*.dmg
+*.dSYM/
+*.dylib
+*.gcda
+*.gcno
+*.gcov
+*.mode1v3
+*.mode2v3
+*.moved-aside
+*.o
+*.pbxuser
+*.pdf
+*.perspectivev3
+*.swo
+*.swp
+*.tar.gz
+*.xccheckout
+*.xcscmblueprint
+*.xcworkspace
+*.zip
+*~
+build/
+cmake_install.cmake
+CMakeCache.txt
+CMakeFiles/
+coverage/
+DerivedData/
+dist/
+docs/_build/
+issues/
+Makefile.cmake
+test-results/
 testdata/test.pdf-oc/.test*
+xcuserdata/
