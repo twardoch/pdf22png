@@ -1,224 +1,98 @@
 # PDF22PNG Todo List
 
-## Current Priorities (2025-06-27)
+## Phase 15: Seamless Installation & Production Ready (2025-06-27)
 
-### Documentation Overhaul (COMPLETED)
-- [x] Rewrite README.md with user-friendly language explaining:
-  - Why this project exists
-  - What it does in simple terms
-  - How to install and use it
-  - Clear distinction between pdf21png and pdf22png
-- [x] Create CONTRIBUTING.md with technical details:
-  - Project architecture and structure
-  - Code requirements and standards
-  - Development workflow
-  - Testing procedures
+### Priority 1: Homebrew Installation (Immediate)
+- [x] Create `release.sh` script for automated releases
+  - [x] Build universal binaries for both implementations
+  - [x] Generate SHA256 checksums automatically
+  - [x] Create GitHub releases with proper tags
+  - [x] Update Homebrew formulas with release data
+- [ ] Finalize `homebrew/pdf21png.rb` with release URL and SHA256
+- [ ] Finalize `homebrew/pdf22png.rb` with release URL and SHA256
+- [ ] Create and configure Homebrew tap `twardoch/homebrew-pdf22png`
+- [ ] Test Homebrew installation for both tools
 
-### Remaining Implementation Tasks
-- [x] Update GitHub Actions workflows for new binary names
-- [x] Create separate Homebrew formulas (pdf21png.rb and pdf22png.rb)
-- [x] Update installation scripts to support both implementations
-- [x] Add version command support to pdf21png (Objective-C)
+### Priority 2: Installation Documentation (Immediate)
+- [x] Update README.md with Homebrew as primary installation method
+  - [x] Add one-liner: `brew install twardoch/pdf22png/pdf22png`
+  - [x] Add alternative: `brew install twardoch/pdf22png/pdf21png`
+  - [x] Include migration guide from old methods
+  - [x] Add troubleshooting section
+- [x] Add Quick Start Guide with real examples
+- [x] Enhance `scripts/install.sh` to detect and prefer Homebrew
+- [x] Update `scripts/uninstall.sh` for Homebrew-aware removal
 
-## COMPLETED: Implementation Renaming ✓
+### Priority 3: Build System Refinement (This Week)
+- [x] Create unified top-level Makefile
+  - [x] `make all` - build both implementations
+  - [x] `make test` - run all tests
+  - [x] `make install` - install both tools
+  - [x] `make release` - prepare releases
+  - [x] `make check-deps` - verify dependencies
+- [ ] Create `scripts/install-deps.sh` for dependency setup
+- [ ] Update `build.sh` to use Makefile targets
 
-### Objective (COMPLETED)
-- **pdf22png-objc** → **pdf21png** (mature, stable, performance-focused) ✓
-- **pdf22png-swift** → **pdf22png** (modern, evolving, feature-rich) ✓
+### Priority 4: Quality Assurance (This Week)
+- [ ] Port Objective-C tests to XCTest framework
+- [ ] Expand Swift test coverage to 80%+
+- [ ] Add integration tests for both CLIs
+- [ ] Set up memory leak detection
+- [ ] Update GitHub Actions workflows
+  - [ ] Matrix builds (macOS versions × architectures)
+  - [ ] Automated release on tag push
+  - [ ] Homebrew formula auto-update
+  - [ ] Performance benchmarking on PRs
 
-## Day 1: Pre-Renaming and Objective-C Implementation
+### Priority 5: Developer Experience (Next Week)
+- [ ] Create `.devcontainer` configuration
+- [ ] Set up pre-commit hooks
+  - [ ] SwiftLint/SwiftFormat for Swift
+  - [ ] clang-format for Objective-C
+  - [ ] Conventional commit enforcement
+- [ ] Add `.editorconfig` for consistent formatting
+- [ ] Create `CODEOWNERS` file
 
-### Pre-Renaming Preparation
-- [x] Create backup branch: `git checkout -b pre-renaming-backup`
-- [x] Tag current state: `git tag v1.0-pre-rename`
-- [x] Document current state in CHANGELOG.md
+### Priority 6: Documentation Excellence (Next Week)
+- [ ] Generate man pages from single Markdown source
+- [ ] Create Swift DocC documentation
+- [ ] Add Objective-C HeaderDoc documentation
+- [ ] Write comprehensive user guide
+  - [ ] PDF processing best practices
+  - [ ] Performance tuning guide
+  - [ ] Batch processing examples
+- [ ] Host documentation on GitHub Pages
 
-### Objective-C Implementation Renaming (pdf22png-objc → pdf21png)
-- [x] Rename source files:
-  - [x] `mv pdf22png-objc/src/pdf22png.m pdf22png-objc/src/pdf21png.m`
-  - [x] `mv pdf22png-objc/src/pdf22png.h pdf22png-objc/src/pdf21png.h`
-  
-- [x] Update source code content:
-  - [x] In `pdf21png.m`: Replace all "pdf22png" with "pdf21png"
-  - [x] In `pdf21png.h`: Update header guards and definitions
-  - [x] In `utils.h`: Update include statements
-  - [x] In `utils.m`: Update references
-  - [x] In `errors.h`: Update any references
-  
-- [x] Update Makefile:
-  - [x] Change `TARGET = pdf22png` to `TARGET = pdf21png`
-  - [x] Update `SOURCES = src/pdf22png.m` to `SOURCES = src/pdf21png.m`
-  - [x] Update installation paths
-  
-- [x] Rename directory:
-  - [x] `mv pdf22png-objc pdf21png`
-  
-- [x] Update README.md in pdf21png/:
-  - [x] Replace all references to pdf22png with pdf21png
-  - [x] Update description to emphasize stability and performance
+### Priority 7: Performance & Optimization (Ongoing)
+- [ ] Update benchmark suite with new binary names
+- [ ] Add memory usage profiling
+- [ ] Implement parallel processing for batch operations
+- [ ] Add performance regression detection
 
-## Day 2: Swift Implementation Updates
+### Priority 8: Long-term Maintenance (Future)
+- [ ] Set up semantic versioning automation
+- [ ] Create issue and PR templates
+- [ ] Add security scanning (SAST)
+- [ ] Plan LTS version strategy
 
-### Swift Implementation Updates (pdf22png-swift → pdf22png)
-- [x] Update Package.swift:
-  - [x] Change executable name from "pdf22png-swift" to "pdf22png"
-  - [x] Update product name
-  - [x] Update target names if needed
-  
-- [x] Update source code:
-  - [x] In `Sources/main.swift`: Update program identification
-  - [x] Update help text and version strings
-  - [x] Remove "-swift" suffix from all references
-  
-- [x] Update Makefile:
-  - [x] Update binary name references
-  - [x] Change output paths
-  
-- [x] Update Tests:
-  - [x] Update test file references
-  - [x] Update expected output in tests
-  
-- [x] Rename directory:
-  - [x] `mv pdf22png-swift pdf22png`
+## Completed Tasks ✓
 
-## Day 3: Core Documentation Updates
+### Implementation Renaming (2025-06-27)
+- [x] Renamed `pdf22png-objc` → `pdf21png`
+- [x] Renamed `pdf22png-swift` → `pdf22png`
+- [x] Updated all source code references
+- [x] Updated build systems and scripts
+- [x] Created placeholder Homebrew formulas
+- [x] Updated primary documentation
 
-### Main Documentation
-- [x] Update root README.md:
-  - [x] Add clear explanation of naming:
-    - [x] pdf21png = Objective-C (stable, performance)
-    - [x] pdf22png = Swift (modern, features)
-  - [x] Update all example commands
-  - [x] Add migration guide section
-  - [x] Update installation instructions
-
-- [x] Update CHANGELOG.md:
-  - [x] Document the renaming as major version change
-  - [x] Explain rationale for the change
-
-- [ ] Update docs/:
-  - [x] `docs/USAGE.md`: Update all command examples
-  - [x] `docs/API.md`: Update API references
-  - [x] `docs/EXAMPLES.md`: Update all examples
-  - [x] `docs/pdf22png.1`: Create two man pages (pdf21png.1 and pdf22png.1)
-
-## Day 4: Scripts and Build System Updates
-
-### Build Scripts
-- [x] Update build.sh:
-  - [x] Update directory names (pdf21png, pdf22png)
-  - [x] Update binary output names
-  - [x] Update build messages
-  
-- [x] Update test_both.sh:
-  - [x] Change binary paths: `./pdf21png/build/pdf21png`
-  - [x] Change binary paths: `./pdf22png/.build/release/pdf22png`
-  - [x] Update output directory names
-  
-- [x] Update bench.sh:
-  - [x] Update binary references
-  - [x] Update benchmark output naming
-
-### Installation Scripts
-- [x] Update scripts/install.sh:
-  - [x] Support installing both pdf21png and pdf22png
-  - [x] Update binary names in installation
-  
-- [x] Update scripts/uninstall.sh:
-  - [x] Remove both pdf21png and pdf22png
-  
-- [x] Update scripts/dev-setup.sh:
-  - [x] Update development environment setup
-
-## Day 5: Benchmarks and Tests
-
-### Benchmark Updates
-- [ ] Update benchmarks/:
-  - [ ] `benchmark.sh`: Update binary paths
-  - [ ] `benchmark_objc.m`: Update references
-  - [ ] `BenchmarkSwift.swift`: Update references
-  - [ ] `compare_implementations.sh`: Update for new names
-  - [ ] `run_benchmarks.sh`: Update all paths
-  - [ ] Update README.md in benchmarks/
-
-### Test Updates
-- [ ] Update all test files to use new binary names
-- [ ] Verify tests pass with renamed implementations
-
-## Day 6: CI/CD and Package Management
-
-### GitHub Actions
-- [ ] Update .github/workflows/build.yml:
-  - [ ] Update artifact names
-  - [ ] Update binary paths
-  
-- [ ] Update .github/workflows/release.yml:
-  - [ ] Update release artifact names
-  - [ ] Update version tagging
-  
-- [ ] Update .github/workflows/benchmark.yml:
-  - [ ] Update benchmark paths
-
-### Homebrew Formula
-- [x] Create homebrew/pdf21png.rb:
-  - [x] New formula for Objective-C implementation
-  - [x] Update URLs and descriptions
-  
-- [x] Update homebrew/pdf22png.rb:
-  - [x] Update to install Swift implementation
-  - [x] Remove -swift suffix references
-
-## Day 7: Final Validation and Release
-
-### Testing Checklist
-- [ ] Build both implementations successfully
-- [ ] Run test suite for both
-- [ ] Verify binary names are correct
-- [ ] Test installation process
-- [ ] Verify help text shows correct names
-- [ ] Run benchmarks with new names
-
-### Documentation Review
-- [ ] All READMEs updated
-- [ ] Man pages created for both
-- [ ] Examples all use new names
-- [ ] No references to old names remain
-
-### Release Preparation
-- [ ] Create release notes
-- [ ] Update version numbers:
-  - [ ] pdf21png: v2.1.0
-  - [ ] pdf22png: v2.2.0
-- [ ] Create GitHub release
-- [ ] Update Homebrew tap
-
-## Verification Checklist
-
-### Source Code
-- [ ] No "pdf22png" strings in pdf21png source
-- [ ] No "pdf22png-swift" strings in pdf22png source
-- [ ] All includes/imports updated
-- [ ] All macro definitions updated
-
-### Build System
-- [ ] Both implementations build successfully
-- [ ] Correct binary names produced
-- [ ] Installation places correct binaries
-
-### Documentation
-- [ ] Clear distinction between implementations
-- [ ] Migration guide complete
-- [ ] All examples updated
-
-### User Experience
-- [ ] Clear which tool to use when
-- [ ] Easy installation of either/both
-- [ ] Help text is clear and correct
+### Documentation Overhaul
+- [x] Rewrote README.md with user-friendly language
+- [x] Created comprehensive CONTRIBUTING.md
+- [x] Updated CHANGELOG.md with renaming details
 
 ## Notes
 
-- This renaming is the TOP PRIORITY before any other work
-- Ensures clear product differentiation
-- Aligns version numbers with product names (2.1 for pdf21png, 2.2 for pdf22png)
-- Sets foundation for independent evolution of each tool
-
+- Focus on seamless Homebrew installation above all
+- Maintain backward compatibility during transition
+- Prioritize user experience and clear documentation
+- Keep both implementations building and tested

@@ -32,6 +32,11 @@ let package = Package(
         .target(
             name: "ScaleUtilities",
             path: "Sources/Utils"
+        ),
+        .testTarget(
+            name: "ScaleUtilitiesTests",
+            dependencies: ["ScaleUtilities"],
+            path: "Tests/ScaleUtilitiesTests"
         )
     ]
 )

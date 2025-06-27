@@ -1,113 +1,227 @@
 # PDF to PNG Converter for macOS
 
-Two powerful command-line tools for converting PDF files to high-quality PNG images on macOS.
+Convert PDF documents to high-quality PNG images with two powerful command-line tools optimized for macOS.
 
-- **`pdf21png`**: A mature, performance-focused tool written in Objective-C.
-- **`pdf22png`**: A modern, feature-rich tool written in Swift.
+## Quick Install
 
-## What's New?
+```bash
+# Install the modern Swift version (recommended)
+brew install twardoch/pdf22png/pdf22png
 
-The project has been recently reorganized to provide two distinct tools:
+# Or install the performance-optimized Objective-C version
+brew install twardoch/pdf22png/pdf21png
+```
 
-- `pdf21png` is the original, battle-tested Objective-C implementation, optimized for speed and stability.
-- `pdf22png` is the new Swift implementation, offering a modern codebase and new features.
+## Overview
 
-This change allows users to choose the tool that best fits their needs, whether it's the raw performance of `pdf21png` or the modern features of `pdf22png`.
+This project provides two implementations of a PDF to PNG converter:
+
+- **`pdf22png`** - Modern Swift implementation with the latest features (recommended for most users)
+- **`pdf21png`** - High-performance Objective-C implementation for maximum speed
+
+Both tools share the same command-line interface and can be used interchangeably.
 
 ## Features
 
-- Convert single pages or entire PDFs.
-- Control image resolution (DPI).
-- Scale images to specific sizes.
-- Preserve transparency.
-- Batch process multiple files.
-- Fine-tune PNG compression.
+- 🖼️ **High-Quality Conversion** - Leverages macOS native Core Graphics for optimal rendering
+- 📄 **Flexible Page Selection** - Convert single pages, ranges, or entire documents
+- 🎯 **Precise Scaling Control** - DPI settings, percentage scaling, or fixed dimensions
+- 🎨 **Transparency Support** - Preserve transparent backgrounds in PDFs
+- ⚡ **Batch Processing** - Convert multiple PDFs efficiently
+- 🔧 **Fine-Tuning Options** - Control PNG compression and output quality
 
 ## Installation
 
-### Homebrew
+### Homebrew (Recommended)
+
+The easiest way to install is via Homebrew:
 
 ```bash
-# Install the Objective-C version
-brew tap twardoch/pdf22png
-brew install pdf21png
+# Install the modern Swift version (recommended for most users)
+brew install twardoch/pdf22png/pdf22png
 
-# Install the Swift version
-brew tap twardoch/pdf22png
-brew install pdf22png
+# Or install the high-performance Objective-C version
+brew install twardoch/pdf22png/pdf21png
+
+# Install both versions
+brew install twardoch/pdf22png/pdf22png twardoch/pdf22png/pdf21png
 ```
 
-### From Source
+### Building from Source
+
+Requirements:
+- macOS 10.15 or later (11.0+ for Swift version)
+- Xcode Command Line Tools
 
 ```bash
+git clone https://github.com/twardoch/pdf22png.git
+cd pdf22png
+
+# Build both versions
+./build.sh
+
+# Install to /usr/local/bin
+sudo make install
+```
+
+### Manual Download
+
+Pre-built universal binaries are available from the [releases page](https://github.com/twardoch/pdf22png/releases).
+
+## Quick Start
+
+### Basic Usage
+
+```bash
+# Convert first page of a PDF to PNG
+pdf22png input.pdf output.png
+
+# Convert page 5 at 300 DPI
+pdf22png -p 5 -r 300 document.pdf page5.png
+
+# Convert all pages with transparent background
+pdf22png -a -t document.pdf
+
+# Scale output to 50% size
+pdf22png -s 50% large.pdf smaller.png
+```
+
+### Common Examples
+
+```bash
+# High-resolution conversion for print
+pdf22png -r 600 poster.pdf print-ready.png
+
+# Create thumbnails at fixed width
+pdf22png -s 200x presentation.pdf thumb.png
+
+# Batch convert all PDFs in a directory
+for pdf in *.pdf; do
+    pdf22png -a "$pdf"
+done
+
+# Extract specific page with transparency
+pdf22png -p 3 -t -q 9 manual.pdf page3.png
+```
+
+## Command Options
+
+| Option | Long Form | Description | Default |
+|--------|-----------|-------------|---------|
+| `-p <n>` | `--page` | Page number to convert | 1 |
+| `-a` | `--all` | Convert all pages | disabled |
+| `-r <dpi>` | `--resolution` | Output resolution in DPI | 144 |
+| `-s <spec>` | `--scale` | Scale specification (see below) | 100% |
+| `-t` | `--transparent` | Preserve transparency | disabled |
+| `-q <0-9>` | `--quality` | PNG compression (0=none, 9=max) | 6 |
+| `-o <path>` | `--output` | Output file or `-` for stdout | - |
+| `-d <dir>` | `--directory` | Output directory for batch mode | . |
+| `-v` | `--verbose` | Enable verbose logging | disabled |
+| `-h` | `--help` | Show help message | - |
+
+### Scale Specifications
+
+- **Percentage**: `150%` or `0.5` (50%)
+- **Fixed width**: `800x` (800px wide, maintain aspect ratio)
+- **Fixed height**: `x600` (600px tall, maintain aspect ratio)
+- **Fit within**: `800x600` (fit within box, maintain aspect ratio)
+
+## Which Version Should I Use?
+
+### Quick Decision Guide
+
+- **Most users**: Install `pdf22png` (Swift version) for the best balance of features and performance
+- **Performance critical**: Install `pdf21png` (Objective-C version) for maximum speed
+- **Not sure**: Install `pdf22png` - it's the recommended default
+
+### Detailed Comparison
+
+| Aspect | pdf21png (Objective-C) | pdf22png (Swift) |
+|--------|------------------------|------------------|
+| **Performance** | ⚡ Fastest possible | 🚀 Very fast |
+| **Memory Usage** | Minimal | Efficient |
+| **macOS Version** | 10.15+ | 11.0+ |
+| **Best For** | Large batches, servers | Desktop use, automation |
+| **Development** | Stable, maintenance mode | Active development |
+
+## Advanced Usage
+
+### Pipeline Integration
+
+```bash
+# Convert and pipe to ImageMagick for further processing
+pdf22png -r 300 input.pdf - | convert - -resize 50% output.jpg
+
+# Extract text from specific page (requires OCR tools)
+pdf22png -p 2 -r 300 document.pdf - | tesseract stdin stdout
+```
+
+### Batch Processing
+
+```bash
+# Convert all PDFs to PNGs in a separate directory
+mkdir -p output
+for pdf in *.pdf; do
+    pdf22png -a -d output "$pdf"
+done
+
+# Custom naming pattern
+pdf22png -a -o "page" document.pdf
+# Creates: page-001.png, page-002.png, etc.
+```
+
+### Scripting
+
+```bash
+#!/bin/bash
+# Convert PDF to thumbnails
+
+INPUT="$1"
+BASENAME=$(basename "$INPUT" .pdf)
+
+# Create high-res and thumbnail versions
+pdf22png -r 300 "$INPUT" "${BASENAME}-highres.png"
+pdf22png -s 150x "$INPUT" "${BASENAME}-thumb.png"
+```
+
+## Troubleshooting
+
+### Installation Issues
+
+If Homebrew installation fails:
+```bash
+# Update Homebrew and retry
+brew update
+brew tap twardoch/pdf22png
+brew install pdf22png
+
+# Or build from source
 git clone https://github.com/twardoch/pdf22png.git
 cd pdf22png
 ./build.sh
 ```
 
-## Usage
+### Common Problems
 
+- **"Command not found"**: Ensure `/usr/local/bin` is in your PATH
+- **"PDF is encrypted"**: This tool doesn't support encrypted PDFs
+- **Poor quality output**: Increase DPI with `-r 300` or higher
+- **Large file sizes**: Adjust compression with `-q 7` or `-q 8`
+
+## Migration from Old Versions
+
+If you previously used `pdf22png` before version 2.0:
+
+- The Objective-C implementation is now `pdf21png`
+- The Swift implementation is now `pdf22png` 
+- All command options remain unchanged
+- Your scripts will work but now use the Swift version
+
+To use the original Objective-C version:
 ```bash
-# Convert the first page of a PDF
-pdf21png document.pdf page1.png
-
-# Convert a specific page
-pdf21png -p 5 document.pdf page5.png
-
-# Convert all pages
-pdf21png -a document.pdf
-
-# Set resolution to 300 DPI
-pdf21png -r 300 document.pdf output.png
-
-# Scale to 50%
-pdf21png -s 50% document.pdf output.png
+# Simply replace pdf22png with pdf21png
+pdf21png [your existing options]
 ```
-
-## Migration Guide
-
-### For Existing Users
-
-If you've been using the original `pdf22png` command, here's what you need to know:
-
-- The original Objective-C implementation is now called `pdf21png`
-- The new Swift implementation is now called `pdf22png`
-- All command-line options remain the same
-- Your existing scripts will continue to work, but will now use the Swift version
-
-To continue using the original Objective-C version:
-```bash
-# Replace pdf22png with pdf21png in your scripts
-pdf21png [same options as before]
-```
-
-To use the new Swift version:
-```bash
-# Continue using pdf22png as before
-pdf22png [same options as before]
-```
-
-### Choosing Between Implementations
-
-| Feature | pdf21png (Objective-C) | pdf22png (Swift) |
-|---------|----------------------|------------------|
-| Performance | ⭐⭐⭐⭐⭐ Fastest | ⭐⭐⭐⭐ Fast |
-| Memory Usage | ⭐⭐⭐⭐⭐ Minimal | ⭐⭐⭐⭐ Efficient |
-| Stability | ⭐⭐⭐⭐⭐ Battle-tested | ⭐⭐⭐⭐ Modern |
-| Features | Core functionality | Extended features |
-| macOS Support | 10.15+ | 11.0+ |
-| Architecture | Universal Binary | Universal Binary |
-
-Use `pdf21png` when:
-- Performance is critical
-- Processing large batches
-- Running on older macOS versions
-- Stability is paramount
-
-Use `pdf22png` when:
-- You want the latest features
-- Modern Swift integration is important
-- You're building new workflows
 
 ## Contributing
 
