@@ -1,0 +1,174 @@
+name: Benchmark Comment
+
+on:
+  workflow_run:
+    workflows: ["Performance Benchmarks"]
+    types:
+      - completed
+
+jobs:
+  comment:
+    runs-on: ubuntu-latest
+    if: github.event.workflow_run.event == 'pull_request' && github.event.workflow_run.conclusion == 'success'
+    
+    permissions:
+      pull-requests: write
+      actions: read
+      
+    steps:
+    - name: Download benchmark results
+      uses: actions/download-artifact@v3
+      with:
+        name: benchmark-results
+        run-id: ${{ github.event.workflow_run.id }}
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Get PR number
+      id: pr
+      run: |
+        # Extract PR number from workflow run
+        PR_NUMBER=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+          "https://api.github.com/repos/${{ github.repository }}/actions/runs/${{ github.event.workflow_run.id }}" \
+          | jq -r '.pull_requests[0].number')
+        echo "number=$PR_NUMBER" >> $GITHUB_OUTPUT
+    
+    - name: Parse benchmark results
+      id: parse
+      run: |
+        # Parse CSV results
+        if [ -f "benchmark-results.csv" ]; then
+          # Extract average times
+          PDF21_AVG=$(awk -F',' 'NR>1 && $1=="pdf21png" {sum+=$4; count++} END {printf "%.3f", sum/count}' benchmark-results.csv)
+          PDF22_AVG=$(awk -F',' 'NR>1 && $1=="pdf22png" {sum+=$4; count++} END {printf "%.3f", sum/count}' benchmark-results.csv)
+          
+          # Extract min/max times
+          PDF21_MIN=$(awk -F',' 'NR>1 && $1=="pdf21png" {if(NR==2||$4<min)min=$4} END {printf "%.3f", min}' benchmark-results.csv)
+          PDF21_MAX=$(awk -F',' 'NR>1 && $1=="pdf21png" {if(NR==2||$4>max)max=$4} END {printf "%.3f", max}' benchmark-results.csv)
+          PDF22_MIN=$(awk -F',' 'NR>1 && $1=="pdf22png" {if(NR==2||$4<min)min=$4} END {printf "%.3f", min}' benchmark-results.csv)
+          PDF22_MAX=$(awk -F',' 'NR>1 && $1=="pdf22png" {if(NR==2||$4>max)max=$4} END {printf "%.3f", max}' benchmark-results.csv)
+          
+          echo "pdf21_avg=$PDF21_AVG" >> $GITHUB_OUTPUT
+          echo "pdf22_avg=$PDF22_AVG" >> $GITHUB_OUTPUT
+          echo "pdf21_min=$PDF21_MIN" >> $GITHUB_OUTPUT
+          echo "pdf21_max=$PDF21_MAX" >> $GITHUB_OUTPUT
+          echo "pdf22_min=$PDF22_MIN" >> $GITHUB_OUTPUT
+          echo "pdf22_max=$PDF22_MAX" >> $GITHUB_OUTPUT
+        fi
+    
+    - name: Get baseline from main
+      id: baseline
+      run: |
+        # Fetch most recent successful benchmark from main branch
+        MAIN_RUN=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+          "https://api.github.com/repos/${{ github.repository }}/actions/workflows/benchmark.yml/runs?branch=main&status=success&per_page=1" \
+          | jq -r '.workflow_runs[0].id')
+        
+        if [ "$MAIN_RUN" != "null" ]; then
+          # Download baseline artifacts
+          curl -s -L -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            "https://api.github.com/repos/${{ github.repository }}/actions/runs/$MAIN_RUN/artifacts" \
+            | jq -r '.artifacts[] | select(.name=="benchmark-results") | .archive_download_url' \
+            | xargs -I {} curl -s -L -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" {} -o baseline.zip
+          
+          unzip -q baseline.zip -d baseline/ || true
+          
+          if [ -f "baseline/benchmark-results.csv" ]; then
+            BASELINE_PDF21=$(awk -F',' 'NR>1 && $1=="pdf21png" {sum+=$4; count++} END {printf "%.3f", sum/count}' baseline/benchmark-results.csv)
+            BASELINE_PDF22=$(awk -F',' 'NR>1 && $1=="pdf22png" {sum+=$4; count++} END {printf "%.3f", sum/count}' baseline/benchmark-results.csv)
+            
+            echo "pdf21=$BASELINE_PDF21" >> $GITHUB_OUTPUT
+            echo "pdf22=$BASELINE_PDF22" >> $GITHUB_OUTPUT
+          fi
+        fi
+    
+    - name: Calculate changes
+      id: changes
+      run: |
+        if [ -n "${{ steps.baseline.outputs.pdf21 }}" ]; then
+          # Calculate percentage changes
+          PDF21_CHANGE=$(echo "scale=1; ((${{ steps.parse.outputs.pdf21_avg }} - ${{ steps.baseline.outputs.pdf21 }}) / ${{ steps.baseline.outputs.pdf21 }} * 100)" | bc)
+          PDF22_CHANGE=$(echo "scale=1; ((${{ steps.parse.outputs.pdf22_avg }} - ${{ steps.baseline.outputs.pdf22 }}) / ${{ steps.baseline.outputs.pdf22 }} * 100)" | bc)
+          
+          # Determine emoji based on change
+          if (( $(echo "$PDF21_CHANGE < -5" | bc -l) )); then
+            PDF21_EMOJI="🚀"  # Significant improvement
+          elif (( $(echo "$PDF21_CHANGE > 5" | bc -l) )); then
+            PDF21_EMOJI="⚠️"  # Regression
+          else
+            PDF21_EMOJI="✅"  # No significant change
+          fi
+          
+          if (( $(echo "$PDF22_CHANGE < -5" | bc -l) )); then
+            PDF22_EMOJI="🚀"
+          elif (( $(echo "$PDF22_CHANGE > 5" | bc -l) )); then
+            PDF22_EMOJI="⚠️"
+          else
+            PDF22_EMOJI="✅"
+          fi
+          
+          echo "pdf21_change=$PDF21_CHANGE" >> $GITHUB_OUTPUT
+          echo "pdf22_change=$PDF22_CHANGE" >> $GITHUB_OUTPUT
+          echo "pdf21_emoji=$PDF21_EMOJI" >> $GITHUB_OUTPUT
+          echo "pdf22_emoji=$PDF22_EMOJI" >> $GITHUB_OUTPUT
+        fi
+    
+    - name: Comment on PR
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const fs = require('fs');
+          
+          let comment = `## 📊 Performance Benchmark Results\n\n`;
+          
+          // Add comparison table
+          comment += `| Implementation | Average Time | Min | Max | vs Main | Status |\n`;
+          comment += `|----------------|-------------|-----|-----|---------|--------|\n`;
+          
+          if ('${{ steps.baseline.outputs.pdf21 }}') {
+            comment += `| pdf21png (Objective-C) | ${{ steps.parse.outputs.pdf21_avg }}s | ${{ steps.parse.outputs.pdf21_min }}s | ${{ steps.parse.outputs.pdf21_max }}s | ${{ steps.changes.outputs.pdf21_change }}% | ${{ steps.changes.outputs.pdf21_emoji }} |\n`;
+            comment += `| pdf22png (Swift) | ${{ steps.parse.outputs.pdf22_avg }}s | ${{ steps.parse.outputs.pdf22_min }}s | ${{ steps.parse.outputs.pdf22_max }}s | ${{ steps.changes.outputs.pdf22_change }}% | ${{ steps.changes.outputs.pdf22_emoji }} |\n`;
+          } else {
+            comment += `| pdf21png (Objective-C) | ${{ steps.parse.outputs.pdf21_avg }}s | ${{ steps.parse.outputs.pdf21_min }}s | ${{ steps.parse.outputs.pdf21_max }}s | N/A | ✅ |\n`;
+            comment += `| pdf22png (Swift) | ${{ steps.parse.outputs.pdf22_avg }}s | ${{ steps.parse.outputs.pdf22_min }}s | ${{ steps.parse.outputs.pdf22_max }}s | N/A | ✅ |\n`;
+          }
+          
+          comment += `\n### Legend\n`;
+          comment += `- 🚀 Performance improved by more than 5%\n`;
+          comment += `- ✅ Performance change within ±5%\n`;
+          comment += `- ⚠️ Performance degraded by more than 5%\n`;
+          
+          // Add detailed output if available
+          if (fs.existsSync('benchmark-output.txt')) {
+            const output = fs.readFileSync('benchmark-output.txt', 'utf8');
+            comment += `\n<details>\n<summary>Detailed Benchmark Output</summary>\n\n\`\`\`\n${output}\n\`\`\`\n</details>\n`;
+          }
+          
+          comment += `\n[View full results](https://github.com/${{ github.repository }}/actions/runs/${{ github.event.workflow_run.id }})`;
+          
+          // Find existing comment to update
+          const { data: comments } = await github.rest.issues.listComments({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            issue_number: ${{ steps.pr.outputs.number }}
+          });
+          
+          const botComment = comments.find(comment => 
+            comment.user.type === 'Bot' && 
+            comment.body.includes('Performance Benchmark Results')
+          );
+          
+          if (botComment) {
+            await github.rest.issues.updateComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              comment_id: botComment.id,
+              body: comment
+            });
+          } else {
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: ${{ steps.pr.outputs.number }},
+              body: comment
+            });
+          }

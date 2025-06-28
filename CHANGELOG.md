@@ -56,6 +56,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Enhanced `scripts/release.sh` with full release automation
   - Created `docs/RELEASE_PROCESS.md` with detailed release guide
   - Updated GitHub Actions to include .pkg and .dmg in releases
+- Phase 23: Quality Assurance
+  - Created XCTest infrastructure for Objective-C (pdf21png)
+  - Expanded Swift test coverage with comprehensive edge case tests
+  - Added tests for calculateScaleFactor function
+  - Fixed width/height parsing bug in parseScaleSpec
+  - Added case-insensitive DPI parsing
+  - Improved test coverage to ~40% (up from ~10%)
+  - Set up memory leak detection with Address Sanitizer and macOS leaks command
+  - Created `scripts/check-memory-leaks.sh` for comprehensive memory testing
+  - Added memory leak checks to CI/CD pipeline
+  - Implemented Homebrew formula auto-update workflow
+  - Enhanced performance benchmarking with PR comparisons and regression detection
 - Scripts automatically detect whether tools were installed via Homebrew or manually
 - Added non-interactive mode for automation
 - Better PATH verification after installation

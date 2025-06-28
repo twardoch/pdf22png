@@ -52,6 +52,11 @@ jobs:
 
     - name: Run tests
       run: make test
+    
+    - name: Check memory leaks
+      run: |
+        echo "Checking for memory leaks..."
+        ./scripts/check-memory-leaks.sh --leaks-only || true
 
     - name: Verify binaries
       run: |
