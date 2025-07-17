@@ -10,20 +10,20 @@ PDF22PNG_DIR := pdf22png
 INSTALL_PREFIX := /usr/local/bin
 
 # Build targets
-.PHONY: all clean install uninstall test release check-deps help
+.PHONY: all clean install uninstall test release release-version check-deps help generate-version generate-version-swift generate-version-objc multiplatform
 
 # Build both implementations
 all: pdf21png pdf22png
 	@echo "✓ Both implementations built successfully"
 
 # Build pdf21png (Objective-C)
-pdf21png: check-deps-objc
+pdf21png: check-deps-objc generate-version-objc
 	@echo "→ Building pdf21png (Objective-C)..."
 	@$(MAKE) -C $(PDF21PNG_DIR)
 	@echo "✓ pdf21png built successfully"
 
 # Build pdf22png (Swift)
-pdf22png: check-deps-swift
+pdf22png: check-deps-swift generate-version-swift
 	@echo "→ Building pdf22png (Swift)..."
 	@$(MAKE) -C $(PDF22PNG_DIR)
 	@echo "✓ pdf22png built successfully"
@@ -94,10 +94,20 @@ benchmark: all
 	@./bench.sh
 
 # Create release artifacts
-release: all test dist
+release: all test
 	@echo "→ Creating release artifacts..."
-	@./release.sh --dry-run
-	@echo "✓ Release artifacts created (dry run)"
+	@./scripts/build-and-release.sh release
+	@echo "✓ Release artifacts created"
+
+# Create release with version
+release-version:
+	@echo "→ Creating release with version..."
+	@if [ -z "$(VERSION)" ]; then \
+		echo "Error: VERSION not specified. Use: make release-version VERSION=1.0.0"; \
+		exit 1; \
+	fi
+	@./scripts/build-and-release.sh release --version "$(VERSION)"
+	@echo "✓ Release artifacts created for version $(VERSION)"
 
 # Build distribution packages
 dist: pkg dmg
@@ -115,7 +125,23 @@ dmg: all
 
 # Get version from git tags
 version:
-	@./scripts/get-version.sh
+	@./scripts/version.sh get
+
+# Generate version files
+generate-version: generate-version-swift generate-version-objc
+	@echo "✓ Version files generated"
+
+# Generate Swift version file
+generate-version-swift:
+	@echo "→ Generating Swift version file..."
+	@./scripts/generate-version.sh
+	@echo "✓ Swift version file generated"
+
+# Generate Objective-C version file
+generate-version-objc:
+	@echo "→ Generating Objective-C version file..."
+	@./scripts/generate-version-objc.sh
+	@echo "✓ Objective-C version file generated"
 
 # Check dependencies
 check-deps: check-deps-objc check-deps-swift
@@ -182,6 +208,7 @@ help:
 	@echo "  uninstall        Remove both tools from $(INSTALL_PREFIX)"
 	@echo "  test             Run tests for both implementations"
 	@echo "  release          Create release artifacts"
+	@echo "  release-version  Create release with specific version (use VERSION=x.y.z)"
 	@echo ""
 	@echo "Additional targets:"
 	@echo "  objc             Alias for pdf21png"
@@ -196,6 +223,7 @@ help:
 	@echo "  pkg              Build .pkg installer"
 	@echo "  dmg              Build .dmg disk image"
 	@echo "  version          Show current version from git tags"
+	@echo "  generate-version Generate version files for both implementations"
 	@echo "  help             Show this help message"
 	@echo ""
 	@echo "Examples:"
@@ -203,3 +231,4 @@ help:
 	@echo "  make pdf22png          # Build only Swift version"
 	@echo "  make test              # Run all tests"
 	@echo "  make install           # Install both tools"
+	@echo "  make release-version VERSION=1.0.0  # Create release for version 1.0.0"

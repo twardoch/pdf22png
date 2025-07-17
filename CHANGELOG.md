@@ -5,9 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased] - 2025-06-27
+## [Unreleased] - 2025-07-17
 
 ### Added
+- **Complete CI/CD Pipeline Implementation**:
+  - Git-tag-based semantic versioning system with `scripts/version.sh`
+  - Automated version file generation for both Swift and Objective-C implementations
+  - Comprehensive test suite with `scripts/test-all.sh` covering unit, integration, and performance tests
+  - Complete build and release pipeline with `scripts/build-and-release.sh`
+  - Multiplatform release support with `scripts/multiplatform-release.sh`
+  - GitHub Actions workflows for CI and automated releases (requires manual setup)
+  - Enhanced Makefile with new targets for version management and releases
+  - Comprehensive documentation in `docs/CI_CD_SETUP.md`
+
+### Enhanced
+- Version management system with semver validation and git tag integration
+- Build system with automatic version embedding in compiled binaries
+- Test coverage with cross-implementation compatibility validation
+- Release process with automated artifact creation and checksums
+- Documentation with complete setup and usage instructions
+
+### Previous Changes
 - Created comprehensive improvement plan in PLAN.md (Phase 15) focusing on seamless installation
 - Added `release.sh` script for automated release process with SHA256 checksum generation
 - Created unified top-level Makefile for building both implementations
