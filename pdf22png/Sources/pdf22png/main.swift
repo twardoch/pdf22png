@@ -40,7 +40,7 @@ struct PDF22PNGCommand: ParsableCommand {
     static let configuration = CommandConfiguration(
         commandName: "pdf22png",
         abstract: "Converts PDF documents to PNG images.",
-        version: "2.2.0"
+        version: Version.fullVersion
     )
     
     @Argument(help: "Input PDF file. If '-', reads from stdin.")
