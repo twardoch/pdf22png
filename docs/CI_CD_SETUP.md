@@ -139,33 +139,168 @@ make pdf22png              # Build Swift version only
 
 ### CI Workflow (`.github/workflows/ci.yml`)
 
-Triggered on:
-- Push to `main` or `develop` branches
-- Pull requests to `main` or `develop`
-- Manual workflow dispatch
+**Note**: This file needs to be manually created in the repository as it requires `workflows` permission.
 
-Steps:
-1. **Setup Environment**: Checkout code, setup Xcode
-2. **Cache Dependencies**: Cache build artifacts for faster builds
-3. **Generate Version Files**: Create version files with current git info
-4. **Build Projects**: Build both implementations
-5. **Run Tests**: Execute comprehensive test suite
-6. **Performance Tests**: Run benchmarks and memory leak detection
-7. **Upload Artifacts**: Store build artifacts and test results
+```yaml
+name: CI
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: Test
+    runs-on: macos-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # Fetch all history for version calculation
+    
+    - name: Setup Xcode
+      uses: maxim-lobanov/setup-xcode@v1
+      with:
+        xcode-version: latest-stable
+    
+    - name: Cache build artifacts
+      uses: actions/cache@v3
+      with:
+        path: |
+          pdf21png/build
+          pdf22png/.build
+        key: ${{ runner.os }}-build-${{ hashFiles('**/Makefile', '**/Package.swift', '**/Package.resolved') }}
+        restore-keys: |
+          ${{ runner.os }}-build-
+    
+    - name: Check dependencies
+      run: make check-deps
+    
+    - name: Generate version files
+      run: make generate-version
+    
+    - name: Build projects
+      run: make all
+    
+    - name: Run tests
+      run: ./scripts/test-all.sh --verbose
+    
+    - name: Upload test results
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: test-results
+        path: test_output/
+        retention-days: 7
+    
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: build-artifacts-${{ github.sha }}
+        path: |
+          pdf21png/build/pdf21png
+          pdf22png/.build/apple/Products/Release/pdf22png
+        retention-days: 30
+```
 
 ### Release Workflow (`.github/workflows/release.yml`)
 
-Triggered on:
-- Push of tags matching `v*` pattern
-- Manual workflow dispatch with version input
+**Note**: This file needs to be manually created in the repository as it requires `workflows` permission.
 
-Steps:
-1. **Setup Environment**: Checkout code, setup Xcode
-2. **Version Validation**: Validate version format and extract from tag
-3. **Build and Test**: Generate version files, build, and run tests
-4. **Create Artifacts**: Generate release artifacts with checksums
-5. **Create GitHub Release**: Upload artifacts to GitHub releases
-6. **Update Documentation**: Show Homebrew formula updates needed
+```yaml
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version (e.g., 1.0.0)'
+        required: true
+        type: string
+      notes:
+        description: 'Release notes'
+        required: false
+        type: string
+
+jobs:
+  release:
+    name: Create Release
+    runs-on: macos-latest
+    
+    permissions:
+      contents: write
+      
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    
+    - name: Setup Xcode
+      uses: maxim-lobanov/setup-xcode@v1
+      with:
+        xcode-version: latest-stable
+    
+    - name: Extract version from tag
+      id: version
+      run: |
+        if [[ "${{ github.event_name }}" == "push" ]]; then
+          VERSION=${GITHUB_REF#refs/tags/v}
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+        else
+          VERSION="${{ github.event.inputs.version }}"
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+        fi
+        echo "Release version: $VERSION"
+    
+    - name: Validate version format
+      run: ./scripts/version.sh validate "${{ steps.version.outputs.version }}"
+    
+    - name: Generate version files
+      run: make generate-version
+    
+    - name: Build projects
+      run: make universal
+    
+    - name: Run tests
+      run: ./scripts/test-all.sh
+    
+    - name: Create release artifacts
+      run: |
+        ./scripts/build-and-release.sh release \
+          --version "${{ steps.version.outputs.version }}" \
+          ${{ github.event.inputs.notes && format('--notes "{0}"', github.event.inputs.notes) || '' }}
+    
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: ${{ github.ref_name }}
+        name: Release ${{ steps.version.outputs.version }}
+        body_path: artifacts/RELEASE_NOTES.md
+        files: |
+          artifacts/*.tar.gz
+          artifacts/*.sha256
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+```
+
+### Manual Setup Instructions
+
+To set up the GitHub Actions workflows manually:
+
+1. Create the `.github/workflows/` directory in your repository
+2. Copy the CI workflow YAML above into `.github/workflows/ci.yml`
+3. Copy the Release workflow YAML above into `.github/workflows/release.yml`
+4. Commit and push these files to your repository
 
 ## Multiplatform Support
 
