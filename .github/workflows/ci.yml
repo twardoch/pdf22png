@@ -1,0 +1,44 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-and-test:
+    name: Build & test (macOS)
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Toolchain versions
+        run: |
+          swift --version
+          xcodebuild -version
+
+      - name: Build pdf21png (Objective-C)
+        run: make -C pdf21png
+
+      - name: Test pdf21png (unit)
+        run: bash pdf21png/Tests/run-unit-tests.sh
+
+      - name: Build pdf22png (Swift)
+        run: swift build --package-path pdf22png
+
+      - name: Test pdf22png (Swift)
+        run: swift test --package-path pdf22png
+
+      - name: Conversion smoke test (both tools)
+        run: |
+          set -euo pipefail
+          printf 'CI smoke test page\n' > page.txt
+          cupsfilter page.txt > sample.pdf 2>/dev/null
+          swift build --package-path pdf22png -c release
+          SWIFT_BIN="pdf22png/.build/release/pdf22png"
+          "pdf21png/build/pdf21png" sample.pdf out21.png
+          "$SWIFT_BIN" sample.pdf out22.png
+          test -s out21.png || { echo "pdf21png produced empty PNG"; exit 1; }
+          test -s out22.png || { echo "pdf22png produced empty PNG"; exit 1; }
+          echo "Both tools produced non-empty PNGs."

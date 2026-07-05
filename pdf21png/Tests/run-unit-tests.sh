@@ -60,7 +60,7 @@ compile_and_run() {
         -I"$SRC_DIR" \
         -o "$BUILD_DIR/test_utils" \
         "$SRC_DIR/utils.m" \
-        "$TESTS_DIR/test_utils.c"
+        "$TESTS_DIR/test_utils.m"
     
     print_success "Tests compiled"
     

@@ -58,25 +58,29 @@ public func parseScaleSpec(_ spec: String) -> ScaleSpec? {
         let heightStr = parts.count > 1 ? String(parts[1]) : ""
 
         if !widthStr.isEmpty {
-            if let value = Double(widthStr) {
-                scale.maxWidth = value
-                if scale.maxWidth <= 0 {
-                    fputs("Error: Width dimension must be positive.\n", stderr)
-                    return nil
-                }
-                scale.hasWidth = true
+            guard let value = Double(widthStr) else {
+                fputs("Error: Invalid scale specification format: \(spec)\n", stderr)
+                return nil
             }
+            scale.maxWidth = value
+            if scale.maxWidth <= 0 {
+                fputs("Error: Width dimension must be positive.\n", stderr)
+                return nil
+            }
+            scale.hasWidth = true
         }
 
         if !heightStr.isEmpty {
-            if let value = Double(heightStr) {
-                scale.maxHeight = value
-                if scale.maxHeight <= 0 {
-                    fputs("Error: Height dimension must be positive.\n", stderr)
-                    return nil
-                }
-                scale.hasHeight = true
+            guard let value = Double(heightStr) else {
+                fputs("Error: Invalid scale specification format: \(spec)\n", stderr)
+                return nil
             }
+            scale.maxHeight = value
+            if scale.maxHeight <= 0 {
+                fputs("Error: Height dimension must be positive.\n", stderr)
+                return nil
+            }
+            scale.hasHeight = true
         }
         
         if scale.hasWidth || scale.hasHeight {

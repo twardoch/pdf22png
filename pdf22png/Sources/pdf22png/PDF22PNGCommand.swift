@@ -528,6 +528,19 @@ struct PDF22PNGCommand: ParsableCommand {
     
     
     
+    /// Renders the requested pages concurrently.
+    ///
+    /// Concurrency model (GCD, not async/await): pages are dispatched onto a
+    /// concurrent `renderQueue`. A `DispatchSemaphore` caps in-flight renders at
+    /// `activeProcessorCount * 2` so a large PDF cannot spawn unbounded work or
+    /// exhaust memory. A `DispatchGroup` joins all pages before returning, and a
+    /// separate serial queue guards the shared success/error counters and
+    /// progress output so those mutations stay race-free. Each page renders
+    /// inside its own `autoreleasepool` to bound peak memory during batch runs.
+    ///
+    /// GCD is used rather than Swift structured concurrency because each page
+    /// render is a synchronous Core Graphics call with no suspension points; the
+    /// semaphore-bounded queue expresses the CPU-bound fan-out directly.
     private func convertPagesInParallel(document: PDFDocument, pages: [Int], baseName: String, totalPages: Int) throws {
         let renderQueue = DispatchQueue(label: "com.pdf22png.render", qos: .userInitiated, attributes: .concurrent)
         let group = DispatchGroup()

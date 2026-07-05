@@ -68,3 +68,15 @@
 - [ ] Add memory usage profiling
 - [ ] Implement parallel processing for batch operations
 - [ ] Add performance regression detection
+
+## Modernization backlog (2026-07-05)
+
+- [ ] Unify dimension-order convention across tools: `pdf21png` parses `HxW`
+      (height-first) while `pdf22png` parses `WxH` (width-first). Converging
+      them is a behavior change — gate behind a deprecation/flag.
+- [ ] Replace deprecated `kUTTypePNG` with `UTTypePNG` in `pdf21png/src/utils.m`
+      (currently emits two deprecation warnings on macOS 12+).
+- [ ] Wire the root `Tests/integration_test.sh` into CI; it needs a
+      `testdata/multi-page.pdf` fixture (generate at runtime or commit one).
+- [ ] Untrack `.cursorindexingignore` (tracked but matched by `.gitignore`) in a
+      standalone commit AFTER a release, so a stage-all release step can't re-add it.

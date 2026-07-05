@@ -175,17 +175,11 @@ final class ScaleSpecEdgeCasesTests: XCTestCase {
         let spec1 = parseScaleSpec("100%dpi")
         XCTAssertNil(spec1, "Should reject mixed percentage and DPI")
         
-        // "800x600%" is parsed as width=800, height="600%" 
-        // Since "600%" is not a valid number for height, it should actually work as width-only
+        // "800x600%" has a non-empty but invalid height ("600%"). A malformed
+        // dimension part is a hard error rather than being silently dropped, so
+        // the whole spec is rejected (consistent with testMultipleX).
         let spec2 = parseScaleSpec("800x600%")
-        if let spec = spec2 {
-            // This is actually valid - it's treated as 800x with invalid height (ignored)
-            XCTAssertTrue(spec.hasWidth)
-            XCTAssertFalse(spec.hasHeight)
-            XCTAssertEqual(spec.maxWidth, 800)
-        } else {
-            XCTFail("Should parse as width-only when height is invalid")
-        }
+        XCTAssertNil(spec2, "Should reject a dimension spec whose height part is invalid")
     }
     
     // MARK: - Case sensitivity

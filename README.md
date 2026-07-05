@@ -1,7 +1,7 @@
 # PDF to PNG Converter for macOS: `pdf21png` & `pdf22png`
 
-[![Version pdf21png](https://img.shields.io/badge/pdf21png-v2.1.0-blue)](https://github.com/twardoch/pdf22png/releases)
-[![Version pdf22png](https://img.shields.io/badge/pdf22png-v2.2.0-green)](https://github.com/twardoch/pdf22png/releases)
+[![Release](https://img.shields.io/github/v/release/twardoch/pdf22png?sort=semver)](https://github.com/twardoch/pdf22png/releases)
+[![CI](https://github.com/twardoch/pdf22png/actions/workflows/ci.yml/badge.svg)](https://github.com/twardoch/pdf22png/actions/workflows/ci.yml)
 [![License](https://img.shields.io/badge/license-MIT-lightgrey.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/platform-macOS-lightgrey.svg)](https://www.apple.com/macos/)
 
@@ -11,6 +11,39 @@ Convert PDF documents to high-quality PNG images with two powerful command-line 
 *   **`pdf22png` (Swift):** The modern, feature-rich successor. Leverages the latest Swift capabilities for enhanced flexibility, type safety, and active development.
 
 Both tools provide a consistent command-line interface, allowing users to switch between them with ease.
+
+<p align="center"><img src="docs/assets/icon.png" alt="pdf22png" width="220"></p>
+
+## Which tool should I use?
+
+Pick in one line: **batch or scripting at volume → `pdf21png`; everything else → `pdf22png`.**
+
+| | `pdf21png` | `pdf22png` |
+|---|---|---|
+| Language | Objective-C | Swift |
+| Best for | High-volume batch, servers, scripting | Interactive use, new features |
+| Priority | Raw throughput, stability | Flexibility, type safety, active dev |
+| Dimension order | `HxW` (height-first) | `WxH` (width-first) |
+| Min macOS | 10.15 Catalina | 11.0 Big Sur |
+| Install | `brew install twardoch/pdf22png/pdf21png` | `brew install twardoch/pdf22png/pdf22png` |
+
+Both read the same PDFs, write the same PNGs, and share the scaling/paging flag
+vocabulary — you can swap one for the other in a script and change only the
+command name (mind the dimension-order note above).
+
+## Common commands
+
+```bash
+pdf22png input.pdf output.png            # first page -> PNG
+pdf22png -p 3 input.pdf page3.png        # a specific page
+pdf22png -a input.pdf                     # every page -> input-001.png, ...
+pdf22png -r 300dpi input.pdf out.png      # render at 300 DPI
+pdf22png -s 50% input.pdf half.png        # scale to 50%
+pdf22png -t input.pdf transparent.png     # transparent background
+```
+
+`pdf21png` accepts the same flags. See [Command-line options](#command-line-options)
+for the full reference.
 
 ## What is `pdf21png` / `pdf22png`?
 

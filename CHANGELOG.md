@@ -5,7 +5,43 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased] - 2025-07-17
+## [Unreleased] - 2026-07-05
+
+### Fixed
+- **Swift build broke on modern toolchains (Swift 6.x):** the executable entry
+  point lived in `main.swift` while using the `@main` attribute, which the
+  compiler rejects ("'main' attribute cannot be used in a module that contains
+  top-level code"). Renamed to `PDF22PNGCommand.swift` so `@main` is the entry
+  point again.
+- **Scale-spec parser silently accepted malformed dimensions:** input like
+  `800x600x400` or `800x600%` parsed as width-only instead of being rejected.
+  A non-empty dimension part that is not a valid number is now a hard error
+  (fail loud), in both the Swift parser and its tests.
+- **Objective-C unit tests would not compile:** `test_utils.c` pulled in
+  Foundation headers as plain C. Renamed to `test_utils.m` and rewritten
+  against the current `utils.h` API (the old file referenced a removed
+  `ScaleSpec.type`/`.value` API and non-existent helpers). 34 assertions, green.
+
+### Added
+- **GitHub Actions CI** (`.github/workflows/ci.yml`): builds and tests both
+  tools on macOS for every push and PR, plus a conversion smoke test that
+  asserts both binaries produce non-empty PNGs.
+- **Release workflow** (`.github/workflows/release.yml`): on a `v*` tag, builds
+  universal binaries for both tools and publishes a GitHub Release tarball with
+  a SHA-256 checksum.
+- Project icon at `docs/assets/icon.png`.
+
+### Changed
+- README now leads with a "Which tool should I use?" comparison table, a quick
+  decision rule, and common commands before the long-form prose.
+- Documented the coordinate-system handling in the Objective-C renderer
+  (bottom-left PDF origin vs. top-left PNG) and the GCD-based concurrent page
+  rendering strategy in the Swift tool.
+- Replaced the contaminated `CLAUDE.md` / `AGENTS.md` / `GEMINI.md` /
+  `.cursorrules` (which described an unrelated Python Unicode package) with an
+  accurate agent/contributor guide for this repository.
+
+## [Older] - 2025-07-17
 
 ### Added
 - **Complete CI/CD Pipeline Implementation**:

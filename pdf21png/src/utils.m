@@ -206,6 +206,11 @@ CGImageRef renderPDFPageToImage(CGPDFPageRef pdfPage, CGFloat scaleFactor, BOOL 
         }
 
         CGContextSaveGState(context);
+        // Coordinate systems: both a PDF page and a Core Graphics bitmap
+        // context use a bottom-left origin with y growing upward, so the page
+        // draws right-side up with no manual y-flip. (PNG is conceptually
+        // top-left, but ImageIO handles that when the CGImage is encoded.)
+        // Only the uniform scale needs applying before drawing.
         CGContextScaleCTM(context, scaleFactor, scaleFactor);
 
         CGContextDrawPDFPage(context, pdfPage);

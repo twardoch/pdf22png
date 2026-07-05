@@ -1,0 +1,48 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build universal binaries & publish release
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Toolchain versions
+        run: |
+          swift --version
+          xcodebuild -version
+
+      - name: Build pdf21png universal binary
+        run: make -C pdf21png universal
+
+      - name: Build pdf22png universal binary
+        run: swift build --package-path pdf22png -c release --arch arm64 --arch x86_64
+
+      - name: Assemble release tarball
+        run: |
+          set -euo pipefail
+          STAGE="$(mktemp -d)/pdf22png-${{ github.ref_name }}-macos-universal"
+          mkdir -p "$STAGE"
+          cp pdf21png/build/pdf21png-universal "$STAGE/pdf21png"
+          cp pdf22png/.build/apple/Products/Release/pdf22png "$STAGE/pdf22png"
+          cp README.md LICENSE "$STAGE/"
+          TARBALL="pdf22png-${{ github.ref_name }}-macos-universal.tar.gz"
+          tar -czf "$TARBALL" -C "$(dirname "$STAGE")" "$(basename "$STAGE")"
+          shasum -a 256 "$TARBALL" | tee "$TARBALL.sha256"
+          echo "TARBALL=$TARBALL" >> "$GITHUB_ENV"
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            ${{ env.TARBALL }}
+            ${{ env.TARBALL }}.sha256
+          generate_release_notes: true
